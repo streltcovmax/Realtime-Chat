@@ -16,7 +16,4 @@ public class Chat {
     @GeneratedValue
     private Long chatId;
     private String lastMessage;
-
-//    @OneToMany
-//    private List<ChatParticipants> participantsList;
 }

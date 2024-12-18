@@ -1,25 +1,20 @@
 package com.mkstr.chat.controllers;
 
-import com.mkstr.chat.data.ChatParticipant;
 import com.mkstr.chat.data.User;
-import com.mkstr.chat.repositories.ChatParticipantRepository;
 import com.mkstr.chat.services.ChatService;
 import com.mkstr.chat.services.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -79,9 +74,4 @@ public class UserController {
     public ResponseEntity<User> getUser(@PathVariable String targetUsername){
         return ResponseEntity.ok(userService.findByUsername(targetUsername));
     }
-//    @GetMapping("/users")
-//    public ResponseEntity<List<User>> getContacts(){
-//        log.info(chatService.findContacts("alex").toString());
-//        return ResponseEntity.ok(userService.findUsers());
-//    }
 }

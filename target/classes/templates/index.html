@@ -1,61 +1,65 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/html">
+<!--<html lang="en" xmlns="http://www.w3.org/1999/html">-->
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" media="all" th:href="@{/css/style.css}" />
+<!--    <link rel="stylesheet" type="text/css" media="all" th:href="@{/css/style.css}" />-->
+        <link rel="stylesheet" type="text/css" media="all" href="/css/style.css" />
     <title>CHAT</title>
 </head>
 <body>
 
 <div class="user-form" id="username-page">
-    <h2>Enter Chatroom</h2>
+    <h2>Войти</h2>
     <form id="usernameForm">
-        <label for="fullname">Name:</label>
-        <input type="text" id="fullname" name="realname" required>
+        <label for="firstName">Имя:</label>
+        <input autocomplete="off" type="text" id="firstName" name="realname" required>
 
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required>
+        <label for="username">sad:</label>
+        <input autocomplete="off" type="text" id="username" name="username" required>
 
-        <button type="submit">Enter Chatroom</button>
+        <button type="submit">далее</button>
     </form>
 </div>
 
 <div class="chat-container hidden" id="chat-page">
     <div class="users-list">
-        <button onclick="showUsersSearch();">Create new chat</button>
+        <button onclick="showUsersSearch();">создать новый чат</button>
         <div class="users-list-container">
-            <h2>Online Users</h2>
+<!--            <h2>Ваши чаты</h2>-->
             <ul id="connectedUsers">
             </ul>
         </div>
         <div>
-            <p id="connected-user-fullname"></p>
-            <a class="logout" href="javascript:void(0)" id="logout">Logout</a>
+            <p id="connected-user-firstName"></p>
+            <a class="logout" href="javascript:void(0)" id="logout">выйти</a>
         </div>
     </div>
 
     <div class="chat-area">
+        <div id="chat-userInfo" class="chat-userInfo hidden">
+            <span></span>
+        </div>
         <div class="chat-area" id="chat-messages">
         </div>
 
         <form id="messageForm" name="messageForm" class="hidden">
             <div class="message-input">
-                <input autocomplete="off" type="text" id="message" placeholder="Type your message...">
-                <button>Send</button>
+                <input autocomplete="off" type="text" id="message" placeholder="Введите сообщение...">
+                <button>отправить</button>
             </div>
         </form>
     </div>
 </div>
 
 <div class="user-form hidden" id="search-page">
-    <h2>Find new friends</h2>
+    <h2>Найти пользователей</h2>
     <form id="searchUserForm">
-        <label for="username">Username:</label>
-        <input type="text" id="searchUsername" name="username">
-<!--        <input type="text" id="searchUsername" name="username" oninput="usersSearch(event)">-->
+        <label for="username">Никнейм:</label>
+        <input autocomplete="off" type="text" id="searchUsername" name="username">
     </form>
-    <h2>Found Users:</h2>
+    <h2>Найдено:</h2>
     <ul id="foundUsers">
     </ul>
 </div>
@@ -63,6 +67,220 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js" integrity="sha512-1QvjE7BtotQjkq8PxLeF6P46gEpBRXuskzIVgjFpekzFVF4yjRgrQvTG1MTOJ3yQgvTteKAcO7DSZI92+u/yZw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js" integrity="sha512-iKDtgDyTHjAitUDdLljGhenhPwrbBfqTKWO1mkhSFH3A7blITC9MhYon6SjnMhp4o0rADGw9yAC6EW4t5a4K3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script th:src="@{/js/script.js}"></script>
+<!--<script th:src="@{/js/script.js}"></script>-->
+<script src="/js/script.js"></script>
 </body>
 </html>
+
+
+<!--<style>-->
+
+
+<!--    *{-->
+<!--        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;-->
+<!--    }-->
+
+<!--    body {-->
+<!--        margin: 0;-->
+<!--        padding: 0;-->
+<!--        background-color: #f0f0f0;-->
+<!--        display: flex;-->
+<!--        align-items: center;-->
+<!--        justify-content: center;-->
+<!--        height: 100vh;-->
+<!--        flex-direction: column;-->
+<!--    }-->
+
+<!--    .chat-container {-->
+<!--        display: flex;-->
+<!--        max-width: 800px;-->
+<!--        min-width: 800px;-->
+<!--        min-height: 600px;-->
+<!--        max-height: 600px;-->
+<!--        margin: 20px;-->
+<!--        border: 1px solid #ccc;-->
+<!--        background-color: #fff;-->
+<!--        overflow: hidden;-->
+<!--        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);-->
+<!--    }-->
+
+<!--    .users-list {-->
+<!--        flex: 1;-->
+<!--        border-right: 1px solid #ccc;-->
+<!--        padding: 20px;-->
+<!--        box-sizing: border-box;-->
+<!--        background-color: #242424;-->
+<!--        color: #fff;-->
+<!--        display: flex;-->
+<!--        flex-direction: column;-->
+<!--        justify-content: space-between;-->
+<!--    }-->
+
+<!--    .users-list-container {-->
+<!--        height: 100%;-->
+<!--        overflow-y: scroll;-->
+<!--    }-->
+
+<!--    .users-list h2 {-->
+<!--        font-size: 1.5rem;-->
+<!--        margin-bottom: 10px;-->
+<!--    }-->
+
+<!--    .users-list ul {-->
+<!--        list-style: none;-->
+<!--        padding: 0;-->
+<!--        margin: 0;-->
+<!--    }-->
+
+<!--    .user-item {-->
+<!--        display: flex;-->
+<!--        align-items: center;-->
+<!--        margin-bottom: 8px;-->
+<!--        cursor: pointer;-->
+<!--    }-->
+
+<!--    .user-item.active {-->
+<!--        background-color: #d2d2d2;-->
+<!--        color: #222222;-->
+<!--        padding: 10px;-->
+<!--    }-->
+
+
+<!--    .user-item span {-->
+<!--        font-weight: bold;-->
+<!--    }-->
+
+<!--    .separator {-->
+<!--        height: 1px;-->
+<!--        background-color: #ccc;-->
+<!--        margin: 10px 0;-->
+<!--    }-->
+
+<!--    .chat-area {-->
+<!--        flex: 3;-->
+<!--        display: flex;-->
+<!--        flex-direction: column;-->
+<!--        box-sizing: border-box;-->
+<!--        padding: 0;-->
+<!--    }-->
+
+<!--    .chat-userInfo{-->
+<!--        margin: 0;-->
+<!--        padding: 0;-->
+<!--        height: 60px;-->
+<!--        background-color:#222;-->
+<!--        font-size: 1.5rem;-->
+<!--        color:#fff;-->
+<!--        display: flex;-->
+<!--    }-->
+<!--    .chat-userInfo.active{-->
+<!--        color:green;-->
+<!--    }-->
+
+
+<!--    .message {-->
+<!--        margin-bottom: 5px;-->
+<!--    }-->
+
+<!--    #chat-messages {-->
+<!--        display: flex;-->
+<!--        flex-direction: column;-->
+<!--        overflow-y: scroll;-->
+<!--        padding: 20px;-->
+<!--    }-->
+
+<!--    .message p {-->
+<!--        padding: 0 12px;-->
+<!--        word-wrap: break-word;-->
+<!--    }-->
+
+<!--    .user-item span.notificationMarker {-->
+<!--        margin-left: 10px;-->
+<!--        background-color: #e8e497;-->
+<!--        color: white;-->
+<!--        border-radius: 10px;-->
+<!--        padding: 5px;-->
+<!--        width: 6px;-->
+<!--        height: 6px;-->
+<!--    }-->
+
+<!--    .sender {-->
+<!--        background-color: #222;-->
+<!--        color: #fff;-->
+<!--        align-self: flex-end;-->
+<!--    }-->
+
+<!--    .receiver {-->
+<!--        background-color: #ecf0f1;-->
+<!--        color: #333;-->
+<!--        align-self: flex-start;-->
+<!--    }-->
+
+<!--    .message-input {-->
+<!--        margin-top: auto;-->
+<!--        display: flex;-->
+<!--    }-->
+
+<!--    .message-input input {-->
+<!--        flex: 1;-->
+<!--        padding: 10px;-->
+<!--        border: 1px solid #ccc;-->
+<!--        margin-right: 10px;-->
+<!--    }-->
+
+<!--    .message-input button {-->
+<!--        padding: 10px;-->
+<!--        border: none;-->
+<!--        background-color: #222;-->
+<!--        color: #fff;-->
+<!--        cursor: pointer;-->
+<!--    }-->
+
+<!--    .user-form {-->
+<!--        max-width: 400px;-->
+<!--        padding: 40px;-->
+<!--        box-sizing: border-box;-->
+<!--        background-color: #fff;-->
+<!--        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);-->
+<!--    }-->
+
+<!--    .user-form h2 {-->
+<!--        font-size: 1.5rem;-->
+<!--        margin-bottom: 20px;-->
+<!--        text-align: center;-->
+<!--    }-->
+
+<!--    .user-form label {-->
+<!--        display: block;-->
+<!--        margin-bottom: 8px;-->
+<!--    }-->
+
+<!--    .user-form input {-->
+<!--        width: 100%;-->
+<!--        padding: 10px 0;-->
+<!--        border: 1px solid #ccc;-->
+<!--        margin-bottom: 20px;-->
+<!--    }-->
+
+<!--    .user-form button {-->
+<!--        padding: 12px;-->
+<!--        border: none;-->
+<!--        background-color: #222;-->
+<!--        color: #fff;-->
+<!--        cursor: pointer;-->
+<!--        width: 100%;-->
+<!--    }-->
+
+<!--    .hidden {-->
+<!--        display: none;-->
+<!--    }-->
+
+<!--    a.logout {-->
+<!--        color: #ababab;-->
+<!--        text-decoration: none;-->
+<!--    }-->
+
+<!--    .online{-->
+<!--        color:green;-->
+<!--    }-->
+<!--</style>-->

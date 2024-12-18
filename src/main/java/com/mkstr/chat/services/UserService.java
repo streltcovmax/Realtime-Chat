@@ -4,7 +4,6 @@ import com.mkstr.chat.data.Status;
 import com.mkstr.chat.data.User;
 import com.mkstr.chat.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,7 +12,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
-    private final ChatService chatService;
 
     public void save(User user){
         userRepository.save(user);

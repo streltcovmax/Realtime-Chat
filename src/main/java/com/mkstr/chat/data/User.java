@@ -11,10 +11,6 @@ import java.util.List;
 public class User {
     @Id
     private String username;
-    private String fullname;
+    private String firstName;
     private Status status;
-
-//    @OneToMany
-//    private List<ChatParticipants> participantsList;
-
 }

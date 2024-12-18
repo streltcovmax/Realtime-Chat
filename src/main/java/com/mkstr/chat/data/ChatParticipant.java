@@ -21,15 +21,4 @@ public class ChatParticipant {
     @MapsId("chatId")
     @JoinColumn(name = "chatId", referencedColumnName = "chatId")
     private Chat chat;
-
-
-
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name="chat_id", insertable = false, updatable = false)
-//    private Chat chat;
-//
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name="username")
-////    @Column(insertable=false, updatable=false)
-//    private User user;
 }

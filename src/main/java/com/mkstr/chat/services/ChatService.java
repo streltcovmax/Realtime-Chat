@@ -21,7 +21,7 @@ public class ChatService {
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
 
-    public Long getOrCreateChat(String sender, String recipient, String messageContent){
+    public Chat getOrCreateChat(String sender, String recipient){
         List<ChatParticipant> senderChatsList = participantRepository.findAllByUserUsername(sender);
         List<ChatParticipant> recipientChatsList = participantRepository.findAllByUserUsername(recipient);
 
@@ -34,13 +34,10 @@ public class ChatService {
             chat = participant.getChat();
             Long chatId = chat.getChatId();
             if(senderChatsSet.contains(chatId)){
-                chat.setLastMessage(messageContent);
-                chatRepository.save(chat);
-                return chatId;
+                return chat;
             }
         }
         chat = new Chat();
-        chat.setLastMessage(messageContent);
         chatRepository.save(chat);
 
         ChatParticipantId participant1 = new ChatParticipantId(sender, chat.getChatId());
@@ -53,7 +50,12 @@ public class ChatService {
                 new ChatParticipant(participant1, user1, chat),
                 new ChatParticipant(participant2, user2, chat))
         );
-        return chat.getChatId();
+        return chat;
+    }
+
+    public void saveLastMessage(Chat chat, String messageText){
+        chat.setLastMessage(messageText);
+        chatRepository.save(chat);
     }
 
     public List<Long> findUserChatsIds(String username){
