@@ -5,31 +5,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!--    <link rel="stylesheet" type="text/css" media="all" th:href="@{/css/style.css}" />-->
-        <link rel="stylesheet" type="text/css" media="all" href="/css/style.css" />
+<!--        <link rel="stylesheet" type="text/css" media="all" href="/css/style.css" />-->
         <link href='https://fonts.googleapis.com/css?family=Raleway' rel='stylesheet'>
     <title>CHAT</title>
 </head>
 <body>
 
-<div class="user-form" id="username-page">
+<div class="user-form " id="username-page">
     <h2>Войти</h2>
     <form id="usernameForm">
         <div class="inputContainer">
             <label for="firstName">Имя:</label>
             <input autocomplete="off" type="text" id="firstName" name="realname" required>
         </div>
-        <label for="username">Никнейм:</label>
-        <input autocomplete="off" type="text" id="username" name="username" required>
+        <div class="inputContainer">
+            <label for="username">Никнейм:</label>
+            <input autocomplete="off" type="text" id="username" name="username" required>
+        </div>
 
         <button type="submit">далее</button>
     </form>
 </div>
 
-<div class="chat-container hidden" id="chat-page">
+<div class="chat-container narrow hidden" id="chat-page">
     <div class="users-list">
         <button onclick="showUsersSearch();">создать новый чат</button>
         <div class="users-list-container">
-<!--            <h2>Ваши чаты</h2>-->
+            <h2>Чаты</h2>
             <ul id="connectedUsers">
             </ul>
         </div>
@@ -39,14 +41,17 @@
         </div>
     </div>
 
-    <div class="chat-area">
-        <div id="chat-userInfo" class="chat-userInfo hidden">
+    <div class="chat-area hidden" id="chat">
+        <div class="chat-userInfo" id="chat-userInfo" >
             <span></span>
         </div>
+
         <div class="chat-area" id="chat-messages">
+            <span></span>
+
         </div>
 
-        <form id="messageForm" name="messageForm" class="hidden">
+        <form id="messageForm" name="messageForm">
             <div class="message-input">
                 <input autocomplete="off" type="text" id="message" placeholder="Введите сообщение...">
                 <button>отправить</button>
@@ -76,88 +81,110 @@
 
 
 <style>
-
-
-    *{
-        font-family: 'Raleway',serif;
+    :root{
+        --back_d: #121212;
+        --back: #212121;
+        --middle: #313131;
+        --high_d: #0056b3;
+        --high: #007bff;
     }
 
     body {
-        margin: 0;
-        padding: 0;
-        background-color: #2d324f;
         display: flex;
-        align-items: center;
         justify-content: center;
+        align-items: center;
         height: 100vh;
-        flex-direction: column;
+        margin: 0;
+        /*padding: 0;*/
+        background-color: var(--back_d);
+        font-family: Raleway, sans-serif;
+        /*flex-direction: column;*/
     }
 
     .user-form {
-        max-width: 400px;
-        padding: 40px;
-        box-sizing: border-box;
-        color: #fff;
-    }
-
-    .user-form h2 {
-        font-size: 1.5rem;
-        margin-bottom: 10px;
+        background-color: var(--back); /* Темный фон формы */
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        padding: 30px;
+        width: 300px;
         text-align: center;
+        animation: fadeIn 0.5s ease-in-out;
     }
-
-    .user-form label {
-        display: block;
-        margin-bottom: 8px;
+    .inputContainer {
+        margin-bottom: 15px;
+        text-align: left; /* Выравнивание меток по левому краю */
     }
-    input{
-        padding-left: 10px;
-        background: none;
-        border: none;
-    }
-    .inputContainer{
-        background-color: #414568;
-        height: fit-content;
-        width: fit-content;
-
-    }
-
-    .user-form input {
-        width: 100%;
-        height: 40px;
-        /*padding: 10px 0;*/
-        /*border: 1px solid #ccc;*/
+    h2 {
         margin-bottom: 20px;
+        color: #ffffff; /* Белый цвет текста заголовка */
+    }
+    label {
+        display: block;
+        margin-bottom: 5px;
+        color: #bbbbbb; /* Серый цвет меток */
+    }
+    input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        border: none; /* Убираем обводку */
+        border-radius: 8px;
+        background-color: var(--middle); /* Темный фон для полей ввода */
+        color: #ffffff; /* Белый цвет текста в полях */
+        transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Переход для тени */
+    }
+    input[type="text"]:focus {
+        outline: none; /* Убираем стандартное обрамление */
+        box-shadow: 0 0 5px #007bff; /* Добавляем тень при фокусе */
+    }
+    button {
+        background-color: var(--high); /* Цвет кнопки */
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    button:hover {
+        background-color: var(--high_d); /* Более темный цвет при наведении */
+        transform: translateY(-2px); /* Подъем кнопки при наведении */
+    }
+    button:active {
+        transform: translateY(0); /* Возврат кнопки на место при нажатии */
     }
 
-    .user-form button {
-        padding: 12px;
-        border: none;
-        background-color: #222;
-        color: #fff;
-        cursor: pointer;
-        width: 100%;
-    }
 
     .chat-container {
         display: flex;
         max-width: 800px;
-        min-width: 800px;
+        /*min-width: 800px;*/
+        min-width: 400px;
+
         min-height: 600px;
         max-height: 600px;
         margin: 20px;
-        border: 1px solid #ccc;
-        background-color: #fff;
+        background-color: var(--middle);
+        border-radius: 15px;
         overflow: hidden;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .chat-container.narrow {
+        /*max-width: 400px;*/
+        min-width: 400px;
+    }
+
+
+    #chat-page{
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+
     }
 
     .users-list {
+        background-color: var(--back);
+        border-radius: 15px 0 0 15px;
+        min-width: 400px;
         flex: 1;
-        border-right: 1px solid #ccc;
         padding: 20px;
         box-sizing: border-box;
-        background-color: #242424;
         color: #fff;
         display: flex;
         flex-direction: column;
@@ -208,9 +235,21 @@
         flex: 3;
         display: flex;
         flex-direction: column;
-        box-sizing: border-box;
+        /*box-sizing: border-box;*/
         padding: 0;
+        background-color: var(--back);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
+
+    #chat{
+        width: 0;
+        transition: width 0.3s ease-out; /* Анимация изменения ширины */
+    }
+    #chat.activated{
+       width: 800px;
+    }
+
+
 
     .chat-userInfo{
         margin: 0;
@@ -222,7 +261,7 @@
         display: flex;
     }
     .chat-userInfo.active{
-        color:green;
+        color:var(--high);
     }
 
 
@@ -231,6 +270,8 @@
     }
 
     #chat-messages {
+        background-color: var(--middle);
+
         display: flex;
         flex-direction: column;
         overflow-y: scroll;
@@ -244,12 +285,12 @@
 
     .user-item span.notificationMarker {
         margin-left: 10px;
-        background-color: #e8e497;
+        background-color: white;
         color: white;
         border-radius: 10px;
         padding: 5px;
-        width: 6px;
-        height: 6px;
+        width: 3px;
+        height: 3px;
     }
 
     .sender {
@@ -264,26 +305,25 @@
         align-self: flex-start;
     }
 
-    .message-input {
-        margin-top: auto;
-        display: flex;
-    }
+    /*.message-input {*/
+    /*    margin-top: auto;*/
+    /*    display: flex;*/
+    /*}*/
 
-    .message-input input {
-        flex: 1;
-        padding: 10px;
-        border: 1px solid #ccc;
-        margin-right: 10px;
-    }
+    /*.message-input input {*/
+    /*    flex: 1;*/
+    /*    padding: 10px;*/
+    /*    border: 1px solid #ccc;*/
+    /*    margin-right: 10px;*/
+    /*}*/
 
-    .message-input button {
-        padding: 10px;
-        border: none;
-        /*background-color: #222;*/
-        color: #fff;
-        cursor: pointer;
-    }
-
+    /*.message-input button {*/
+    /*    padding: 10px;*/
+    /*    border: none;*/
+    /*    background-color: #222;*/
+    /*    color: #fff;*/
+    /*    cursor: pointer;*/
+    /*}*/
 
 
     .hidden {
@@ -296,6 +336,37 @@
     }
 
     .online{
-        color:green;
+        color:#007bff;
+    }
+
+    ::-webkit-scrollbar {
+        width: 5px; /* Ширина вертикального скроллбара */
+        height: 5px; /* Высота горизонтального скроллбара */
+    }
+
+    ::-webkit-scrollbar-track {
+        background: none; /* Фон трека (области скроллбара) */
+        /*border-radius: 10px; !* Закругленные углы у трека *!*/
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: rgba(0, 123, 255, 0.67); /* Цвет ползунка (thumb) */
+        border-radius: 6px; /* Закругленные углы у ползунка */
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 123, 255, 1); /* Цвет ползунка при наведении */
+    }
+
+    /* Анимация появления */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>

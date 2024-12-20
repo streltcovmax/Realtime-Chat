@@ -5,7 +5,8 @@ const messageInput = document.querySelector('#message');
 const chatPage = document.querySelector('#chat-page');
 const logout = document.querySelector('#logout');
 const messageForm = document.querySelector('#messageForm');
-const chatArea = document.querySelector('#chat-messages');
+const chatMessagesArea = document.querySelector('#chat-messages');
+const chat = document.querySelector('#chat')
 const searchPage = document.querySelector('#search-page');
 const foundUsersList = document.querySelector('#foundUsers');
 const usersSearchInput = document.querySelector('#searchUsername');
@@ -83,7 +84,7 @@ function appendUserToList(user){
 
     listItem.appendChild(nameElement);
     listItem.appendChild(messageMarker);
-    listItem.addEventListener('click', pickUserToChat);
+    listItem.addEventListener('click', pickChat);
 
     usersList.appendChild(listItem);
     usersList.appendChild(separator);
@@ -104,7 +105,7 @@ function updateUserStatus(payload){
     }
 }
 
-function pickUserToChat(event){
+function pickChat(event){
     const clickedUser = event.currentTarget;
     const userFirstName = event.currentTarget.firstName;
 
@@ -113,21 +114,29 @@ function pickUserToChat(event){
 
         selectedUser = clickedUser.getAttribute('id');
 
-        chatArea.innerHTML='';
+        chatMessagesArea.innerHTML='';
 
-        const userElement = document.querySelector(`#${selectedUser}`);
-        if(userElement){
-            userElement.classList.add('active');
-            if(userElement.classList.contains('online')) selectedUserInfo.classList.add('online');
-            const notificationMarker = userElement.querySelector('.notificationMarker');
+        const chatElement = document.querySelector(`#${selectedUser}`);
+        if(chatElement){
+            chatElement.classList.add('active');
+            if(chatElement.classList.contains('online')) selectedUserInfo.classList.add('online');
+            const notificationMarker = chatElement.querySelector('.notificationMarker');
             notificationMarker.classList.add('hidden');
             notificationMarker.textContent = '0';
             displayUserChat().then();
         }
 
-
         messageInput.placeholder = "Введите сообщение для пользователя " + userFirstName + "...";
-        messageForm.classList.remove('hidden');
+        // messageForm.classList.remove('hidden');
+        chatPage.classList.remove('narrow');
+
+        chat.classList.remove('hidden');
+
+        setTimeout(() => {
+            chat.classList.add('activated');
+        }, 100);
+
+        document.addEventListener('keydown', hideChat);
 
         const nameElement = document.createElement('span');
         nameElement.textContent = userFirstName;
@@ -137,14 +146,41 @@ function pickUserToChat(event){
     }
 }
 
+function hideChat(){
+    console.log("hiding opened chat");
+    if (event.key === 'Escape') {
+        if(selectedUser){
+            const chatElement = document.querySelector(`#${selectedUser}`);
+            if(chatElement){
+                chatElement.classList.remove('active');
+                // chatElement.querySelector('.notificationMarker').classList.remove('hidden');
+            }
+            messageInput.placeholder = "...";
+            chatPage.classList.add('narrow');
+
+            chat.classList.remove('activated');
+            setTimeout(() => {
+                chat.classList.add('hidden');
+            }, 500);
+
+
+            selectedUserInfo.textContent = '';
+            selectedUserInfo.classList.add('hidden');
+            selectedUser = null;
+            chatMessagesArea.innerHTML='';
+            document.removeEventListener('keydown', hideChat);
+        }
+    }
+}
+
 async function displayUserChat(){
     const chatResponse = await fetch(`/messages/${username}/${selectedUser}`);
     const chatJson = await chatResponse.json();
-    chatArea.innerHTML = '';
+    chatMessagesArea.innerHTML = '';
     chatJson.forEach(chat => {
         addMessage(chat.content, chat.senderId);
     })
-    chatArea.scrollTop = chatArea.scrollHeight;
+    chatMessagesArea.scrollTop = chatMessagesArea.scrollHeight;
 }
 
 function sendMessage(event) {
@@ -179,7 +215,7 @@ async function onMessageReceived(payload) {
         }
         else{
             addMessage(message.content, senderId);
-            chatArea.scrollTop = chatArea.scrollHeight;
+            chatMessagesArea.scrollTop = chatMessagesArea.scrollHeight;
         }
     }
     else{
@@ -229,7 +265,7 @@ function addMessage(content, senderId){
     const message = document.createElement('p');
     message.textContent = content;
     messageContainer.appendChild(message);
-    chatArea.appendChild(messageContainer);
+    chatMessagesArea.appendChild(messageContainer);
 }
 function showUsersSearch(){
     chatPage.classList.add("hidden");
@@ -266,7 +302,7 @@ function displayFoundUsers(payload){
                 searchPage.classList.add("hidden");
                 if(user.status === 'ONLINE') selectedUserInfo.classList.add('online');
 
-                pickUserToChat(event);
+                pickChat(event);
         })
     });
 }
