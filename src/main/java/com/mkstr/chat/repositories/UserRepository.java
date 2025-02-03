@@ -1,17 +1,11 @@
 package com.mkstr.chat.repositories;
 
-import com.mkstr.chat.data.Status;
 import com.mkstr.chat.data.User;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface UserRepository extends CrudRepository<User, String> {
-
-    List<User> findAllByStatus(Status status);
+public interface UserRepository extends JpaRepository<User, String> {
     List<User> findAllByUsernameContains(String username);
     User findByUsername(String username);
-
-//    List<User> findAll();
-
 }

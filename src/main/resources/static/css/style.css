@@ -1,17 +1,73 @@
-*{
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    /*padding: 0;*/
+    background-color: #121212;
+    font-family: Raleway, sans-serif;
+    /*flex-direction: column;*/
+}
+.hidden{
+    display: none;
 }
 
-body {
-    margin: 0;
-    padding: 0;
-    background-color: #f0f0f0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    flex-direction: column;
+.user-form {
+    background-color: #1e1e1e; /* Темный фон формы */
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    padding: 30px;
+    width: 300px;
+    text-align: center;
+    animation: fadeIn 0.5s ease-in-out;
 }
+.inputContainer {
+    margin-bottom: 15px;
+    text-align: left; /* Выравнивание меток по левому краю */
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: #ffffff; /* Белый цвет текста заголовка */
+}
+label {
+    display: block;
+    margin-bottom: 5px;
+    color: #bbbbbb; /* Серый цвет меток */
+}
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: none; /* Убираем обводку */
+    border-radius: 8px;
+    background-color: #2a2a2a; /* Темный фон для полей ввода */
+    color: #ffffff; /* Белый цвет текста в полях */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Переход для тени */
+}
+input[type="text"]:focus {
+    outline: none; /* Убираем стандартное обрамление */
+    box-shadow: 0 0 5px #007bff; /* Добавляем тень при фокусе */
+}
+button {
+    background-color: #007bff; /* Цвет кнопки */
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+button:hover {
+    background-color: #0056b3; /* Более темный цвет при наведении */
+    transform: translateY(-2px); /* Подъем кнопки при наведении */
+}
+button:active {
+    transform: translateY(0); /* Возврат кнопки на место при нажатии */
+}
+
+
+/*OLD*/
 
 .chat-container {
     display: flex;
@@ -20,22 +76,26 @@ body {
     min-height: 600px;
     max-height: 600px;
     margin: 20px;
-    border: 1px solid #ccc;
-    background-color: #fff;
+    /*border: 1px solid #ccc;*/
+    /*background-color: #fff;*/
     overflow: hidden;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    /*box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);*/
 }
 
 .users-list {
+    background-color: #1e1e1e;
+    border-radius: 15px 0 0 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     flex: 1;
-    border-right: 1px solid #ccc;
+    /*border-right: 1px solid #ccc;*/
     padding: 20px;
     box-sizing: border-box;
-    background-color: #242424;
     color: #fff;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    scrollbar-color: red orange;
+    scrollbar-width: auto;
 }
 
 .users-list-container {
@@ -63,15 +123,10 @@ body {
 
 .user-item.active {
     background-color: #d2d2d2;
-    /*color: #4f4f4f;*/
+    color: #222222;
     padding: 10px;
 }
 
-/*.user-item img {*/
-/*    width: 40px;*/
-/*    height: 40px;*/
-/*    margin-right: 10px;*/
-/*}*/
 
 .user-item span {
     font-weight: bold;
@@ -87,9 +142,23 @@ body {
     flex: 3;
     display: flex;
     flex-direction: column;
-    padding: 20px;
     box-sizing: border-box;
+    padding: 0;
 }
+
+.chat-userInfo{
+    margin: 0;
+    padding: 0;
+    height: 60px;
+    background-color:#222;
+    font-size: 1.5rem;
+    color:#fff;
+    display: flex;
+}
+.chat-userInfo.active{
+    color:green;
+}
+
 
 .message {
     margin-bottom: 5px;
@@ -99,6 +168,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow-y: scroll;
+    padding: 20px;
 }
 
 .message p {
@@ -108,11 +178,12 @@ body {
 
 .user-item span.notificationMarker {
     margin-left: 10px;
-    background-color: #f8fa6f;
+    background-color: #e8e497;
     color: white;
+    border-radius: 10px;
     padding: 5px;
-    width: 10px;
-    height: 10px;
+    width: 6px;
+    height: 6px;
 }
 
 .sender {
@@ -127,60 +198,26 @@ body {
     align-self: flex-start;
 }
 
-.message-input {
-    margin-top: auto;
-    display: flex;
-}
+/*.message-input {*/
+/*    margin-top: auto;*/
+/*    display: flex;*/
+/*}*/
 
-.message-input input {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #ccc;
-    margin-right: 10px;
-}
+/*.message-input input {*/
+/*    flex: 1;*/
+/*    padding: 10px;*/
+/*    border: 1px solid #ccc;*/
+/*    margin-right: 10px;*/
+/*}*/
 
-.message-input button {
-    padding: 10px;
-    border: none;
-    background-color: #222;
-    color: #fff;
-    cursor: pointer;
-}
+/*.message-input button {*/
+/*    padding: 10px;*/
+/*    border: none;*/
+/*    background-color: #222;*/
+/*    color: #fff;*/
+/*    cursor: pointer;*/
+/*}*/
 
-.user-form {
-    max-width: 400px;
-    padding: 40px;
-    box-sizing: border-box;
-    background-color: #fff;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.user-form h2 {
-    font-size: 1.5rem;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.user-form label {
-    display: block;
-    margin-bottom: 8px;
-}
-
-.user-form input {
-    width: 100%;
-    padding: 10px 0;
-    border: 1px solid #ccc;
-    margin-bottom: 20px;
-}
-
-.user-form button {
-    padding: 12px;
-    border: none;
-    background-color: #222;
-    color: #fff;
-    cursor: pointer;
-    width: 100%;
-}
 
 .hidden {
     display: none;
@@ -193,4 +230,16 @@ a.logout {
 
 .online{
     color:green;
+}
+
+/* Анимация появления */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
