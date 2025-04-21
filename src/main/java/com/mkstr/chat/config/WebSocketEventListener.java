@@ -24,13 +24,13 @@ public class WebSocketEventListener {
         StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
         String username = (String)headerAccessor.getSessionAttributes().get("username");
         if(username != null) {
-            log.info("___The username disconnected : {}", username);
+            log.info("The username disconnected : {}", username);
             userService.disconnect(username);
             messagingTemplate.convertAndSend("/user/public/", userService.findByUsername(username));
 
         }
         else{
-            log.info("___USER NAME NULL COULDN'T UPDATE USER STATUS");
+            log.error("USERNAME IS NULL COULDN'T UPDATE USER STATUS");
         }
     }
 }

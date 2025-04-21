@@ -26,7 +26,7 @@ public class UserService {
     }
 
     public List<User> findAllByUsername(String username){
-        return userRepository.findAllByUsernameContains(username);
+        return userRepository.findAllByUsername(username);
     }
 
     public User findByUsername(String username){

@@ -24,7 +24,6 @@ public class UserController {
 
     private final UserService userService;
     private final ChatService chatService;
-    private final SimpMessagingTemplate messagingTemplate;
     private String username;
 
 
@@ -35,7 +34,7 @@ public class UserController {
             StompHeaderAccessor headerAccessor
     ){
         username = user.getUsername();
-        headerAccessor.getSessionAttributes().put("username", username);
+//        headerAccessor.getSessionAttributes().put("username", username);
         log.info("___Added this in WS session" + user);
         userService.save(user);
         return user;
@@ -52,21 +51,11 @@ public class UserController {
         return user;
     }
 
-    @MessageMapping("/user.findUsers")
-    public void findUsers(
-            @Payload String targetUsername,
-            StompHeaderAccessor headerAccessor
-    ){
-        String username = (String) headerAccessor.getSessionAttributes().get("username");
-        log.info(targetUsername);
-        log.info(username);
-        List<User> foundUsers = userService.findAllByUsername(targetUsername);
-        messagingTemplate.convertAndSend("/user/" + username + "/usersSearch", foundUsers);
-    }
+
 
     @GetMapping("/chats")
     public ResponseEntity<List<User>> getContacts(){
-        log.info(username + " " + chatService.findContacts(username).toString());
+        log.info(username + " chats: " + chatService.findContacts(username).toString());
         return ResponseEntity.ok(chatService.findContacts(username));
     }
 

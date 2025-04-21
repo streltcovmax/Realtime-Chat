@@ -11,6 +11,6 @@ import java.util.List;
 public class User {
     @Id
     private String username;
-    private String firstName;
+    private String fullname;
     private Status status;
 }

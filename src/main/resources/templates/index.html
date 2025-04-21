@@ -1,372 +1,236 @@
 <!DOCTYPE html>
-<!--<html lang="en" xmlns="http://www.w3.org/1999/html">-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!--    <link rel="stylesheet" type="text/css" media="all" th:href="@{/css/style.css}" />-->
-<!--        <link rel="stylesheet" type="text/css" media="all" href="/css/style.css" />-->
-        <link href='https://fonts.googleapis.com/css?family=Raleway' rel='stylesheet'>
+    <link rel="stylesheet" type="text/css" media="all" href="/static/css/style.css" />
+<!-- <link rel="stylesheet" type="text/css" media="all" href="/static/css/new_style.css" /> -->
+    <link rel="stylesheet" type="text/css" media="all" href="/static/css/common.css" />
+    <link rel="icon" type="image/x-icon" href="/static/images/icon_colored.ico">
+<!--    <link href='https://fonts.googleapis.com/css?family=Raleway' rel='stylesheet'>-->
     <title>CHAT</title>
 </head>
 <body>
 
-<div class="user-form " id="username-page">
-    <h2>Войти</h2>
-    <form id="usernameForm">
-        <div class="inputContainer">
-            <label for="firstName">Имя:</label>
-            <input autocomplete="off" type="text" id="firstName" name="realname" required>
-        </div>
-        <div class="inputContainer">
-            <label for="username">Никнейм:</label>
-            <input autocomplete="off" type="text" id="username" name="username" required>
-        </div>
-
-        <button type="submit">далее</button>
-    </form>
-</div>
-
-<div class="chat-container narrow hidden" id="chat-page">
-    <div class="users-list">
-        <button onclick="showUsersSearch();">создать новый чат</button>
-        <div class="users-list-container">
-            <h2>Чаты</h2>
-            <ul id="connectedUsers">
-            </ul>
-        </div>
-        <div>
-            <p id="connected-user-firstName"></p>
-            <a class="logout" href="javascript:void(0)" id="logout">выйти</a>
-        </div>
-    </div>
-
-    <div class="chat-area hidden" id="chat">
-        <div class="chat-userInfo" id="chat-userInfo" >
-            <span></span>
-        </div>
-
-        <div class="chat-area" id="chat-messages">
-            <span></span>
-
-        </div>
-
-        <form id="messageForm" name="messageForm">
-            <div class="message-input">
-                <input autocomplete="off" type="text" id="message" placeholder="Введите сообщение...">
-                <button>отправить</button>
+    <div class="login r" id="login-page">
+        <h2>ВОЙТИ</h2>
+        <form id="login-form">
+            <div class="inputContainer">
+                <input autocomplete="off" type="text" id="fullname-input" name="fullname" placeholder="имя" title="введите имя" class="r animated" required>
             </div>
+            <div class="inputContainer">
+                <input autocomplete="off" type="text" id="username-input" name="username" placeholder="никнейм" title="введите никнейм" class="r animated" required>
+            </div>
+
+            <button class="r" id="login-button-submit">далее</button>
         </form>
     </div>
-</div>
 
-<div class="user-form hidden" id="search-page">
-    <h2>Найти пользователей</h2>
-    <form id="searchUserForm">
-        <label for="username">Никнейм:</label>
-        <input autocomplete="off" type="text" id="searchUsername" name="username">
-    </form>
-    <h2>Найдено:</h2>
-    <ul id="foundUsers">
-    </ul>
-</div>
+    <div class="chats hidden" id="chat-page">
+     
+
+        <div class="chats-panel br-r">
+            <!-- <button onclick="showUsersSearch();">создать новый чат</button> -->
+            <input autocomplete="off" type="text" id="search" name="search" placeholder="поиск" class="r">
+            <div class="chats-list-container ">
+                <ul id="chats-list">
+                    <li class="chat-item active">
+                        <div class="chat-info">
+                            <div class="chat-avatar r">.</div>
+                            <div class="chat-text">
+                                <span class="chat-name">user1</span>
+                                <span class="chat-message"> some txt mesage</span>
+                            </div>
+                            <div class="chat-nums">
+                                <span class="time">23:01</span>
+                            </div>
+                    </li>
+                    <li class="chat-item ">
+                        <div class="chat-info">
+                            <div class="chat-avatar r">1</div>
+                            <div class="chat-text">
+                                <span class="chat-name">user1</span>
+                                <span class="chat-message"> some txt mesage</span>
+                            </div>
+                            <div class="chat-nums">
+                                <span class="time">23:01</span>
+                            </div>
+                    </li>
+                    <li class="chat-item ">
+                        <div class="chat-info">
+                            <div class="chat-avatar r">1</div>
+                            <div class="chat-text">
+                                <span class="chat-name">user1</span>
+                                <span class="chat-message"> some txt mesage</span>
+                            </div>
+                            <div class="chat-nums">
+                                <span class="time">23:01</span>
+                            </div>
+                    </li>
+                    <li class="chat-item">
+                        <div class="chat-info">
+                            <div class="chat-avatar r">1</div>
+                            <div class="chat-text">
+                                <span class="chat-name">user1</span>
+                                <span class="chat-message"> some txt mesage</span>
+                            </div>
+                            <div class="chat-nums">
+                                <span class="time">23:01</span>
+                                <span class="notificationMarker r">8</span>
+                            </div>
+                    </li>
+                    <li class="chat-item">
+                        <div class="chat-info">
+                            <div class="chat-avatar r">1</div>
+                            <div class="chat-text">
+                                <span class="chat-name">user1</span>
+                                <span class="chat-message"> some txt mesage</span>
+                            </div>
+                            <div class="chat-nums">
+                                <span class="time">23:01</span>
+                                <span class="notificationMarker r">8</span>
+                            </div>
+                    </li>
+                    <li class="chat-item ">
+                        <div class="chat-info">
+                            <div class="chat-avatar r">1</div>
+                            <div class="chat-text">
+                                <span class="chat-name">user1</span>
+                                <span class="chat-message"> some txt mesage</span>
+                            </div>
+                            <div class="chat-nums">
+                                <span class="time">23:01</span>
+                            </div>
+                    </li>
+                    <li class="chat-item ">
+                        <div class="chat-info">
+                            <div class="chat-avatar r">1</div>
+                            <div class="chat-text">
+                                <span class="chat-name">user1</span>
+                                <span class="chat-message"> some txt mesage</span>
+                            </div>
+                            <div class="chat-nums">
+                                <span class="time">23:01</span>
+                            </div>
+                    </li>
+                    <li class="chat-item">
+                        <div class="chat-info">
+                            <div class="chat-avatar r">1</div>
+                            <div class="chat-text">
+                                <span class="chat-name">user1</span>
+                                <span class="chat-message"> some txt mesage</span>
+                            </div>
+                            <div class="chat-nums">
+                                <span class="time">23:01</span>
+                                <span class="notificationMarker r">8</span>
+                            </div>
+                    </li>
+                    <li class="chat-item">
+                        <div class="chat-info">
+                            <div class="chat-avatar r">1</div>
+                            <div class="chat-text">
+                                <span class="chat-name">user1</span>
+                                <span class="chat-message"> some txt mesage</span>
+                            </div>
+                            <div class="chat-nums">
+                                <span class="time">23:01</span>
+                                <span class="notificationMarker r">8</span>
+                            </div>
+
+                    </li>
+                    <li class="chat-item ">
+                        <div class="chat-info">
+                            <div class="chat-avatar r">1</div>
+                            <div class="chat-text">
+                                <span class="chat-name">user1</span>
+                                <span class="chat-message"> some txt mesage</span>
+                            </div>
+                            <div class="chat-nums">
+                                <span class="time">23:01</span>
+                            </div>
+                    </li>
+                </ul>
+            </div>
+            <!-- <div>
+                <p id="connected-user-firstName"></p>
+                <a class="logout" href="javascript:void(0)" id="logout">выйти</a>
+            </div> -->
+        </div>
+
+        <div class="chat-area-wrap">
+            <div class="chat-area" id="chat">
+            <div class="br-b" id="chat-userInfo" >
+                <p>user1</p>
+                <span>last seen 3 years ago</span>
+            </div>
+            <div id="chat-messages">
+                <div class="message">
+                    <div class="chat-avatar gr-g r">A</div>
+                    <span class="message-content sender r">mesag</span>
+                </div>
+                <div class="message">
+                    <div class="chat-avatar gr-r r">B</div>
+                    <span class="message-content receiver r">response</span>
+                </div>
+                <div class="message">
+                    <div class="chat-avatar gr-g r">A</div>
+                    <span class="message-content sender r">mesag</span>
+                </div>
+                <div class="message">
+                    <div class="chat-avatar gr-r r">B</div>
+                    <span class="message-content receiver r">response</span>
+                </div>
+            </div>
+            <form id="messageForm" name="messageForm" class="br-t">
+                <div class="message-input">
+                    <input autocomplete="off" type="text" id="messageInput" placeholder="введите сообщение..." class="r">
+                    <button class="r">></button>
+                </div>
+            </form>
+        </div>
+            <div class="info-message r" id="pick-chat-message"> выберите чат! </div>
+        </div>
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js" integrity="sha512-1QvjE7BtotQjkq8PxLeF6P46gEpBRXuskzIVgjFpekzFVF4yjRgrQvTG1MTOJ3yQgvTteKAcO7DSZI92+u/yZw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js" integrity="sha512-iKDtgDyTHjAitUDdLljGhenhPwrbBfqTKWO1mkhSFH3A7blITC9MhYon6SjnMhp4o0rADGw9yAC6EW4t5a4K3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<!--<script th:src="@{/js/script.js}"></script>-->
-<script src="/js/script.js"></script>
+        <div class="sidepanel br-l">
+            <p id="logout-button">logout</p>
+            <p id="connected-user-firstName"></p>
+        </div>
+    </div>
+
+    <div class="user-form hidden" id="search-page">
+        <h2>Найти пользователей</h2>
+        <form id="searchUserForm">
+            <label for="username">Никнейм:</label>
+            <input autocomplete="off" type="text" id="searchUsername" name="username">
+        </form>
+        <h2>Найдено:</h2>
+        <ul id="foundUsers">
+        </ul>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js" integrity="sha512-1QvjE7BtotQjkq8PxLeF6P46gEpBRXuskzIVgjFpekzFVF4yjRgrQvTG1MTOJ3yQgvTteKAcO7DSZI92+u/yZw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js" integrity="sha512-iKDtgDyTHjAitUDdLljGhenhPwrbBfqTKWO1mkhSFH3A7blITC9MhYon6SjnMhp4o0rADGw9yAC6EW4t5a4K3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!--    <script src="/js/stomp/sock.js"></script>-->
+<!--    <script src="/js/stomp/stomp.js"></script>-->
+<!--    <script src="/static/js/script.js"></script>-->
+<!--    <script src="/static/js/chatsList.js"></script>-->
+<!--    <script src="/static/js/chat.js"></script>-->
+<!--    <script src="/static/js/search.js"></script>-->
+
+<!--    <script src="/static/js/lib/sockjs.min.js"></script>-->
+<!--    <script src="/static/js/lib/stomp.min.js"></script>-->
+
+    <script type="module" src="/static/js/models/user.js"></script>
+    <script type="module" src="/static/js/stomp/client.js"></script>
+    <script type="module" src="/static/js/stomp/connection.js"></script>
+    <script type="module" src="/static/js/api/chatsData.js"></script>
+    <script type="module" src="/static/js/events/listeners.js"></script>
+    <script type="module" src="/static/js/dom/main.js"></script>
+    <script type="module" src="/static/js/dom/chatsList.js"></script>
+<!--    <script src="/js/models/user.js"></script>-->
 </body>
 </html>
 
 
-<style>
-    :root{
-        --back_d: #121212;
-        --back: #212121;
-        --middle: #313131;
-        --high_d: #0056b3;
-        --high: #007bff;
-    }
-
-    body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-        /*padding: 0;*/
-        background-color: var(--back_d);
-        font-family: Raleway, sans-serif;
-        /*flex-direction: column;*/
-    }
-
-    .user-form {
-        background-color: var(--back); /* Темный фон формы */
-        border-radius: 15px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-        padding: 30px;
-        width: 300px;
-        text-align: center;
-        animation: fadeIn 0.5s ease-in-out;
-    }
-    .inputContainer {
-        margin-bottom: 15px;
-        text-align: left; /* Выравнивание меток по левому краю */
-    }
-    h2 {
-        margin-bottom: 20px;
-        color: #ffffff; /* Белый цвет текста заголовка */
-    }
-    label {
-        display: block;
-        margin-bottom: 5px;
-        color: #bbbbbb; /* Серый цвет меток */
-    }
-    input[type="text"] {
-        width: 100%;
-        padding: 10px;
-        border: none; /* Убираем обводку */
-        border-radius: 8px;
-        background-color: var(--middle); /* Темный фон для полей ввода */
-        color: #ffffff; /* Белый цвет текста в полях */
-        transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Переход для тени */
-    }
-    input[type="text"]:focus {
-        outline: none; /* Убираем стандартное обрамление */
-        box-shadow: 0 0 5px #007bff; /* Добавляем тень при фокусе */
-    }
-    button {
-        background-color: var(--high); /* Цвет кнопки */
-        color: white;
-        border: none;
-        padding: 10px 15px;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background-color 0.3s ease, transform 0.2s ease;
-    }
-    button:hover {
-        background-color: var(--high_d); /* Более темный цвет при наведении */
-        transform: translateY(-2px); /* Подъем кнопки при наведении */
-    }
-    button:active {
-        transform: translateY(0); /* Возврат кнопки на место при нажатии */
-    }
-
-
-    .chat-container {
-        display: flex;
-        max-width: 800px;
-        /*min-width: 800px;*/
-        min-width: 400px;
-
-        min-height: 600px;
-        max-height: 600px;
-        margin: 20px;
-        background-color: var(--middle);
-        border-radius: 15px;
-        overflow: hidden;
-    }
-    .chat-container.narrow {
-        /*max-width: 400px;*/
-        min-width: 400px;
-    }
-
-
-    #chat-page{
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-
-    }
-
-    .users-list {
-        background-color: var(--back);
-        border-radius: 15px 0 0 15px;
-        min-width: 400px;
-        flex: 1;
-        padding: 20px;
-        box-sizing: border-box;
-        color: #fff;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
-
-    .users-list-container {
-        height: 100%;
-        overflow-y: scroll;
-    }
-
-    .users-list h2 {
-        font-size: 1.5rem;
-        margin-bottom: 10px;
-    }
-
-    .users-list ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .user-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 8px;
-        cursor: pointer;
-    }
-
-    .user-item.active {
-        background-color: #d2d2d2;
-        color: #222222;
-        padding: 10px;
-    }
-
-
-    .user-item span {
-        font-weight: bold;
-    }
-
-    .separator {
-        height: 1px;
-        background-color: #ccc;
-        margin: 10px 0;
-    }
-
-    .chat-area {
-        flex: 3;
-        display: flex;
-        flex-direction: column;
-        /*box-sizing: border-box;*/
-        padding: 0;
-        background-color: var(--back);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    #chat{
-        width: 0;
-        transition: width 0.3s ease-out; /* Анимация изменения ширины */
-    }
-    #chat.activated{
-       width: 800px;
-    }
-
-
-
-    .chat-userInfo{
-        margin: 0;
-        padding: 0;
-        height: 60px;
-        background-color:#222;
-        font-size: 1.5rem;
-        color:#fff;
-        display: flex;
-    }
-    .chat-userInfo.active{
-        color:var(--high);
-    }
-
-
-    .message {
-        margin-bottom: 5px;
-    }
-
-    #chat-messages {
-        background-color: var(--middle);
-
-        display: flex;
-        flex-direction: column;
-        overflow-y: scroll;
-        padding: 20px;
-    }
-
-    .message p {
-        padding: 0 12px;
-        word-wrap: break-word;
-    }
-
-    .user-item span.notificationMarker {
-        margin-left: 10px;
-        background-color: white;
-        color: white;
-        border-radius: 10px;
-        padding: 5px;
-        width: 3px;
-        height: 3px;
-    }
-
-    .sender {
-        background-color: #222;
-        color: #fff;
-        align-self: flex-end;
-    }
-
-    .receiver {
-        background-color: #ecf0f1;
-        color: #333;
-        align-self: flex-start;
-    }
-
-    /*.message-input {*/
-    /*    margin-top: auto;*/
-    /*    display: flex;*/
-    /*}*/
-
-    /*.message-input input {*/
-    /*    flex: 1;*/
-    /*    padding: 10px;*/
-    /*    border: 1px solid #ccc;*/
-    /*    margin-right: 10px;*/
-    /*}*/
-
-    /*.message-input button {*/
-    /*    padding: 10px;*/
-    /*    border: none;*/
-    /*    background-color: #222;*/
-    /*    color: #fff;*/
-    /*    cursor: pointer;*/
-    /*}*/
-
-
-    .hidden {
-        display: none;
-    }
-
-    a.logout {
-        color: #ababab;
-        text-decoration: none;
-    }
-
-    .online{
-        color:#007bff;
-    }
-
-    ::-webkit-scrollbar {
-        width: 5px; /* Ширина вертикального скроллбара */
-        height: 5px; /* Высота горизонтального скроллбара */
-    }
-
-    ::-webkit-scrollbar-track {
-        background: none; /* Фон трека (области скроллбара) */
-        /*border-radius: 10px; !* Закругленные углы у трека *!*/
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background: rgba(0, 123, 255, 0.67); /* Цвет ползунка (thumb) */
-        border-radius: 6px; /* Закругленные углы у ползунка */
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        background: rgba(0, 123, 255, 1); /* Цвет ползунка при наведении */
-    }
-
-    /* Анимация появления */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-</style>
