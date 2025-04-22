@@ -1,26 +1,34 @@
 'use strict';
 
-const usernamePage = document.querySelector('#username-page');
+const usernamePage = document.querySelector('#login-page');
 const messageInput = document.querySelector('#message');
 const chatPage = document.querySelector('#chat-page');
-const logout = document.querySelector('#logout');
+const logout = document.querySelector('#logout-button');
 const messageForm = document.querySelector('#messageForm');
-const chatArea = document.querySelector('#chat-messages');
+const chatMessagesArea = document.querySelector('#chat-messages');
+const chat = document.querySelector('#chat')
 const searchPage = document.querySelector('#search-page');
 const foundUsersList = document.querySelector('#foundUsers');
 const usersSearchInput = document.querySelector('#searchUsername');
-const usersList = document.querySelector('#connectedUsers');
+const selectedUserInfo = document.querySelector('#chat-userInfo');
+
+
+const chatsList = document.querySelector('#chats-list');
+
+const chattingArea = document.querySelector('#chat-area')
+const chattingInfoMessage = document.querySelector('#pick-chat-message')
+
 
 let username = null;
-let fullname = null;
+let firstName = null;
 let stompClient = null;
 let selectedUser = null;
 
 function connect(event){
-    username = document.querySelector('#username').value.trim();
-    fullname = document.querySelector('#fullname').value.trim();
+    username = document.querySelector('#username-input').value.trim();
+    firstName = document.querySelector('#fullname-input').value.trim();
 
-    if(username && fullname){
+    if(username && firstName){
         usernamePage.classList.add('hidden');
         chatPage.classList.remove('hidden');
 
@@ -38,96 +46,172 @@ function onConnected(){
 
     stompClient.send('/app/user.addUser',
         {},
-        JSON.stringify({username: username, status: 'ONLINE', fullname: fullname})
+        JSON.stringify({username: username, status: 'ONLINE', firstName: firstName})
     );
 
-    document.querySelector("#connected-user-fullname").textContent = fullname;
-    findAndShowUsers().then();
+    document.querySelector('#connected-user-firstName').textContent = firstName;
+    hideChattigArea();
+    findAndShowChats().then();
+}
+
+function hideChattigArea(){
+    chattingArea.classList.add('hidden');
+    chattingInfoMessage.classList.remove('hidden');
+    chattingArea.innerHTML = '';
 }
 
 
-async function findAndShowUsers() {
-    const usersResponse = await fetch('/users');
+async function findAndShowChats() {
+    const usersResponse = await fetch('/chats');
     let users = await usersResponse.json();
-    console.log("trying to get users from db " + users);
+    console.log("trying to get users from db ", users);
     users = users.filter(user => user.username !== username)
 
-    usersList.innerHTML = '';
+    chatsList.innerHTML = '';
 
     users.forEach(user => {
-        appendUserToList(user);
-        const separator = document.createElement('li');
-        separator.classList.add('separator');
-        usersList.appendChild(separator);
+        appendChatDataToList(user);
     });
+}
+
+//TODO еще должна быть message data, можно просто брать последний msg из бд
+function appendChatDataToList(userData){
+    const listItem = document.createElement('li');
+    listItem.innerHTML =`<div class="chat-info">
+                            <div class="chat-avatar r">${userData.firstName[0]}</div>
+                            <div class="chat-text">
+                                <span class="chat-name">${userData.firstName}</span>
+                                <span class="chat-message"> here comes the msg</span>
+                            </div>
+                            <div class="chat-nums">
+                                <span class="time">00:00</span>
+                                <span class="notificationMarker r hidden">0</span>
+                            </div>
+                        </div>`
+    listItem.classList.add('chat-item');
+    chatsList.appendChild(listItem);
+
 }
 
 function appendUserToList(user){
     const listItem = document.createElement('li');
     listItem.classList.add('user-item');
     listItem.id = user.username;
+    listItem.firstName = user.firstName;
 
     if(user.status === "ONLINE") {
         listItem.classList.add('online');
     }
 
     const nameElement = document.createElement('span');
-    nameElement.textContent = user.fullname;
+    nameElement.textContent = user.firstName;
 
     const messageMarker = document.createElement('span');
     messageMarker.textContent = '0';
     messageMarker.classList.add('notificationMarker', 'hidden');
 
+    const separator = document.createElement('li');
+    separator.classList.add('separator');
+
     listItem.appendChild(nameElement);
     listItem.appendChild(messageMarker);
-    listItem.addEventListener('click', pickUserToChat);
+    listItem.addEventListener('click', pickChat);
 
-    usersList.appendChild(listItem);
+    chatsList.appendChild(listItem);
+    chatsList.appendChild(separator);
 }
 
 function updateUserStatus(payload){
     const user = JSON.parse(payload.body);
-    console.log("this user updated his status: " + user);
     let userElement = document.querySelector(`#${user.username}`);
+    //для списка контактов обновляем если пользователь в нём есть
     if(userElement){
-        if(user.status === 'ONLINE')
-            userElement.classList.add('online');
-        else
-            userElement.classList.remove('online');
+        if(user.status === 'ONLINE') userElement.classList.add('online');
+        else userElement.classList.remove('online');
     }
-    else console.log(user.username + " is not ur contact, changes ignored");
-
+    //для шапки обновляем если этот пользователь выбран сейчас
+    if(selectedUser === user.username){
+        if(user.status === 'ONLINE') selectedUserInfo.classList.add('online');
+        else selectedUserInfo.classList.remove('online');
+    }
 }
 
-function pickUserToChat(event){
+function pickChat(event){
     const clickedUser = event.currentTarget;
-    if(clickedUser.getAttribute('id') !== selectedUser)
-    {
+    const userFirstName = event.currentTarget.firstName;
+
+    if(clickedUser.getAttribute('id') !== selectedUser) {
+        if(selectedUser) document.querySelector(`#${selectedUser}`).classList.remove('active');
+
         selectedUser = clickedUser.getAttribute('id');
-        document.querySelectorAll('.user-item').forEach(item => {
-            item.classList.remove('active');
-        });
 
-        clickedUser.classList.add('active');
-        console.log(clickedUser.textContent);
-        messageInput.placeholder = "Type message for " + clickedUser.firstElementChild.textContent;
+        chatMessagesArea.innerHTML='';
 
-        messageForm.classList.remove('hidden');
-        // displayUserChat().then();
-        const notificationMarker = clickedUser.querySelector('.notificationMarker');
-        notificationMarker.classList.add('hidden');
-        notificationMarker.textContent = '0';
+        const chatElement = document.querySelector(`#${selectedUser}`);
+        if(chatElement){
+            chatElement.classList.add('active');
+            if(chatElement.classList.contains('online')) selectedUserInfo.classList.add('online');
+            const notificationMarker = chatElement.querySelector('.notificationMarker');
+            notificationMarker.classList.add('hidden');
+            notificationMarker.textContent = '0';
+            displayUserChat().then();
+        }
+
+        messageInput.placeholder = "Введите сообщение для пользователя " + userFirstName + "...";
+        // messageForm.classList.remove('hidden');
+        chatPage.classList.remove('narrow');
+
+        chat.classList.remove('hidden');
+
+        setTimeout(() => {
+            chat.classList.add('activated');
+        }, 100);
+
+        document.addEventListener('keydown', hideChat);
+
+        const nameElement = document.createElement('span');
+        nameElement.textContent = userFirstName;
+        selectedUserInfo.textContent = '';
+        selectedUserInfo.appendChild(nameElement);
+        selectedUserInfo.classList.remove('hidden');
+    }
+}
+
+function hideChat(){
+    console.log("hiding opened chat");
+    if (event.key === 'Escape') {
+        if(selectedUser){
+            const chatElement = document.querySelector(`#${selectedUser}`);
+            if(chatElement){
+                chatElement.classList.remove('active');
+                // chatElement.querySelector('.notificationMarker').classList.remove('hidden');
+            }
+            messageInput.placeholder = "...";
+            chatPage.classList.add('narrow');
+
+            chat.classList.remove('activated');
+            setTimeout(() => {
+                chat.classList.add('hidden');
+            }, 500);
+
+
+            selectedUserInfo.textContent = '';
+            selectedUserInfo.classList.add('hidden');
+            selectedUser = null;
+            chatMessagesArea.innerHTML='';
+            document.removeEventListener('keydown', hideChat);
+        }
     }
 }
 
 async function displayUserChat(){
     const chatResponse = await fetch(`/messages/${username}/${selectedUser}`);
     const chatJson = await chatResponse.json();
-    chatArea.innerHTML = '';
+    chatMessagesArea.innerHTML = '';
     chatJson.forEach(chat => {
         addMessage(chat.content, chat.senderId);
     })
-    chatArea.scrollTop = chatArea.scrollHeight;
+    chatMessagesArea.scrollTop = chatMessagesArea.scrollHeight;
 }
 
 function sendMessage(event) {
@@ -149,13 +233,11 @@ function sendMessage(event) {
     event.preventDefault();
 }
 async function onMessageReceived(payload) {
-    //Это надо вызывать только когда создался новый чат с нашим участием, либо пользователь из списка наших чатов сменил свой статус
-    // await findAndShowUsers();
     const message = JSON.parse(payload.body);
     const senderId = message.senderId;
     console.log("Received message from " + senderId);
     let thisMessageChat = document.querySelector(`#${senderId}`)
-    
+
     if(thisMessageChat){
         if(selectedUser !== senderId){
             const notificationMarker = thisMessageChat.querySelector('.notificationMarker');
@@ -164,7 +246,7 @@ async function onMessageReceived(payload) {
         }
         else{
             addMessage(message.content, senderId);
-            chatArea.scrollTop = chatArea.scrollHeight;
+            chatMessagesArea.scrollTop = chatMessagesArea.scrollHeight;
         }
     }
     else{
@@ -181,13 +263,20 @@ async function fetchAndAppendNewUserToList(targetUsername, openChat){
     appendUserToList(userJson);
     let chat = document.querySelector(`#${targetUsername}`)
     if(openChat){
-        selectedUser = chat.getAttribute('id');
-        document.querySelectorAll('.user-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        chat.classList.add('active');
-        messageInput.placeholder = "Type message for " + chat.firstElementChild.textContent  + "...";
+        if(selectedUser)
+            document.querySelector(`#${selectedUser}`).classList.remove('active');
 
+        selectedUser = chat.getAttribute('id');
+        chat.classList.add('active');
+        messageInput.placeholder = "Введите сообщение для пользователя " + chat.firstElementChild.textContent  + "...";
+        selectedUserInfo.textContent = '';
+
+        const nameElement = document.createElement('span');
+        nameElement.textContent = chat.firstElementChild.textContent;
+        selectedUserInfo.appendChild(nameElement);
+
+        if(chat.classList.contains('online')) selectedUserInfo.classList.add('online');
+        selectedUserInfo.classList.remove('hidden');
     }
     else{
         const notificationMarker = await chat.querySelector('.notificationMarker');
@@ -207,7 +296,7 @@ function addMessage(content, senderId){
     const message = document.createElement('p');
     message.textContent = content;
     messageContainer.appendChild(message);
-    chatArea.appendChild(messageContainer);
+    chatMessagesArea.appendChild(messageContainer);
 }
 function showUsersSearch(){
     chatPage.classList.add("hidden");
@@ -215,7 +304,6 @@ function showUsersSearch(){
     stompClient.subscribe(`/user/${username}/usersSearch`, displayFoundUsers);
 }
 function usersSearch(){
-    // let userToFind = event.target.value;
     let usernameToFind = usersSearchInput.value;
     foundUsersList.innerHTML = '';
 
@@ -225,51 +313,47 @@ function usersSearch(){
 }
 function displayFoundUsers(payload){
     let foundUsers = JSON.parse(payload.body);
-
     foundUsersList.innerHTML = '';
     foundUsers = foundUsers.filter(user => user.username !== username)
 
     foundUsers.forEach(user => {
+        //Создание списка найденных пользователей
         const userElement = document.createElement('li');
-        userElement.textContent = user.username + " (" + user.fullname +  ")";
+        userElement.textContent = user.username + " (" + user.firstName +  ")";
         userElement.id = user.username;
+        userElement.firstName = user.firstName;
         foundUsersList.appendChild(userElement);
-        userElement.addEventListener('click', function (event) {
-            foundUsersList.innerHTML = '';
-            usersSearchInput.value = '';
-            chatPage.classList.remove("hidden");
-            searchPage.classList.add("hidden");
-            const clickedUser = event.currentTarget;
-            if(clickedUser.getAttribute('id') !== selectedUser){
-                document.querySelector(`#${selectedUser}`).classList.remove('active');
-                selectedUser = clickedUser.getAttribute('id');
-                const userElement = document.querySelector(`#${selectedUser}`);
-                if(userElement){
-                    userElement.classList.add('active');
-                    messageInput.placeholder = "Type message for " + userElement.firstElementChild.textContent + "...";
-                }
-                else{
-                    messageInput.placeholder = "Type message for " + user.fullname + "...";
-                }
-            }
-            messageForm.classList.remove('hidden');
+        userElement.addEventListener
+        ('click',
+            function (event)
+            {
+                foundUsersList.innerHTML = '';
+                usersSearchInput.value = '';
+                chatPage.classList.remove("hidden");
+                searchPage.classList.add("hidden");
+                if(user.status === 'ONLINE') selectedUserInfo.classList.add('online');
+
+                pickChat(event);
         })
     });
 }
 
+
+
+
 function onError(error) {
     console.log('Error connecting');
 }
-
 function onLogout(){
     stompClient.send("/app/user.disconnectUser",
         {},
-        JSON.stringify({username: username, status: 'OFFLINE', fullname: fullname})
+        JSON.stringify({username: username, status: 'OFFLINE', firstName: firstName})
     );
     window.location.reload();
 }
 
-usernamePage.addEventListener('submit', connect, true);
+// usernamePage.addEventListener('submit', connect, true);
+document.querySelector('#login-button-submit').addEventListener('click', connect, true);
 chatPage.addEventListener('submit', sendMessage, true);
 logout.addEventListener('click', onLogout, true);
 usersSearchInput.addEventListener('input', usersSearch, true);

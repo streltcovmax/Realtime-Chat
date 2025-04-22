@@ -69,6 +69,7 @@ public class ChatService {
 
     public List<User> findContacts(String username){
         List<Long> userChats = findUserChatsIds(username);
+        log.info("user chats ids: {}", userChats);
         Set<ChatParticipant> participants = new HashSet<>();
         for(Long id: userChats){
             participants.addAll(participantRepository.findAllByChatChatId(id));

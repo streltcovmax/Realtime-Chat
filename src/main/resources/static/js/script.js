@@ -1,17 +1,22 @@
 'use strict';
 
-const usernamePage = document.querySelector('#username-page');
+const usernamePage = document.querySelector('#login-page');
 const messageInput = document.querySelector('#message');
 const chatPage = document.querySelector('#chat-page');
-const logout = document.querySelector('#logout');
+const logout = document.querySelector('#logout-button');
 const messageForm = document.querySelector('#messageForm');
 const chatMessagesArea = document.querySelector('#chat-messages');
 const chat = document.querySelector('#chat')
 const searchPage = document.querySelector('#search-page');
 const foundUsersList = document.querySelector('#foundUsers');
 const usersSearchInput = document.querySelector('#searchUsername');
-const usersList = document.querySelector('#connectedUsers');
 const selectedUserInfo = document.querySelector('#chat-userInfo');
+
+
+const chatsList = document.querySelector('#chats-list');
+
+const chattingArea = document.querySelector('#chat-area')
+const chattingInfoMessage = document.querySelector('#pick-chat-message')
 
 
 let username = null;
@@ -20,8 +25,8 @@ let stompClient = null;
 let selectedUser = null;
 
 function connect(event){
-    username = document.querySelector('#username').value.trim();
-    firstName = document.querySelector('#firstName').value.trim();
+    username = document.querySelector('#username-input').value.trim();
+    firstName = document.querySelector('#fullname-input').value.trim();
 
     if(username && firstName){
         usernamePage.classList.add('hidden');
@@ -44,22 +49,48 @@ function onConnected(){
         JSON.stringify({username: username, status: 'ONLINE', firstName: firstName})
     );
 
-    document.querySelector("#connected-user-firstName").textContent = firstName;
+    document.querySelector('#connected-user-firstName').textContent = firstName;
+    hideChattigArea();
     findAndShowChats().then();
+}
+
+function hideChattigArea(){
+    chattingArea.classList.add('hidden');
+    chattingInfoMessage.classList.remove('hidden');
+    chattingArea.innerHTML = '';
 }
 
 
 async function findAndShowChats() {
     const usersResponse = await fetch('/chats');
     let users = await usersResponse.json();
-    console.log("trying to get users from db " + users);
+    console.log("trying to get users from db ", users);
     users = users.filter(user => user.username !== username)
 
-    usersList.innerHTML = '';
+    chatsList.innerHTML = '';
 
     users.forEach(user => {
-        appendUserToList(user);
+        appendChatDataToList(user);
     });
+}
+
+//TODO еще должна быть message data, можно просто брать последний msg из бд
+function appendChatDataToList(userData){
+    const listItem = document.createElement('li');
+    listItem.innerHTML =`<div class="chat-info">
+                            <div class="chat-avatar r">${userData.firstName[0]}</div>
+                            <div class="chat-text">
+                                <span class="chat-name">${userData.firstName}</span>
+                                <span class="chat-message"> here comes the msg</span>
+                            </div>
+                            <div class="chat-nums">
+                                <span class="time">00:00</span>
+                                <span class="notificationMarker r hidden">0</span>
+                            </div>
+                        </div>`
+    listItem.classList.add('chat-item');
+    chatsList.appendChild(listItem);
+
 }
 
 function appendUserToList(user){
@@ -86,8 +117,8 @@ function appendUserToList(user){
     listItem.appendChild(messageMarker);
     listItem.addEventListener('click', pickChat);
 
-    usersList.appendChild(listItem);
-    usersList.appendChild(separator);
+    chatsList.appendChild(listItem);
+    chatsList.appendChild(separator);
 }
 
 function updateUserStatus(payload){
@@ -321,7 +352,8 @@ function onLogout(){
     window.location.reload();
 }
 
-usernamePage.addEventListener('submit', connect, true);
+// usernamePage.addEventListener('submit', connect, true);
+document.querySelector('#login-button-submit').addEventListener('click', connect, true);
 chatPage.addEventListener('submit', sendMessage, true);
 logout.addEventListener('click', onLogout, true);
 usersSearchInput.addEventListener('input', usersSearch, true);
