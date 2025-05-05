@@ -18,7 +18,4 @@ INSERT INTO chat_participants VALUES (1, 'user_c');
 INSERT INTO chat_participants VALUES (2, 'user_d');
 
 
-SELECT * FROM users;
-
-drop table users cascade;
-
+SELECT * FROM chats;

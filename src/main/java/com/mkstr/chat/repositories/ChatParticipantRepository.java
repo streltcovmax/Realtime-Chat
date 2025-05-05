@@ -1,7 +1,7 @@
 package com.mkstr.chat.repositories;
 
-import com.mkstr.chat.data.ChatParticipant;
-import com.mkstr.chat.data.ChatParticipantId;
+import com.mkstr.chat.model.ChatParticipant;
+import com.mkstr.chat.model.ChatParticipantId;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

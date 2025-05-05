@@ -1,0 +1,48 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: chat
+
+  security:
+    oauth2:
+#      resourceserver:
+#        jwt:
+#          issuer-uri: http://localhost:8080/realms/chat_realm
+#          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
+      client:
+        registration:
+          keycloak:
+            client-id: chat-api
+            client-secret: s80glz7AACXWOeJkoTwJpLF54Y9Zvgds
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://localhost:8081/login/oauth2/code/keycloak"
+            scope: openid, profile, email
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8080/realms/chat_realm
+
+  web:
+    resources:
+      static-locations: classpath:/
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/chatDB
+    username: postgres
+    password: 1234
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+jwt:
+  auth:
+    converter:
+      resource-id: chat-api
+      principle-attribute: preferred_username

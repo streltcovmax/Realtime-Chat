@@ -1,8 +1,7 @@
 package com.mkstr.chat.repositories;
 
-import com.mkstr.chat.data.Message;
+import com.mkstr.chat.model.Message;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.repository.CrudRepository;
 
 import java.util.List;
 

@@ -1,5 +1,7 @@
 'use strict';
 
+import {User} from "./user.js";
+
 const usernamePage = document.querySelector('#login-page');
 const messageInput = document.querySelector('#message');
 const chatPage = document.querySelector('#chat-page');
@@ -19,16 +21,19 @@ const chattingArea = document.querySelector('#chat-area')
 const chattingInfoMessage = document.querySelector('#pick-chat-message')
 
 
-let username = null;
-let firstName = null;
+// let username = null;
+// let firstName = null;
 let stompClient = null;
 let selectedUser = null;
 
 function connect(event){
-    username = document.querySelector('#username-input').value.trim();
-    firstName = document.querySelector('#fullname-input').value.trim();
+    let username = document.querySelector('#username-input').value.trim();
+    let firstName = document.querySelector('#fullname-input').value.trim();
 
     if(username && firstName){
+        User.username = username;
+        User.firstName = firstName;
+        User.status = 'ONLINE';
         usernamePage.classList.add('hidden');
         chatPage.classList.remove('hidden');
 
@@ -41,17 +46,32 @@ function connect(event){
 }
 
 function onConnected(){
-    stompClient.subscribe(`/user/${username}/messages`, onMessageReceived);
-    stompClient.subscribe(`/user/public/`, updateUserStatus);
+    // stompClient.subscribe(`/user/${username}/messages`, onMessageReceived);
+    // stompClient.subscribe(`/user/public/`, updateUserStatus);
 
-    stompClient.send('/app/user.addUser',
-        {},
-        JSON.stringify({username: username, status: 'ONLINE', firstName: firstName})
-    );
+    // stompClient.send('/app/user.addUser',
+    //     {},
+    //     JSON.stringify({username: username, status: 'ONLINE', firstName: firstName})
+    // );
+    console.log('user: ', User.username);
+    fetch('/user.addUser', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            username: User.username,
+            firstName: User.firstName,
+            status: User.status
+        })
+    }).then(response => {
+        if(!response.ok) console.error('Error creating user');
+        else findAndShowChats().then();
+    });
 
-    document.querySelector('#connected-user-firstName').textContent = firstName;
+
     hideChattigArea();
-    findAndShowChats().then();
+    document.querySelector('#connected-user-firstName').textContent = User.firstName;
 }
 
 function hideChattigArea(){
@@ -65,7 +85,7 @@ async function findAndShowChats() {
     const usersResponse = await fetch('/chats');
     let users = await usersResponse.json();
     console.log("trying to get users from db ", users);
-    users = users.filter(user => user.username !== username)
+    users = users.filter(user => user.username !== User.username)
 
     chatsList.innerHTML = '';
 
@@ -205,7 +225,7 @@ function hideChat(){
 }
 
 async function displayUserChat(){
-    const chatResponse = await fetch(`/messages/${username}/${selectedUser}`);
+    const chatResponse = await fetch(`/messages/${User.username}/${selectedUser}`);
     const chatJson = await chatResponse.json();
     chatMessagesArea.innerHTML = '';
     chatJson.forEach(chat => {
@@ -218,7 +238,7 @@ function sendMessage(event) {
     const messageContent = messageInput.value.trim();
     if (messageContent && stompClient && selectedUser) {
         const message = {
-            senderId: username,
+            senderId: User.username,
             recipientId: selectedUser,
             content: messageInput.value,
             dateCreated: new Date()
@@ -288,7 +308,7 @@ async function fetchAndAppendNewUserToList(targetUsername, openChat){
 function addMessage(content, senderId){
     const messageContainer = document.createElement('div');
     messageContainer.classList.add('message');
-    if (senderId === username) {
+    if (senderId === User.username) {
         messageContainer.classList.add('sender');
     } else {
         messageContainer.classList.add('receiver');
@@ -301,7 +321,7 @@ function addMessage(content, senderId){
 function showUsersSearch(){
     chatPage.classList.add("hidden");
     searchPage.classList.remove("hidden");
-    stompClient.subscribe(`/user/${username}/usersSearch`, displayFoundUsers);
+    stompClient.subscribe(`/user/${User.username}/usersSearch`, displayFoundUsers);
 }
 function usersSearch(){
     let usernameToFind = usersSearchInput.value;
@@ -345,9 +365,10 @@ function onError(error) {
     console.log('Error connecting');
 }
 function onLogout(){
+    User.status = 'OFFLINE'
     stompClient.send("/app/user.disconnectUser",
         {},
-        JSON.stringify({username: username, status: 'OFFLINE', firstName: firstName})
+        JSON.stringify({User})
     );
     window.location.reload();
 }

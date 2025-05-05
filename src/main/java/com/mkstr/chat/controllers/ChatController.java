@@ -1,7 +1,7 @@
 package com.mkstr.chat.controllers;
 
-import com.mkstr.chat.data.Chat;
-import com.mkstr.chat.data.Message;
+import com.mkstr.chat.model.Chat;
+import com.mkstr.chat.model.Message;
 import com.mkstr.chat.repositories.MessageRepository;
 import com.mkstr.chat.services.ChatService;
 import lombok.RequiredArgsConstructor;

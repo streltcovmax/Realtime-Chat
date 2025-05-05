@@ -476,3 +476,7 @@ form#messageForm {
 .hidden {
     display: none;
 }
+
+#logout-button{
+    color: var(--text-highlight);
+}

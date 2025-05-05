@@ -1,6 +1,6 @@
 package com.mkstr.chat.services;
 
-import com.mkstr.chat.data.Message;
+import com.mkstr.chat.model.Message;
 import com.mkstr.chat.repositories.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

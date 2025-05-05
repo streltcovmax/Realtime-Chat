@@ -1,9 +1,9 @@
 package com.mkstr.chat.services;
 
-import com.mkstr.chat.data.Chat;
-import com.mkstr.chat.data.ChatParticipant;
-import com.mkstr.chat.data.ChatParticipantId;
-import com.mkstr.chat.data.User;
+import com.mkstr.chat.model.Chat;
+import com.mkstr.chat.model.ChatParticipant;
+import com.mkstr.chat.model.ChatParticipantId;
+import com.mkstr.chat.model.User;
 import com.mkstr.chat.repositories.ChatParticipantRepository;
 import com.mkstr.chat.repositories.ChatRepository;
 import com.mkstr.chat.repositories.UserRepository;
@@ -59,9 +59,10 @@ public class ChatService {
     }
 
     public List<Long> findUserChatsIds(String username){
-        List<ChatParticipant> chatPart = participantRepository.findAllByUserUsername(username);
+        List<ChatParticipant> chatParticipants = participantRepository.findAllByUserUsername(username);
+        log.info(username + " participates in " + chatParticipants.toString());
         List<Long> chatsIds = new ArrayList<>();
-        for(ChatParticipant chat: chatPart){
+        for(ChatParticipant chat: chatParticipants){
             chatsIds.add(chat.getChat().getChatId());
         }
         return chatsIds;
@@ -84,3 +85,5 @@ public class ChatService {
     }
 
 }
+
+//TODO почему пишет сначала нал в консоль при авторизации, а потом список чатов
