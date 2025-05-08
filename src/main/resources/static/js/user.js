@@ -1,5 +1,5 @@
 export const User = {
     username: '',
-    firstName: '',
+    fullname: '',
     status: 'OFFLINE'
 };

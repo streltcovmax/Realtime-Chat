@@ -18,7 +18,7 @@ spring:
             client-secret: s80glz7AACXWOeJkoTwJpLF54Y9Zvgds
             authorization-grant-type: authorization_code
             redirect-uri: "http://localhost:8081/login/oauth2/code/keycloak"
-            scope: openid, profile, email
+            scope: openid, profile
         provider:
           keycloak:
             issuer-uri: http://localhost:8080/realms/chat_realm
@@ -41,8 +41,8 @@ spring:
           lob:
             non_contextual_creation: true
 
-jwt:
-  auth:
-    converter:
-      resource-id: chat-api
-      principle-attribute: preferred_username
+#jwt:
+#  auth:
+#    converter:
+#      resource-id: chat-api
+#      principle-attribute: preferred_username

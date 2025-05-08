@@ -12,9 +12,9 @@
 </head>
 <body>
 
-<div class="login r" id="login-page">
+<div class="login r hidden" id="login-page">
     <h2>ВОЙТИ</h2>
-    <a href="http://localhost:8080/logout">logout</a>
+    <a href="http://localhost:8081/logout">logout</a>
     <form id="login-form">
         <div class="inputContainer">
             <input autocomplete="off" type="text" id="fullname-input" name="fullname" placeholder="имя" title="введите имя" class="r animated" required>
@@ -27,9 +27,7 @@
     </form>
 </div>
 
-<div class="chats hidden" id="chat-page">
-
-
+<div class="chats" id="chat-page">
     <div class="chats-panel br-r">
         <!-- <button onclick="showUsersSearch();">создать новый чат</button> -->
         <input autocomplete="off" type="text" id="search" name="search" placeholder="поиск" class="r">
@@ -164,7 +162,7 @@
                 <p>user1</p>
                 <span>last seen 3 years ago</span>
             </div>
-            <div id="chat-messages">
+            <div id="chat-messages" class="r">
                 <div class="message">
                     <div class="chat-avatar gr-g r">A</div>
                     <span class="message-content sender r">mesag</span>
@@ -189,13 +187,14 @@
                 </div>
             </form>
         </div>
-        <div class="info-message r" id="pick-chat-message"> выберите чат! </div>
+        <div class="info-message r overlay" id="pick-chat-message"> выберите чат </div>
+        <div class="info-message r overlay hidden" id="empty-chat-message"> здесь пока пусто </div>
     </div>
 
 
     <div class="sidepanel br-l">
-        <p id="logout-button">logout</p>
-        <p id="connected-user-firstName"></p>
+        <button id="logout-button" class="r">выйти</button>
+        <button id="this-profile-button" class="r" type="button">профиль</button>
     </div>
 </div>
 

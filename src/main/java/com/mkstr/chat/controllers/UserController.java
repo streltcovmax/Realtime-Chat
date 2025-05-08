@@ -1,5 +1,6 @@
 package com.mkstr.chat.controllers;
 
+import com.mkstr.chat.model.Status;
 import com.mkstr.chat.model.User;
 import com.mkstr.chat.services.ChatService;
 import com.mkstr.chat.services.UserService;
@@ -12,12 +13,17 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
 @Slf4j
 public class UserController {
@@ -25,14 +31,19 @@ public class UserController {
     private final UserService userService;
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
-    private User user;
+    private final CurrentUserProvider currentUserProvider;
+
+    @GetMapping("/api/me")
+    public User getCurrentUser() {
+        return currentUserProvider.getCurrentUser();
+    }
 
 
     @PostMapping("/user.addUser")
     @ResponseBody
     public User addUser(@RequestBody User user){
-        this.user = user;
-        log.info("User connected: " + user);
+//        this.user = user;
+        log.info("User connected: {}", user);
         userService.save(user);
         return user;
     }
@@ -47,19 +58,18 @@ public class UserController {
         return user;
     }
 
-    @MessageMapping("/user.findUsers")
-    public void findUsers(
-            @Payload String targetUsername
-    ){
-        log.info(targetUsername);
-        List<User> foundUsers = userService.findAllByUsername(targetUsername);
-        messagingTemplate.convertAndSend("/user/" + user.getUsername() + "/usersSearch", foundUsers);
-    }
+//    @MessageMapping("/user.findUsers")
+//    public void findUsers(
+//            @Payload String targetUsername
+//    ){
+//        log.info(targetUsername);
+//        List<User> foundUsers = userService.findAllByUsername(targetUsername);
+//        messagingTemplate.convertAndSend("/user/" + user.getUsername() + "/usersSearch", foundUsers);
+//    }
 
-    @PreAuthorize("hasRole('user')")
     @GetMapping("/chats")
     public ResponseEntity<List<User>> getContacts(){
-        List<User> contacts = chatService.findContacts(user.getUsername());
+        List<User> contacts = chatService.findContacts(currentUserProvider.getCurrentUser().getUsername());
         return ResponseEntity.ok(contacts);
     }
 
@@ -70,10 +80,16 @@ public class UserController {
     }
 
 //    @GetMapping("/")
+//    public ResponseEntity<User> getUserInfo(@AuthenticationPrincipal OidcUser user) {
+//        return ResponseEntity.ok(new User(user.getPreferredUsername(), user.getFullName(), Status.ONLINE));
+//    }
 
 
 }
 
-//TODO как организовать получение данных с бека на фронт, если я не хочу чтобы юзер мог написать url /chats и получить список чатов на пустой странице
 
-//TODO 26.04.25 в постмане работает авторизация по токену, надо сделать чтобы оно через интерфейс было https://youtu.be/vmEWywGzWbA?si=4CY_UNA_wvVQ4ZL5&t=2660
+//TODO данные о юзере получать из currentUserProvider
+//TODO 06.05 сделать профили юзеров
+//TODO 06.05 сделать отображение последнего сообщения
+//TODO 06.05 пофиксить отправку сообщений
+//TODO шаблон предзагрузки на фронте
