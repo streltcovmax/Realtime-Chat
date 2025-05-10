@@ -42,9 +42,9 @@ public class UserController {
     @PostMapping("/user.addUser")
     @ResponseBody
     public User addUser(@RequestBody User user){
-//        this.user = user;
         log.info("User connected: {}", user);
         userService.save(user);
+        messagingTemplate.convertAndSend("/user/public/", user);
         return user;
     }
 
@@ -53,7 +53,7 @@ public class UserController {
     public User disconnectUser(
             @Payload User user
     ){
-        log.info("___Disconnected {}", user);
+        log.info("disconnected {}", user);
         userService.disconnect(user.getUsername());
         return user;
     }
@@ -88,8 +88,7 @@ public class UserController {
 }
 
 
-//TODO данные о юзере получать из currentUserProvider
 //TODO 06.05 сделать профили юзеров
-//TODO 06.05 сделать отображение последнего сообщения
 //TODO 06.05 пофиксить отправку сообщений
+//TODO 06.05 сделать отображение последнего сообщения
 //TODO шаблон предзагрузки на фронте

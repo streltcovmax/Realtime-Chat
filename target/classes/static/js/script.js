@@ -12,7 +12,7 @@ const chat = document.querySelector('#chat')
 const searchPage = document.querySelector('#search-page');
 const foundUsersList = document.querySelector('#foundUsers');
 const usersSearchInput = document.querySelector('#searchUsername');
-const selectedUserInfo = document.querySelector('#chat-userInfo');
+const selectedUserInfo = document.querySelector('#chat-header-info');
 const chatArea = document.querySelector('#chat-area');
 const pickChatInfoMessage = document.querySelector('#pick-chat-message');
 const emptyChatInfoMessage = document.querySelector('#empty-chat-message');
@@ -69,8 +69,8 @@ function connectWS(){
 }
 
 function onConnected(){
-    // stompClient.subscribe(`/user/${username}/messages`, onMessageReceived);
-    // stompClient.subscribe(`/user/public/`, updateUserStatus);
+    stompClient.subscribe(`/user/${User.username}/messages`, onMessageReceived);
+    stompClient.subscribe(`/user/public/`, updateUserStatus);
 
     fetch('/user.addUser', {
         method: 'POST',
@@ -96,7 +96,15 @@ function onConnected(){
     // document.querySelector('#connected-user-fullname').textContent = User.fullname;
 }
 
+function removeChatsSelection(){
+    const activeChatItems = document.querySelectorAll('.chat-item.active');
+    activeChatItems.forEach(item => {
+        item.classList.remove('active');
+    });
+}
+
 function hideDOMChattigArea(){
+    removeChatsSelection();
     chatArea.classList.add('hidden');
     chatMessagesArea.innerHTML = '';
     pickChatInfoMessage.classList.remove('hidden');
@@ -109,7 +117,6 @@ function showDOMChattingArea(){
     pickChatInfoMessage.classList.add('hidden');
     chatArea.classList.remove('hidden');
 }
-
 
 async function findAndShowChats() {
     const usersResponse = await fetch('/chats');
@@ -128,7 +135,10 @@ async function findAndShowChats() {
 function appendChatDataToList(chatData){
     const listItem = document.createElement('li');
     listItem.innerHTML =`<div class="chat-info">
-                            <div class="chat-avatar r">${chatData.fullname[0]}</div>
+                                <div class="chat-avatar r">${chatData.fullname[0]}
+                                    <span class="online-indicator hidden"></span>
+                                </div>
+                            </div>
                             <div class="chat-text">
                                 <span class="chat-name">${chatData.fullname}</span>
                                 <span class="chat-message"> here comes the msg</span>
@@ -139,7 +149,9 @@ function appendChatDataToList(chatData){
                             </div>
                         </div>`
     listItem.classList.add('chat-item');
+    updateDOMStatusIndicator(listItem, chatData.status);
     listItem.chatData = chatData;
+    listItem.id = chatData.username;
     listItem.addEventListener('click', pickTheChat)
     chatsList.appendChild(listItem);
 }
@@ -174,11 +186,17 @@ function appendChatDataToList(chatData){
 
 function updateUserStatus(payload){
     const user = JSON.parse(payload.body);
-    let userElement = document.querySelector(`#${user.username}`);
+    console.log('received ', user.username);
+    console.log('received ', user.status);
+    const userElement = document.querySelector(`#${user.username}`);
+    console.log('updating status, ', user.username);
     //для списка контактов обновляем если пользователь в нём есть
     if(userElement){
-        if(user.status === 'ONLINE') userElement.classList.add('online');
-        else userElement.classList.remove('online');
+        updateDOMStatusIndicator(userElement, user.status);
+        userElement.chatData.status = user.status;
+    }
+    else{
+        console.log(user.username, " not found in ur list");
     }
     //для шапки обновляем если этот пользователь выбран сейчас
     if(selectedChatUsername === user.username){
@@ -187,13 +205,20 @@ function updateUserStatus(payload){
     }
 }
 
+function updateDOMStatusIndicator(element, status){
+    if(status === 'ONLINE'){
+        element.querySelector('.online-indicator').classList.remove('hidden');
+    }
+    else {
+        element.querySelector('.online-indicator').classList.add('hidden');
+    }
+    selectedUserInfo.querySelector('#chat-header-status').textContent = status.toLowerCase();
+}
+
+
 function pickTheChat(event){
     //убираем выделение с чатов
-    const activeChatItems = document.querySelectorAll('.chat-item.active');
-    activeChatItems.forEach(item => {
-        item.classList.remove('active');
-    });
-
+    removeChatsSelection();
     const clickedChatElement = event.currentTarget;
     const clickedChatData = event.currentTarget.chatData;
     if(clickedChatData.username !== selectedChatUsername){
@@ -205,6 +230,9 @@ function pickTheChat(event){
         const notificationMarker = clickedChatElement.querySelector('.notificationMarker');
         notificationMarker.classList.add('hidden');
         notificationMarker.textContent = '0';
+
+        selectedUserInfo.querySelector('#chat-header-username').textContent = clickedChatData.username;
+        selectedUserInfo.querySelector('#chat-header-status').textContent = clickedChatData.status.toLowerCase();
 
         showDOMChattingArea();
         
@@ -440,12 +468,12 @@ function onError(error) {
     console.log('Error connecting');
 }
 function onLogout(){
-    // User.status = 'OFFLINE'
+    User.status = 'OFFLINE'
     // stompClient.send("/app/user.disconnectUser",
     //     {},
     //     JSON.stringify({User})
     // );
-    // window.location.reload();
+    window.location.reload();
     window.location.replace('/logout');
 }
 

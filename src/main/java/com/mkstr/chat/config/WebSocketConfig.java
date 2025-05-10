@@ -13,6 +13,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
+                .setHandshakeHandler(new CustomHandshakeHandler()) // подключаем наш хендлер;
+                .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
 

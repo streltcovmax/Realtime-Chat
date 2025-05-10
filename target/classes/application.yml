@@ -7,10 +7,6 @@ spring:
 
   security:
     oauth2:
-#      resourceserver:
-#        jwt:
-#          issuer-uri: http://localhost:8080/realms/chat_realm
-#          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
       client:
         registration:
           keycloak:
@@ -22,6 +18,7 @@ spring:
         provider:
           keycloak:
             issuer-uri: http://localhost:8080/realms/chat_realm
+            user-name-attribute: preferred_username
 
   web:
     resources:
@@ -41,8 +38,8 @@ spring:
           lob:
             non_contextual_creation: true
 
-jwt:
-  auth:
-    converter:
-      resource-id: chat-api
-      principle-attribute: preferred_username
+#jwt:
+#  auth:
+#    converter:
+#      resource-id: chat-api
+#      principle-attribute: preferred_username

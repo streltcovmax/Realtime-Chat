@@ -215,6 +215,7 @@ button:active {
 }
 /* TODO на бэке обеспечить чтобы в текст авы подавался 1-2 символа */
 .chat-avatar {
+    position: relative;
     height: 30px;
     width:30px;
     aspect-ratio: 1/1;
@@ -233,7 +234,7 @@ button:active {
 }
 
 
-#chat-userInfo.active{
+#chat-header-info.active{
     color:var(--highlight_plain);
 }
 
@@ -331,6 +332,7 @@ a.logout {
     /*background: var(--highlight_plain);*/
     padding: 6px 10px;
     color: var(--text-highlight);
+    opacity: 70%;
 }
 
 .overlay{
@@ -338,7 +340,7 @@ a.logout {
     z-index: 1000;
 }
 
-#chat-userInfo {
+#chat-header-info {
     /* height: 60px; */
     background-color: var(--back_dark);
     color: var(--text-highlight);
@@ -350,7 +352,7 @@ a.logout {
 
 }
 
-#chat-userInfo p{
+#chat-header-info p{
     font-weight: bold;
     font-size: 1.0rem;
     margin: 0;
@@ -358,7 +360,7 @@ a.logout {
     /* margin-left: 0; */
 }
 
-#chat-userInfo span{
+#chat-header-info span{
     color: var(--text-plain);
     font-size: 0.9rem;
     margin: 0;
@@ -480,4 +482,15 @@ form#messageForm {
 
 #logout-button{
     color: var(--text-highlight);
+}
+
+.online-indicator {
+    position: absolute;
+    top: 0;
+    right: -4px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--highlight_plain);
+    border: 2px solid white;
+    border-radius: 50%;
 }
