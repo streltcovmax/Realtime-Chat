@@ -3,7 +3,7 @@
 import {User} from "./user.js";
 
 const usernamePage = document.querySelector('#login-page');
-const messageInput = document.querySelector('#message');
+const messageInput = document.querySelector('#messageInput');
 const chatPage = document.querySelector('#chat-page');
 const logout = document.querySelector('#logout-button');
 const messageForm = document.querySelector('#messageForm');
@@ -52,6 +52,7 @@ function setDOMUserData(){
 function setListeners(){
     document.querySelector('#this-profile-button').addEventListener('click', showCurrentUserProfile);
     document.querySelector('#logout-button').addEventListener('click', onLogout);
+    document.querySelector('#send-message-button').addEventListener('click', sendMessage);
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             // Вызов нужной функции
@@ -134,6 +135,7 @@ async function findAndShowChats() {
 //TODO еще должна быть message data, можно просто брать последний msg из бд
 function appendChatDataToList(chatData){
     const listItem = document.createElement('li');
+
     listItem.innerHTML =`<div class="chat-info">
                                 <div class="chat-avatar r">${chatData.fullname[0]}
                                     <span class="online-indicator hidden"></span>
@@ -321,7 +323,7 @@ async function displayChatMessages(clickedChatData){
         emptyChatInfoMessage.classList.add('hidden');
 
         messagesJson.forEach(message => {
-            addMessage(message, clickedChatData);
+            addMessage(message);
         })
         chatMessagesArea.scrollTop = chatMessagesArea.scrollHeight;
     }
@@ -331,6 +333,7 @@ async function displayChatMessages(clickedChatData){
 }
 
 function sendMessage(event) {
+    event.preventDefault();
     const messageContent = messageInput.value.trim();
     if (messageContent && stompClient && selectedChatUsername) {
         const message = {
@@ -342,11 +345,13 @@ function sendMessage(event) {
         stompClient.send("/app/chat", {}, JSON.stringify(message));
         messageInput.value = '';
 
+        console.log('sent message ', message)
+        emptyChatInfoMessage.classList.add('hidden');
+
         let thisMessageChat = document.querySelector(`#${message.recipientId}`)
         if(!thisMessageChat) fetchAndAppendNewUserToList(message.recipientId, true).then();
-        addMessage(message.content, message.senderId);
+        addMessage(message);
     }
-    event.preventDefault();
 }
 async function onMessageReceived(payload) {
     const message = JSON.parse(payload.body);
@@ -361,7 +366,7 @@ async function onMessageReceived(payload) {
             notificationMarker.textContent = '';
         }
         else{
-            addMessage(message.content, senderId);
+            addMessage(message);
             chatMessagesArea.scrollTop = chatMessagesArea.scrollHeight;
         }
     }
@@ -401,6 +406,7 @@ async function fetchAndAppendNewUserToList(targetUsername, openChat){
     }
 }
 
+//TODO СЕЙЧАС добавление сообщения
 function addMessage(messageData) {
     const messageContainer = document.createElement('div');
     const senderId = messageData.senderId;
@@ -474,7 +480,8 @@ function onLogout(){
     //     JSON.stringify({User})
     // );
     window.location.reload();
-    window.location.replace('/logout');
+    window.location.replace('http://localhost:8080/realms/chat_realm/protocol/openid-connect/logout?redirect_uri=http://localhost:8081');
+
 }
 
 // usernamePage.addEventListener('submit', connect, true);

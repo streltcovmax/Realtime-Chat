@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findAllByChatId(Long chatId);
+    Message findLastByChatId(Long chatId);
 }

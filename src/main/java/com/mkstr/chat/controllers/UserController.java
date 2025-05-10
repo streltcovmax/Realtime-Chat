@@ -4,6 +4,8 @@ import com.mkstr.chat.model.Status;
 import com.mkstr.chat.model.User;
 import com.mkstr.chat.services.ChatService;
 import com.mkstr.chat.services.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -77,6 +79,12 @@ public class UserController {
     @GetMapping("/users/{targetUsername}")
     public ResponseEntity<User> getUser(@PathVariable String targetUsername){
         return ResponseEntity.ok(userService.findByUsername(targetUsername));
+    }
+
+    @GetMapping("/logout")
+    public String logout(HttpServletRequest request, HttpServletResponse response) {
+        String keycloakLogoutUrl = "http://localhost:8080/realms/chat_realm/protocol/openid-connect/logout?redirect_uri=http://localhost:8081";
+        return "redirect:" + keycloakLogoutUrl;
     }
 
 //    @GetMapping("/")

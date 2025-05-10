@@ -13,6 +13,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.List;
 
@@ -45,5 +46,11 @@ public class ChatController {
     {
         Long chatId = chatService.getOrCreateChat(username, selectedChat).getChatId();
         return ResponseEntity.ok(messageRepository.findAllByChatId(chatId));
+    }
+
+    @PostMapping("/messages.findLastInChat")
+    public ResponseEntity<Message> findLastMessageByChatId(Long chatId) {
+        Message message = messageRepository.findLastByChatId(chatId);
+        return ResponseEntity.ok(message);
     }
 }
