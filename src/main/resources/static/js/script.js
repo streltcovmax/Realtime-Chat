@@ -2,6 +2,7 @@
 
 import {User} from "./user.js";
 
+
 const usernamePage = document.querySelector('#login-page');
 const messageInput = document.querySelector('#messageInput');
 const chatPage = document.querySelector('#chat-page');
@@ -22,7 +23,8 @@ const chatsList = document.querySelector('#chats-list');
 
 
 let stompClient = null;
-let selectedChatUsername = null;
+let selectedChatData = null;
+let selectedChatUser = {username: null, fullname: null};
 
 function initCurrentUser() {
     fetch("/api/me")
@@ -111,7 +113,9 @@ function hideDOMChattigArea(){
     pickChatInfoMessage.classList.remove('hidden');
     emptyChatInfoMessage.classList.add('hidden');
 
-    selectedChatUsername = null;
+    resetSelectedUser();
+
+    console.log("hiding chat");
 }
 
 function showDOMChattingArea(){
@@ -132,7 +136,6 @@ async function findAndShowChats() {
     });
 }
 
-//TODO еще должна быть message data, можно просто брать последний msg из бд
 function appendChatDataToList(chatData){
     const listItem = document.createElement('li');
 
@@ -143,10 +146,10 @@ function appendChatDataToList(chatData){
                             </div>
                             <div class="chat-text">
                                 <span class="chat-name">${chatData.fullname}</span>
-                                <span class="chat-message"> here comes the msg</span>
+                                <span class="chat-message"> </span>
                             </div>
                             <div class="chat-nums">
-                                <span class="time">00:00</span>
+                                <span class="datetime">00:00</span>
                                 <span class="notificationMarker r hidden">0</span>
                             </div>
                         </div>`
@@ -154,6 +157,15 @@ function appendChatDataToList(chatData){
     updateDOMStatusIndicator(listItem, chatData.status);
     listItem.chatData = chatData;
     listItem.id = chatData.username;
+    fetch(`/messages/last/${User.username}/${chatData.username}`).then(response => {
+        if(!response.ok) console.error('не удалось получить последнее сообщение чата');
+        else{
+            return response.json();
+        }
+    } ).then(messageJson => {
+        listItem.querySelector('.chat-message').textContent = messageJson.content;
+        listItem.querySelector('.datetime').textContent = formatLocalDateTime(messageJson.dateCreated);
+    });
     listItem.addEventListener('click', pickTheChat)
     chatsList.appendChild(listItem);
 }
@@ -201,7 +213,7 @@ function updateUserStatus(payload){
         console.log(user.username, " not found in ur list");
     }
     //для шапки обновляем если этот пользователь выбран сейчас
-    if(selectedChatUsername === user.username){
+    if(selectedChatUser.username === user.username){
         if(user.status === 'ONLINE') selectedUserInfo.classList.add('online');
         else selectedUserInfo.classList.remove('online');
     }
@@ -223,11 +235,12 @@ function pickTheChat(event){
     removeChatsSelection();
     const clickedChatElement = event.currentTarget;
     const clickedChatData = event.currentTarget.chatData;
-    if(clickedChatData.username !== selectedChatUsername){
+    if(clickedChatData.username !== selectedChatUser.username){
         console.log('opening chat with', clickedChatData.username);
         clickedChatElement.classList.add('active');
 
-        selectedChatUsername = clickedChatData.username;
+        selectedChatUser.username = clickedChatData.username;
+        selectedChatUser.fullname = clickedChatData.fullname;
 
         const notificationMarker = clickedChatElement.querySelector('.notificationMarker');
         notificationMarker.classList.add('hidden');
@@ -235,6 +248,7 @@ function pickTheChat(event){
 
         selectedUserInfo.querySelector('#chat-header-username').textContent = clickedChatData.username;
         selectedUserInfo.querySelector('#chat-header-status').textContent = clickedChatData.status.toLowerCase();
+        selectedUserInfo.querySelector('.chat-avatar').textContent = clickedChatData.fullname[0];
 
         showDOMChattingArea();
         
@@ -246,46 +260,6 @@ function pickTheChat(event){
     }
 }
 
-// function pickChat(event){
-//     const clickedChat = event.currentTarget;
-//     const userFirstName = event.currentTarget.fullname;
-//
-//     if(clickedChat.getAttribute('id') !== selectedChatUsername) {
-//         if(selectedChatUsername) document.querySelector(`#${selectedChatUsername}`).classList.remove('active');
-//
-//         selectedChatUsername = clickedChat.getAttribute('id');
-//
-//         chatMessagesArea.innerHTML='';
-//
-//         const chatElement = document.querySelector(`#${selectedChatUsername}`);
-//         if(chatElement){
-//             chatElement.classList.add('active');
-//             if(chatElement.classList.contains('online')) selectedUserInfo.classList.add('online');
-//             const notificationMarker = chatElement.querySelector('.notificationMarker');
-//             notificationMarker.classList.add('hidden');
-//             notificationMarker.textContent = '0';
-//             displayChatMessages().then();
-//         }
-//
-//         messageInput.placeholder = "Введите сообщение для пользователя " + userFirstName + "...";
-//         // messageForm.classList.remove('hidden');
-//         chatPage.classList.remove('narrow');
-//
-//         chat.classList.remove('hidden');
-//
-//         setTimeout(() => {
-//             chat.classList.add('activated');
-//         }, 100);
-//
-//         document.addEventListener('keydown', hideChat);
-//
-//         const nameElement = document.createElement('span');
-//         nameElement.textContent = userFirstName;
-//         selectedUserInfo.textContent = '';
-//         selectedUserInfo.appendChild(nameElement);
-//         selectedUserInfo.classList.remove('hidden');
-//     }
-// }
 
 // function hideChat(){
 //     console.log("hiding opened chat");
@@ -315,7 +289,7 @@ function pickTheChat(event){
 // }
 
 async function displayChatMessages(clickedChatData){
-    const messagesResponse = await fetch(`/messages/${User.username}/${clickedChatData.username}`);
+    const messagesResponse = await fetch(`/messages/all/${User.username}/${clickedChatData.username}`);
     const messagesJson = await messagesResponse.json();
     console.log('chat messages json:', messagesJson);
     chatMessagesArea.innerHTML = '';
@@ -325,7 +299,7 @@ async function displayChatMessages(clickedChatData){
         messagesJson.forEach(message => {
             addMessage(message);
         })
-        chatMessagesArea.scrollTop = chatMessagesArea.scrollHeight;
+        scrollToBottom(chatMessagesArea);
     }
     else{
         emptyChatInfoMessage.classList.remove('hidden');
@@ -335,10 +309,10 @@ async function displayChatMessages(clickedChatData){
 function sendMessage(event) {
     event.preventDefault();
     const messageContent = messageInput.value.trim();
-    if (messageContent && stompClient && selectedChatUsername) {
+    if (messageContent && stompClient && selectedChatUser) {
         const message = {
             senderId: User.username,
-            recipientId: selectedChatUsername,
+            recipientId: selectedChatUser.username,
             content: messageInput.value,
             dateCreated: new Date()
         };
@@ -350,29 +324,43 @@ function sendMessage(event) {
 
         let thisMessageChat = document.querySelector(`#${message.recipientId}`)
         if(!thisMessageChat) fetchAndAppendNewUserToList(message.recipientId, true).then();
+        else updateLastMessageInfo(thisMessageChat, message)
         addMessage(message);
     }
 }
+
+
 async function onMessageReceived(payload) {
     const message = JSON.parse(payload.body);
     const senderId = message.senderId;
     console.log("Received message from " + senderId);
-    let thisMessageChat = document.querySelector(`#${senderId}`)
+    let thisChatInList = document.querySelector(`#${senderId}`)
 
-    if(thisMessageChat){
-        if(selectedChatUsername !== senderId){
-            const notificationMarker = thisMessageChat.querySelector('.notificationMarker');
+    if(thisChatInList){
+        if(selectedChatUser.username !== senderId){
+            const notificationMarker = thisChatInList.querySelector('.notificationMarker');
             notificationMarker.classList.remove('hidden');
             notificationMarker.textContent = '';
+
         }
         else{
             addMessage(message);
             chatMessagesArea.scrollTop = chatMessagesArea.scrollHeight;
+
         }
+        updateLastMessageInfo(thisChatInList, message);
     }
     else{
-        await fetchAndAppendNewUserToList(senderId, false);
+        // await fetchAndAppendNewUserToList(senderId, false);
+        console.log("*добавляем нового пользователя в список чатов")
     }
+}
+
+function updateLastMessageInfo(chatElement, message){
+    console.log("*обновляем текст последнего сообщения в чате ", message.senderId, "на ", message.content);
+
+    chatElement.querySelector('.chat-message').textContent = message.content;
+    chatElement.querySelector('.datetime').textContent = formatLocalDateTime(message.dateCreated);
 }
 
 async function fetchAndAppendNewUserToList(targetUsername, openChat){
@@ -384,10 +372,10 @@ async function fetchAndAppendNewUserToList(targetUsername, openChat){
     appendUserToList(userJson);
     let chat = document.querySelector(`#${targetUsername}`)
     if(openChat){
-        if(selectedChatUsername)
-            document.querySelector(`#${selectedChatUsername}`).classList.remove('active');
+        if(selectedChatUser)
+            document.querySelector(`#${selectedChatUser.username}`).classList.remove('active');
 
-        selectedChatUsername = chat.getAttribute('id');
+        selectedChatUser.username = chat.getAttribute('id');
         chat.classList.add('active');
         messageInput.placeholder = "Введите сообщение для пользователя " + chat.firstElementChild.textContent  + "...";
         selectedUserInfo.textContent = '';
@@ -406,23 +394,31 @@ async function fetchAndAppendNewUserToList(targetUsername, openChat){
     }
 }
 
-//TODO СЕЙЧАС добавление сообщения
 function addMessage(messageData) {
     const messageContainer = document.createElement('div');
     const senderId = messageData.senderId;
     if (senderId === User.username){
         messageContainer.innerHTML =
-            `<div class="message r">
-                <span class="message-content sender r">${messageData.content}</span>
+            `<div class="message sender">
+<!--                <div class="chat-avatar r">${User.fullname[0]}</div>-->
+                <div class="message-content sender">
+                    <span>${messageData.content}</span>
+                    <span class="time">${formatLocalTime(messageData.dateCreated)}</span>
+               </div>
             </div>`
     }
     else{
         messageContainer.innerHTML =
-            `<div class="message r">
-                <span class="message-content receiver r">${messageData.content}</span>
+            `<div class="message receiver">
+<!--                <div class="chat-avatar r">${selectedChatUser.fullname[0]}</div>-->
+                <div class="message-content receiver">
+                    <span>${messageData.content}</span>
+                    <span class="time">${formatLocalTime(messageData.dateCreated)}</span>
+                </div>
             </div>`
     }
     chatMessagesArea.appendChild(messageContainer);
+    scrollToBottom(chatMessagesArea);
 }
 
 function showUsersSearch() {
@@ -489,5 +485,41 @@ function onLogout(){
 // logout.addEventListener('click', onLogout, true);
 // usersSearchInput.addEventListener('input', usersSearch, true);
 
+function formatLocalDateTime(dateTimeString) {
+    const date = new Date(dateTimeString);
+
+    const pad = (num) => String(num).padStart(2, '0');
+
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+    const day = pad(date.getDate());
+    const month = pad(date.getMonth() + 1); // месяцы с 0 по 11
+    const year = String(date.getFullYear()).slice(-2); // последние 2 цифры года
+
+    return `${hours}:${minutes} ${day}.${month}.${year}`;
+}
+
+function formatLocalTime(dateTimeString) {
+    const date = new Date(dateTimeString);
+
+    const pad = (num) => String(num).padStart(2, '0');
+
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+
+    return `${hours}:${minutes}`;
+}
+
+
+function scrollToBottom(area){
+    area.scrollTop = area.scrollHeight;
+}
+
+function resetSelectedUser(){
+    selectedChatUser = {username: null, fullname: null};
+}
+
 
 initCurrentUser();
+
+//TODO выровнять кнопки на боковой панели

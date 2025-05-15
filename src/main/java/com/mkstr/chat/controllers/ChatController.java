@@ -39,7 +39,7 @@ public class ChatController {
 
 
 
-    @GetMapping("/messages/{username}/{selectedChat}")
+    @GetMapping("/messages/all/{username}/{selectedChat}")
     public ResponseEntity<List<Message>> findChatMessages(
             @PathVariable String username,
             @PathVariable String selectedChat)
@@ -48,9 +48,14 @@ public class ChatController {
         return ResponseEntity.ok(messageRepository.findAllByChatId(chatId));
     }
 
-    @PostMapping("/messages.findLastInChat")
-    public ResponseEntity<Message> findLastMessageByChatId(Long chatId) {
-        Message message = messageRepository.findLastByChatId(chatId);
-        return ResponseEntity.ok(message);
+    @GetMapping("/messages/last/{username}/{selectedChat}")
+    public ResponseEntity<Message> findLastMessageByChat(
+            @PathVariable String username,
+            @PathVariable String selectedChat)
+    {
+        Long chatId = chatService.getOrCreateChat(username, selectedChat).getChatId();
+        Message message = messageRepository.findTopByChatIdOrderByDateCreatedDesc(chatId);
+        if(message != null) return ResponseEntity.ok(message);
+        else return ResponseEntity.internalServerError().body(null);
     }
 }
