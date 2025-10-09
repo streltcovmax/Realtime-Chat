@@ -1,5 +1,6 @@
 package com.mkstr.chat.model;
 
+import com.mkstr.chat.dto.ChatParticipantId;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,7 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 public class ChatParticipant {
     @EmbeddedId
-    private ChatParticipantId id; 
+    private ChatParticipantId id;
 
     @ManyToOne
     @MapsId("userId")

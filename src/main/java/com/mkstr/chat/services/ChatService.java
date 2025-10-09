@@ -2,7 +2,7 @@ package com.mkstr.chat.services;
 
 import com.mkstr.chat.model.Chat;
 import com.mkstr.chat.model.ChatParticipant;
-import com.mkstr.chat.model.ChatParticipantId;
+import com.mkstr.chat.dto.ChatParticipantId;
 import com.mkstr.chat.model.User;
 import com.mkstr.chat.repositories.ChatParticipantRepository;
 import com.mkstr.chat.repositories.ChatRepository;
@@ -21,6 +21,7 @@ public class ChatService {
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
 
+    //TODO: переделаьб
     public Chat getOrCreateChat(String sender, String recipient){
         List<ChatParticipant> senderChatsList = participantRepository.findAllByUserUsername(sender);
         List<ChatParticipant> recipientChatsList = participantRepository.findAllByUserUsername(recipient);

@@ -1,4 +1,4 @@
-package com.mkstr.chat.model;
+package com.mkstr.chat.dto;
 
 import jakarta.persistence.Embeddable;
 import lombok.*;
