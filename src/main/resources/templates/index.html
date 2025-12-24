@@ -14,7 +14,6 @@
 
 <div class="login r hidden" id="login-page">
     <h2>ВОЙТИ</h2>
-    <a href="http://localhost:8081/logout">logout</a>
     <form id="login-form">
         <div class="inputContainer">
             <input autocomplete="off" type="text" id="fullname-input" name="fullname" placeholder="имя" title="введите имя" class="r animated" required>
@@ -30,7 +29,7 @@
 <div class="chats" id="chat-page">
     <div class="chats-panel br-r">
         <!-- <button onclick="showUsersSearch();">создать новый чат</button> -->
-        <input autocomplete="off" type="text" id="search" name="search" placeholder="поиск" class="r">
+        <input autocomplete="off" type="text" id="searchUsername" name="search" placeholder="поиск" class="r">
         <div class="chats-list-container ">
             <ul id="chats-list">
                 <li class="chat-item active">
@@ -150,10 +149,9 @@
                 </li>
             </ul>
         </div>
-        <!-- <div>
-            <p id="connected-user-firstName"></p>
-            <a class="logout" href="javascript:void(0)" id="logout">выйти</a>
-        </div> -->
+        <div>
+            <p id="connected-user-firstName">USERNAME VALUE</p>
+        </div>
     </div>
 
 <!--    <div class="chat-area-wrap">-->
@@ -204,10 +202,10 @@
 
 <div class="user-form hidden" id="search-page">
     <h2>Найти пользователей</h2>
-    <form id="searchUserForm">
-        <label for="username">Никнейм:</label>
-        <input autocomplete="off" type="text" id="searchUsername" name="username">
-    </form>
+<!--    <form id="searchUserForm">-->
+<!--        <label for="username">Никнейм:</label>-->
+<!--        <input autocomplete="off" type="text" id="searchUsername" name="username">-->
+<!--    </form>-->
     <h2>Найдено:</h2>
     <ul id="foundUsers">
     </ul>

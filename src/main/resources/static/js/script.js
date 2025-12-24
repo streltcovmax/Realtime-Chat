@@ -27,7 +27,7 @@ let selectedChatData = null;
 let selectedChatUser = {username: null, fullname: null};
 
 function initCurrentUser() {
-    fetch("/api/me")
+    fetch("/user.getCurrent")
         .then(response => {
             if (response.ok) {
                 return response.json(); // возвращаем промис
@@ -55,13 +55,16 @@ function setListeners(){
     document.querySelector('#this-profile-button').addEventListener('click', showCurrentUserProfile);
     document.querySelector('#logout-button').addEventListener('click', onLogout);
     document.querySelector('#send-message-button').addEventListener('click', sendMessage);
+    usersSearchInput.addEventListener('input', usersSearch, true);
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
-            // Вызов нужной функции
             hideDOMChattigArea();
         }
     });
+}
 
+function setSubscriptions() {
+    stompClient.subscribe(`/user/${User.username}/usersSearch`, displayFoundUsers);
 }
 
 function connectWS(){
@@ -74,7 +77,6 @@ function connectWS(){
 function onConnected(){
     stompClient.subscribe(`/user/${User.username}/messages`, onMessageReceived);
     stompClient.subscribe(`/user/public/`, updateUserStatus);
-
     fetch('/user.addUser', {
         method: 'POST',
         headers: {
@@ -91,6 +93,7 @@ function onConnected(){
             hideDOMChattigArea();
             setDOMUserData();
             setListeners();
+            setSubscriptions();
             findAndShowChats().then();
         }
     });
@@ -210,7 +213,7 @@ function updateUserStatus(payload){
         userElement.chatData.status = user.status;
     }
     else{
-        console.log(user.username, " not found in ur list");
+        console.log(user.username, " not on your list");
     }
     //для шапки обновляем если этот пользователь выбран сейчас
     if(selectedChatUser.username === user.username){
@@ -421,44 +424,45 @@ function addMessage(messageData) {
     scrollToBottom(chatMessagesArea);
 }
 
-function showUsersSearch() {
-    chatPage.classList.add("hidden");
-    searchPage.classList.remove("hidden");
-    stompClient.subscribe(`/user/${User.username}/usersSearch`, displayFoundUsers);
-}
 function usersSearch(){
     let usernameToFind = usersSearchInput.value;
     foundUsersList.innerHTML = '';
-
     if(usernameToFind.length > 2){
+
+        console.log(
+            "SEARCHING..." + usernameToFind
+        )
+
         stompClient.send("/app/user.findUsers", {}, usernameToFind);
     }
 }
 function displayFoundUsers(payload){
     let foundUsers = JSON.parse(payload.body);
     foundUsersList.innerHTML = '';
-    foundUsers = foundUsers.filter(user => user.username !== username)
+    foundUsers = foundUsers.filter(user => user.username !== username);
 
-    foundUsers.forEach(user => {
-        //Создание списка найденных пользователей
-        const userElement = document.createElement('li');
-        userElement.textContent = user.username + " (" + user.fullname +  ")";
-        userElement.id = user.username;
-        userElement.fullname = user.fullname;
-        foundUsersList.appendChild(userElement);
-        userElement.addEventListener
-        ('click',
-            function (event)
-            {
-                foundUsersList.innerHTML = '';
-                usersSearchInput.value = '';
-                chatPage.classList.remove("hidden");
-                searchPage.classList.add("hidden");
-                if(user.status === 'ONLINE') selectedUserInfo.classList.add('online');
+    console.log("Found users " + foundUsers);
 
-                pickChat(event);
-        })
-    });
+    // foundUsers.forEach(user => {
+    //     //Создание списка найденных пользователей
+    //     const userElement = document.createElement('li');
+    //     userElement.textContent = user.username + " (" + user.fullname +  ")";
+    //     userElement.id = user.username;
+    //     userElement.fullname = user.fullname;
+    //     foundUsersList.appendChild(userElement);
+    //     userElement.addEventListener
+    //     ('click',
+    //         function (event)
+    //         {
+    //             foundUsersList.innerHTML = '';
+    //             usersSearchInput.value = '';
+    //             chatPage.classList.remove("hidden");
+    //             searchPage.classList.add("hidden");
+    //             if(user.status === 'ONLINE') selectedUserInfo.classList.add('online');
+    //
+    //             pickChat(event);
+    //     })
+    // });
 }
 
 function showCurrentUserProfile(){
@@ -476,14 +480,13 @@ function onLogout(){
     //     JSON.stringify({User})
     // );
     window.location.reload();
-    window.location.replace('http://localhost:8080/realms/chat_realm/protocol/openid-connect/logout?redirect_uri=http://localhost:8081');
-
+    window.location.replace('logout');
+    // window.location.replace('http://localhost:8080/realms/chat_realm/protocol/openid-connect/logout?redirect_uri=http://localhost:8081');
 }
 
 // usernamePage.addEventListener('submit', connect, true);
 // chatPage.addEventListener('submit', sendMessage, true);
 // logout.addEventListener('click', onLogout, true);
-// usersSearchInput.addEventListener('input', usersSearch, true);
 
 function formatLocalDateTime(dateTimeString) {
     const date = new Date(dateTimeString);

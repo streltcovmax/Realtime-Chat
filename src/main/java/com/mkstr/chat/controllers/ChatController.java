@@ -2,8 +2,8 @@ package com.mkstr.chat.controllers;
 
 import com.mkstr.chat.model.Chat;
 import com.mkstr.chat.model.Message;
-import com.mkstr.chat.services.ChatService;
-import com.mkstr.chat.services.MessageService;
+import com.mkstr.chat.service.ChatService;
+import com.mkstr.chat.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

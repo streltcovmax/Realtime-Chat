@@ -11,4 +11,5 @@ public class Chat {
     @GeneratedValue
     private Long chatId;
     private String lastMessage;
+    private String name;
 }
