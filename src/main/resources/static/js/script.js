@@ -13,6 +13,9 @@ const chat = document.querySelector('#chat')
 const searchPage = document.querySelector('#search-page');
 const foundUsersList = document.querySelector('#foundUsers');
 const searchResultsContainer = document.querySelector('#search-results-container');
+const searchNoResults = document.querySelector('#search-no-results');
+const chatsListContainer = document.querySelector('#chats-list-container');
+const searchClearBtn = document.querySelector('#search-clear-btn');
 const usersSearchInput = document.querySelector('#searchUsername');
 const selectedUserInfo = document.querySelector('#chat-header-info');
 const chatArea = document.querySelector('#chat-area');
@@ -57,6 +60,8 @@ function setListeners(){
     document.querySelector('#logout-button').addEventListener('click', onLogout);
     document.querySelector('#send-message-button').addEventListener('click', sendMessage);
     usersSearchInput.addEventListener('input', usersSearch, true);
+    usersSearchInput.addEventListener('input', updateSearchClearButton);
+    searchClearBtn.addEventListener('click', clearSearch);
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             hideDOMChattigArea();
@@ -117,6 +122,32 @@ function hideDOMChattigArea(){
     resetSelectedUser();
 
     console.log("hiding chat");
+}
+
+function updateSearchClearButton(){
+    if (usersSearchInput.value.trim().length > 0) {
+        searchClearBtn.classList.remove('hidden');
+    } else {
+        searchClearBtn.classList.add('hidden');
+    }
+}
+
+function clearSearch(){
+    usersSearchInput.value = '';
+    searchClearBtn.classList.add('hidden');
+    hideSearchResults();
+}
+
+function showSearchResults(){
+    searchResultsContainer.classList.remove('hidden');
+    chatsListContainer.classList.add('hidden');
+}
+
+function hideSearchResults(){
+    searchResultsContainer.classList.add('hidden');
+    chatsListContainer.classList.remove('hidden');
+    foundUsersList.innerHTML = '';
+    searchNoResults.classList.add('hidden');
 }
 
 function showDOMChattingArea(){
@@ -425,8 +456,12 @@ function addMessage(messageData) {
 function usersSearch(){
     let usernameToFind = usersSearchInput.value.trim();
     foundUsersList.innerHTML = '';
-    searchResultsContainer.classList.add('hidden');
-    if(usernameToFind.length > 2 && stompClient){
+    searchNoResults.classList.add('hidden');
+    if (usernameToFind.length <= 2) {
+        hideSearchResults();
+        return;
+    }
+    if (stompClient) {
         stompClient.send("/app/user.findUsers", {}, usernameToFind);
     }
 }
@@ -435,8 +470,10 @@ function displayFoundUsers(payload){
     foundUsersList.innerHTML = '';
     foundUsers = foundUsers.filter(user => user.username !== User.username);
 
+    showSearchResults();
+
     if (foundUsers.length > 0) {
-        searchResultsContainer.classList.remove('hidden');
+        searchNoResults.classList.add('hidden');
         foundUsers.forEach(user => {
             const userElement = document.createElement('li');
             userElement.classList.add('search-result-item');
@@ -444,9 +481,9 @@ function displayFoundUsers(payload){
             userElement.chatData = user;
             foundUsersList.appendChild(userElement);
             userElement.addEventListener('click', () => {
-                foundUsersList.innerHTML = '';
                 usersSearchInput.value = '';
-                searchResultsContainer.classList.add('hidden');
+                searchClearBtn.classList.add('hidden');
+                hideSearchResults();
                 const existingChat = document.querySelector(`#${user.username}`);
                 if (existingChat) {
                     existingChat.dispatchEvent(new Event('click', { bubbles: true }));
@@ -460,7 +497,7 @@ function displayFoundUsers(payload){
             });
         });
     } else {
-        searchResultsContainer.classList.add('hidden');
+        searchNoResults.classList.remove('hidden');
     }
 }
 
