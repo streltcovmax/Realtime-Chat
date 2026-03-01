@@ -30,6 +30,10 @@
     <div class="chats-panel br-r">
         <!-- <button onclick="showUsersSearch();">создать новый чат</button> -->
         <input autocomplete="off" type="text" id="searchUsername" name="search" placeholder="поиск" class="r">
+        <div id="search-results-container" class="search-results-container hidden">
+            <p class="search-results-label">Найдено:</p>
+            <ul id="foundUsers"></ul>
+        </div>
         <div class="chats-list-container ">
             <ul id="chats-list">
                 <li class="chat-item active">
@@ -202,13 +206,6 @@
 
 <div class="user-form hidden" id="search-page">
     <h2>Найти пользователей</h2>
-<!--    <form id="searchUserForm">-->
-<!--        <label for="username">Никнейм:</label>-->
-<!--        <input autocomplete="off" type="text" id="searchUsername" name="username">-->
-<!--    </form>-->
-    <h2>Найдено:</h2>
-    <ul id="foundUsers">
-    </ul>
 </div>
 
 

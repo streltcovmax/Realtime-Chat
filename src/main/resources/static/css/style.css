@@ -126,6 +126,49 @@ button:active {
     color: var(--text-highlight);
 }
 
+.search-results-container {
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 0 0 12px 0;
+    padding: 8px;
+    background-color: var(--back_dark);
+    border-radius: 4px;
+}
+
+.search-results-container.hidden {
+    display: none;
+}
+
+.search-results-label {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    color: var(--text-plain);
+}
+
+#foundUsers {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#foundUsers .search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    color: var(--text-highlight);
+    border-radius: 4px;
+}
+
+#foundUsers .search-result-item:hover {
+    background-color: var(--highlight_dark);
+}
+
+#foundUsers .search-result-item .chat-avatar {
+    flex-shrink: 0;
+}
+
 
 .chats-panel{
     min-width: 400px;

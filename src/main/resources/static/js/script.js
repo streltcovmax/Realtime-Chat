@@ -12,6 +12,7 @@ const chatMessagesArea = document.querySelector('#chat-messages');
 const chat = document.querySelector('#chat')
 const searchPage = document.querySelector('#search-page');
 const foundUsersList = document.querySelector('#foundUsers');
+const searchResultsContainer = document.querySelector('#search-results-container');
 const usersSearchInput = document.querySelector('#searchUsername');
 const selectedUserInfo = document.querySelector('#chat-header-info');
 const chatArea = document.querySelector('#chat-area');
@@ -422,44 +423,45 @@ function addMessage(messageData) {
 }
 
 function usersSearch(){
-    let usernameToFind = usersSearchInput.value;
+    let usernameToFind = usersSearchInput.value.trim();
     foundUsersList.innerHTML = '';
-    if(usernameToFind.length > 2){
-
-        console.log(
-            "SEARCHING..." + usernameToFind
-        )
-
+    searchResultsContainer.classList.add('hidden');
+    if(usernameToFind.length > 2 && stompClient){
         stompClient.send("/app/user.findUsers", {}, usernameToFind);
     }
 }
 function displayFoundUsers(payload){
     let foundUsers = JSON.parse(payload.body);
     foundUsersList.innerHTML = '';
-    foundUsers = foundUsers.filter(user => user.username !== username);
+    foundUsers = foundUsers.filter(user => user.username !== User.username);
 
-    console.log("Found users " + foundUsers);
-
-    // foundUsers.forEach(user => {
-    //     //Создание списка найденных пользователей
-    //     const userElement = document.createElement('li');
-    //     userElement.textContent = user.username + " (" + user.fullname +  ")";
-    //     userElement.id = user.username;
-    //     userElement.fullname = user.fullname;
-    //     foundUsersList.appendChild(userElement);
-    //     userElement.addEventListener
-    //     ('click',
-    //         function (event)
-    //         {
-    //             foundUsersList.innerHTML = '';
-    //             usersSearchInput.value = '';
-    //             chatPage.classList.remove("hidden");
-    //             searchPage.classList.add("hidden");
-    //             if(user.status === 'ONLINE') selectedUserInfo.classList.add('online');
-    //
-    //             pickChat(event);
-    //     })
-    // });
+    if (foundUsers.length > 0) {
+        searchResultsContainer.classList.remove('hidden');
+        foundUsers.forEach(user => {
+            const userElement = document.createElement('li');
+            userElement.classList.add('search-result-item');
+            userElement.innerHTML = `<span class="chat-avatar r">${user.fullname ? user.fullname[0] : '?'}</span> ${user.fullname || user.username} (@${user.username})`;
+            userElement.chatData = user;
+            foundUsersList.appendChild(userElement);
+            userElement.addEventListener('click', () => {
+                foundUsersList.innerHTML = '';
+                usersSearchInput.value = '';
+                searchResultsContainer.classList.add('hidden');
+                const existingChat = document.querySelector(`#${user.username}`);
+                if (existingChat) {
+                    existingChat.dispatchEvent(new Event('click', { bubbles: true }));
+                } else {
+                    appendChatDataToList(user);
+                    const newChat = document.querySelector(`#${user.username}`);
+                    if (newChat) {
+                        newChat.dispatchEvent(new Event('click', { bubbles: true }));
+                    }
+                }
+            });
+        });
+    } else {
+        searchResultsContainer.classList.add('hidden');
+    }
 }
 
 function showCurrentUserProfile(){
