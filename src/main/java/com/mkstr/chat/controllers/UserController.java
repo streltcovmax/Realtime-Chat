@@ -48,7 +48,7 @@ public class UserController {
         return user;
     }
 
-    @MessageMapping("/user.findUser s")
+    @MessageMapping("/user.findUsers")
     public void findUsers(
             @Payload String targetUsername
     ) {

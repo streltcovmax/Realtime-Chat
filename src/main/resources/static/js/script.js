@@ -30,7 +30,7 @@ function initCurrentUser() {
     fetch("/user.getCurrent")
         .then(response => {
             if (response.ok) {
-                return response.json(); // возвращаем промис
+                return response.json();
             } else {
                 throw new Error("Ошибка загрузки пользователя");
             }
@@ -48,7 +48,7 @@ function initCurrentUser() {
 }
 
 function setDOMUserData(){
-
+    document.querySelector('#connected-user-fullname').textContent = User.fullname;
 }
 
 function setListeners(){
@@ -97,9 +97,6 @@ function onConnected(){
             findAndShowChats().then();
         }
     });
-
-
-    // document.querySelector('#connected-user-fullname').textContent = User.fullname;
 }
 
 function removeChatsSelection(){
