@@ -2,11 +2,13 @@ package com.mkstr.chat.model;
 
 import com.mkstr.chat.dto.ChatParticipantId;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Data
-@Table(name="chat_participants")
+@Table(name = "chat_participants")
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatParticipant {

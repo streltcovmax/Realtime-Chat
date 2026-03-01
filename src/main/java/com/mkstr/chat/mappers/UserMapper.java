@@ -6,6 +6,6 @@ import org.mapstruct.Mapper;
 import java.security.Principal;
 
 @Mapper
-public interface UserMapper{
+public interface UserMapper {
     User eventToUser(Principal principal);
 }

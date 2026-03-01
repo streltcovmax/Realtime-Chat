@@ -17,6 +17,6 @@ public class CurrentUserProvider {
             return new User(oidcUser.getPreferredUsername(), oidcUser.getFullName(), Status.ONLINE);
         }
 
-        return null; // или бросить кастомное исключение
+        return null;
     }
 }

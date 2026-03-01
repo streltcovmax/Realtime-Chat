@@ -53,18 +53,18 @@ function initCurrentUser() {
         });
 }
 
-function setDOMUserData(){
+function setDOMUserData() {
     document.querySelector('#connected-user-fullname').textContent = User.fullname;
 }
 
-function setListeners(){
+function setListeners() {
     document.querySelector('#this-profile-button').addEventListener('click', showCurrentUserProfile);
     document.querySelector('#logout-button').addEventListener('click', onLogout);
     document.querySelector('#send-message-button').addEventListener('click', sendMessage);
     usersSearchInput.addEventListener('input', usersSearch, true);
     usersSearchInput.addEventListener('input', updateSearchClearButton);
     searchClearBtn.addEventListener('click', clearSearch);
-    document.addEventListener('keydown', function(event) {
+    document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             hideDOMChattigArea();
         }
@@ -75,14 +75,14 @@ function setSubscriptions() {
     stompClient.subscribe(`/user/${User.username}/usersSearch`, displayFoundUsers);
 }
 
-function connectWS(){
+function connectWS() {
     const socket = new SockJS('/ws');
     stompClient = Stomp.over(socket);
     console.log("подключение к WS");
     stompClient.connect({}, onConnected, onError);
 }
 
-function onConnected(){
+function onConnected() {
     stompClient.subscribe(`/user/${User.username}/messages`, onMessageReceived);
     stompClient.subscribe(`/user/public/`, updateUserStatus);
     fetch('/user.addUser', {
@@ -96,8 +96,8 @@ function onConnected(){
             status: User.status
         })
     }).then(response => {
-        if(!response.ok) console.error('Ошибка сохранения пользователя в БД');
-        else{
+        if (!response.ok) console.error('Ошибка сохранения пользователя в БД');
+        else {
             hideDOMChattigArea();
             setDOMUserData();
             setListeners();
@@ -107,14 +107,14 @@ function onConnected(){
     });
 }
 
-function removeChatsSelection(){
+function removeChatsSelection() {
     const activeChatItems = document.querySelectorAll('.chat-item.active');
     activeChatItems.forEach(item => {
         item.classList.remove('active');
     });
 }
 
-function hideDOMChattigArea(){
+function hideDOMChattigArea() {
     removeChatsSelection();
     chatArea.classList.add('hidden');
     chatMessagesArea.innerHTML = '';
@@ -126,7 +126,7 @@ function hideDOMChattigArea(){
     console.log("hiding chat");
 }
 
-function updateSearchClearButton(){
+function updateSearchClearButton() {
     if (usersSearchInput.value.trim().length > 0) {
         searchClearBtn.classList.remove('hidden');
     } else {
@@ -134,25 +134,25 @@ function updateSearchClearButton(){
     }
 }
 
-function clearSearch(){
+function clearSearch() {
     usersSearchInput.value = '';
     searchClearBtn.classList.add('hidden');
     hideSearchResults();
 }
 
-function showSearchResults(){
+function showSearchResults() {
     searchResultsContainer.classList.remove('hidden');
     chatsListContainer.classList.add('hidden');
 }
 
-function hideSearchResults(){
+function hideSearchResults() {
     searchResultsContainer.classList.add('hidden');
     chatsListContainer.classList.remove('hidden');
     foundUsersList.innerHTML = '';
     searchNoResults.classList.add('hidden');
 }
 
-function showDOMChattingArea(){
+function showDOMChattingArea() {
     pickChatInfoMessage.classList.add('hidden');
     chatArea.classList.remove('hidden');
 }
@@ -170,10 +170,10 @@ async function findAndShowChats() {
     });
 }
 
-function appendChatDataToList(chatData){
+function appendChatDataToList(chatData) {
     const listItem = document.createElement('li');
 
-    listItem.innerHTML =`<div class="chat-info">
+    listItem.innerHTML = `<div class="chat-info">
                                 <div class="chat-avatar r">${chatData.fullname[0]}
                                     <span class="online-indicator hidden"></span>
                                 </div>
@@ -192,11 +192,11 @@ function appendChatDataToList(chatData){
     listItem.chatData = chatData;
     listItem.id = chatData.username;
     fetch(`/messages/last/${User.username}/${chatData.username}`).then(response => {
-        if(!response.ok) console.error('не удалось получить последнее сообщение чата');
-        else{
+        if (!response.ok) console.error('не удалось получить последнее сообщение чата');
+        else {
             return response.json();
         }
-    } ).then(messageJson => {
+    }).then(messageJson => {
         listItem.querySelector('.chat-message').textContent = messageJson.content;
         listItem.querySelector('.datetime').textContent = formatLocalDateTime(messageJson.dateCreated);
     });
@@ -232,44 +232,42 @@ function appendChatDataToList(chatData){
 //     chatsList.appendChild(separator);
 // }
 
-function updateUserStatus(payload){
+function updateUserStatus(payload) {
     const user = JSON.parse(payload.body);
     console.log('received ', user.username);
     console.log('received ', user.status);
     const userElement = document.querySelector(`#${user.username}`);
     console.log('updating status, ', user.username);
     //для списка контактов обновляем если пользователь в нём есть
-    if(userElement){
+    if (userElement) {
         updateDOMStatusIndicator(userElement, user.status);
         userElement.chatData.status = user.status;
-    }
-    else{
+    } else {
         console.log(user.username, " not on your list");
     }
     //для шапки обновляем если этот пользователь выбран сейчас
-    if(selectedChatUser.username === user.username){
-        if(user.status === 'ONLINE') selectedUserInfo.classList.add('online');
+    if (selectedChatUser.username === user.username) {
+        if (user.status === 'ONLINE') selectedUserInfo.classList.add('online');
         else selectedUserInfo.classList.remove('online');
     }
 }
 
-function updateDOMStatusIndicator(element, status){
-    if(status === 'ONLINE'){
+function updateDOMStatusIndicator(element, status) {
+    if (status === 'ONLINE') {
         element.querySelector('.online-indicator').classList.remove('hidden');
-    }
-    else {
+    } else {
         element.querySelector('.online-indicator').classList.add('hidden');
     }
     selectedUserInfo.querySelector('#chat-header-status').textContent = status.toLowerCase();
 }
 
 
-function pickTheChat(event){
+function pickTheChat(event) {
     //убираем выделение с чатов
     removeChatsSelection();
     const clickedChatElement = event.currentTarget;
     const clickedChatData = event.currentTarget.chatData;
-    if(clickedChatData.username !== selectedChatUser.username){
+    if (clickedChatData.username !== selectedChatUser.username) {
         console.log('opening chat with', clickedChatData.username);
         clickedChatElement.classList.add('active');
 
@@ -285,10 +283,9 @@ function pickTheChat(event){
         selectedUserInfo.querySelector('.chat-avatar').textContent = clickedChatData.fullname[0];
 
         showDOMChattingArea();
-        
+
         displayChatMessages(clickedChatData).then();
-    }
-    else{
+    } else {
         console.log('closing chat with', clickedChatData.username);
         hideDOMChattigArea();
     }
@@ -322,20 +319,19 @@ function pickTheChat(event){
 //     }
 // }
 
-async function displayChatMessages(clickedChatData){
+async function displayChatMessages(clickedChatData) {
     const messagesResponse = await fetch(`/messages/all/${User.username}/${clickedChatData.username}`);
     const messagesJson = await messagesResponse.json();
     console.log('chat messages json:', messagesJson);
     chatMessagesArea.innerHTML = '';
-    if(messagesJson.length > 0){
+    if (messagesJson.length > 0) {
         emptyChatInfoMessage.classList.add('hidden');
 
         messagesJson.forEach(message => {
             addMessage(message);
         })
         scrollToBottom(chatMessagesArea);
-    }
-    else{
+    } else {
         emptyChatInfoMessage.classList.remove('hidden');
     }
 }
@@ -357,7 +353,7 @@ async function sendMessage(event) {
         emptyChatInfoMessage.classList.add('hidden');
 
         let thisMessageChat = document.querySelector(`#${message.recipientId}`)
-        if(!thisMessageChat) await fetchAndAppendNewUserToList(message.recipientId, true);
+        if (!thisMessageChat) await fetchAndAppendNewUserToList(message.recipientId, true);
         else updateLastMessageInfo(thisMessageChat, message)
         addMessage(message);
     }
@@ -370,46 +366,43 @@ async function onMessageReceived(payload) {
     console.log("Received message from " + senderId);
     let thisChatInList = document.querySelector(`#${senderId}`)
 
-    if(thisChatInList){
-        if(selectedChatUser.username !== senderId){
+    if (thisChatInList) {
+        if (selectedChatUser.username !== senderId) {
             const notificationMarker = thisChatInList.querySelector('.notificationMarker');
             notificationMarker.classList.remove('hidden');
             notificationMarker.textContent = '';
 
-        }
-        else{
+        } else {
             addMessage(message);
             chatMessagesArea.scrollTop = chatMessagesArea.scrollHeight;
 
         }
         updateLastMessageInfo(thisChatInList, message);
-    }
-    else{
+    } else {
         await fetchAndAppendNewUserToList(senderId, false, message);
     }
 }
 
-function updateLastMessageInfo(chatElement, message){
+function updateLastMessageInfo(chatElement, message) {
     console.log("*обновляем текст последнего сообщения в чате ", message.senderId, "на ", message.content);
 
     chatElement.querySelector('.chat-message').textContent = message.content;
     chatElement.querySelector('.datetime').textContent = formatLocalDateTime(message.dateCreated);
 }
 
-async function fetchAndAppendNewUserToList(targetUsername, openChat, message){
-    if(pendingNewChats.has(targetUsername)){
-        if(message) pendingMessagesForNewChats.set(targetUsername, message);
+async function fetchAndAppendNewUserToList(targetUsername, openChat, message) {
+    if (pendingNewChats.has(targetUsername)) {
+        if (message) pendingMessagesForNewChats.set(targetUsername, message);
         return;
     }
     let chat = document.querySelector(`#${targetUsername}`);
-    if(chat){
-        if(message) updateLastMessageInfo(chat, message);
-        if(!openChat){
+    if (chat) {
+        if (message) updateLastMessageInfo(chat, message);
+        if (!openChat) {
             const notificationMarker = chat.querySelector('.notificationMarker');
             notificationMarker.classList.remove('hidden');
             notificationMarker.textContent = '';
-        }
-        else chat.dispatchEvent(new Event('click', { bubbles: true }));
+        } else chat.dispatchEvent(new Event('click', {bubbles: true}));
         return;
     }
     pendingNewChats.add(targetUsername);
@@ -417,20 +410,19 @@ async function fetchAndAppendNewUserToList(targetUsername, openChat, message){
         const userResponse = await fetch(`/users/${targetUsername}`);
         const userJson = await userResponse.json();
         chat = document.querySelector(`#${targetUsername}`);
-        if(chat){
+        if (chat) {
             pendingNewChats.delete(targetUsername);
             return;
         }
         appendChatDataToList(userJson);
         chat = document.querySelector(`#${targetUsername}`);
-        if(!chat) return;
+        if (!chat) return;
         const msgToShow = pendingMessagesForNewChats.get(targetUsername) || message;
-        if(msgToShow) updateLastMessageInfo(chat, msgToShow);
+        if (msgToShow) updateLastMessageInfo(chat, msgToShow);
         pendingMessagesForNewChats.delete(targetUsername);
-        if(openChat){
-            chat.dispatchEvent(new Event('click', { bubbles: true }));
-        }
-        else{
+        if (openChat) {
+            chat.dispatchEvent(new Event('click', {bubbles: true}));
+        } else {
             const notificationMarker = chat.querySelector('.notificationMarker');
             notificationMarker.classList.remove('hidden');
             notificationMarker.textContent = '';
@@ -443,7 +435,7 @@ async function fetchAndAppendNewUserToList(targetUsername, openChat, message){
 function addMessage(messageData) {
     const messageContainer = document.createElement('div');
     const senderId = messageData.senderId;
-    if (senderId === User.username){
+    if (senderId === User.username) {
         messageContainer.innerHTML =
             `<div class="message sender">
 <!--                <div class="chat-avatar r">${User.fullname[0]}</div>-->
@@ -452,8 +444,7 @@ function addMessage(messageData) {
                     <span class="time">${formatLocalTime(messageData.dateCreated)}</span>
                </div>
             </div>`
-    }
-    else{
+    } else {
         messageContainer.innerHTML =
             `<div class="message receiver">
 <!--                <div class="chat-avatar r">${selectedChatUser.fullname[0]}</div>-->
@@ -467,7 +458,7 @@ function addMessage(messageData) {
     scrollToBottom(chatMessagesArea);
 }
 
-function usersSearch(){
+function usersSearch() {
     let usernameToFind = usersSearchInput.value.trim();
     foundUsersList.innerHTML = '';
     searchNoResults.classList.add('hidden');
@@ -479,7 +470,8 @@ function usersSearch(){
         stompClient.send("/app/user.findUsers", {}, usernameToFind);
     }
 }
-function displayFoundUsers(payload){
+
+function displayFoundUsers(payload) {
     let foundUsers = JSON.parse(payload.body);
     foundUsersList.innerHTML = '';
     foundUsers = foundUsers.filter(user => user.username !== User.username);
@@ -500,12 +492,12 @@ function displayFoundUsers(payload){
                 hideSearchResults();
                 const existingChat = document.querySelector(`#${user.username}`);
                 if (existingChat) {
-                    existingChat.dispatchEvent(new Event('click', { bubbles: true }));
+                    existingChat.dispatchEvent(new Event('click', {bubbles: true}));
                 } else {
                     appendChatDataToList(user);
                     const newChat = document.querySelector(`#${user.username}`);
                     if (newChat) {
-                        newChat.dispatchEvent(new Event('click', { bubbles: true }));
+                        newChat.dispatchEvent(new Event('click', {bubbles: true}));
                     }
                 }
             });
@@ -515,7 +507,7 @@ function displayFoundUsers(payload){
     }
 }
 
-function showCurrentUserProfile(){
+function showCurrentUserProfile() {
     console.log("СМОТРИМ ПОЛНУЮ ИНФУ ЭТОГО ЮЗЕРА наверное тут get запрос");
 }
 
@@ -523,7 +515,8 @@ function showCurrentUserProfile(){
 function onError(error) {
     console.log('Error connecting');
 }
-function onLogout(){
+
+function onLogout() {
     User.status = 'OFFLINE'
     // stompClient.send("/app/user.disconnectUser",
     //     {},
@@ -564,11 +557,11 @@ function formatLocalTime(dateTimeString) {
 }
 
 
-function scrollToBottom(area){
+function scrollToBottom(area) {
     area.scrollTop = area.scrollHeight;
 }
 
-function resetSelectedUser(){
+function resetSelectedUser() {
     selectedChatUser = {username: null, fullname: null};
 }
 
