@@ -12,6 +12,7 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -50,14 +51,20 @@ public class UserController {
 
     @MessageMapping("/user.findUsers")
     public void findUsers(
-            @Payload String targetUsername
+            @Payload String targetUsername,
+            Principal principal
     ) {
+        if (principal == null) {
+            log.warn("findUsers called without authenticated principal");
+            return;
+        }
+        String currentUsername = principal.getName();
         List<User> foundUsers = userService.findAllByUsername(targetUsername);
 
         log.info("Found users {}", foundUsers);
-        log.info("Request came from {}", currentUserProvider.getCurrentUser().getUsername());
+        log.info("Request came from {}", currentUsername);
 
-        messagingTemplate.convertAndSend("/user/" + currentUserProvider.getCurrentUser().getUsername() + "/usersSearch", foundUsers);
+        messagingTemplate.convertAndSend("/user/" + currentUsername + "/usersSearch", foundUsers);
     }
 
     @GetMapping("/chats")
