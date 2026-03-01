@@ -29,6 +29,8 @@ const chatsList = document.querySelector('#chats-list');
 let stompClient = null;
 let selectedChatData = null;
 let selectedChatUser = {username: null, fullname: null};
+const pendingNewChats = new Set();
+const pendingMessagesForNewChats = new Map();
 
 function initCurrentUser() {
     fetch("/user.getCurrent")
@@ -395,21 +397,46 @@ function updateLastMessageInfo(chatElement, message){
 }
 
 async function fetchAndAppendNewUserToList(targetUsername, openChat, message){
-    const userResponse = await fetch(`/users/${targetUsername}`);
-    const userJson = await userResponse.json();
-    appendChatDataToList(userJson);
-    let chat = document.querySelector(`#${targetUsername}`);
-    if(!chat) return;
-    if(openChat){
-        chat.dispatchEvent(new Event('click', { bubbles: true }));
+    if(pendingNewChats.has(targetUsername)){
+        if(message) pendingMessagesForNewChats.set(targetUsername, message);
+        return;
     }
-    else{
-        if(message){
-            updateLastMessageInfo(chat, message);
+    let chat = document.querySelector(`#${targetUsername}`);
+    if(chat){
+        if(message) updateLastMessageInfo(chat, message);
+        if(!openChat){
+            const notificationMarker = chat.querySelector('.notificationMarker');
+            notificationMarker.classList.remove('hidden');
+            notificationMarker.textContent = '';
         }
-        const notificationMarker = chat.querySelector('.notificationMarker');
-        notificationMarker.classList.remove('hidden');
-        notificationMarker.textContent = '';
+        else chat.dispatchEvent(new Event('click', { bubbles: true }));
+        return;
+    }
+    pendingNewChats.add(targetUsername);
+    try {
+        const userResponse = await fetch(`/users/${targetUsername}`);
+        const userJson = await userResponse.json();
+        chat = document.querySelector(`#${targetUsername}`);
+        if(chat){
+            pendingNewChats.delete(targetUsername);
+            return;
+        }
+        appendChatDataToList(userJson);
+        chat = document.querySelector(`#${targetUsername}`);
+        if(!chat) return;
+        const msgToShow = pendingMessagesForNewChats.get(targetUsername) || message;
+        if(msgToShow) updateLastMessageInfo(chat, msgToShow);
+        pendingMessagesForNewChats.delete(targetUsername);
+        if(openChat){
+            chat.dispatchEvent(new Event('click', { bubbles: true }));
+        }
+        else{
+            const notificationMarker = chat.querySelector('.notificationMarker');
+            notificationMarker.classList.remove('hidden');
+            notificationMarker.textContent = '';
+        }
+    } finally {
+        pendingNewChats.delete(targetUsername);
     }
 }
 

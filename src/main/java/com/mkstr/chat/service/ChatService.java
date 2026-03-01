@@ -12,17 +12,26 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class ChatService {
+    private static final ConcurrentHashMap<String, Object> chatPairLocks = new ConcurrentHashMap<>();
+
     private final ChatParticipantRepository participantRepository;
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
 
+    private static Object getLockForPair(String user1, String user2) {
+        String key = user1.compareTo(user2) < 0 ? user1 + "|" + user2 : user2 + "|" + user1;
+        return chatPairLocks.computeIfAbsent(key, k -> new Object());
+    }
+
     //TODO: переделаьб
     public Chat getOrCreateChat(String sender, String recipient){
+        synchronized (getLockForPair(sender, recipient)) {
         List<ChatParticipant> senderChatsList = participantRepository.findAllByUserUsername(sender);
         List<ChatParticipant> recipientChatsList = participantRepository.findAllByUserUsername(recipient);
 
@@ -52,6 +61,7 @@ public class ChatService {
                 new ChatParticipant(participant2, user2, chat))
         );
         return chat;
+        }
     }
 
     public void saveLastMessage(Chat chat, String messageText){
