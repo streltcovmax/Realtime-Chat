@@ -266,7 +266,6 @@ function updateDOMStatusIndicator(element, status) {
     selectedUserInfo.querySelector('#chat-header-status').textContent = status.toLowerCase();
 }
 
-
 function pickTheChat(event) {
     //убираем выделение с чатов
     removeChatsSelection();
@@ -295,7 +294,6 @@ function pickTheChat(event) {
         hideDOMChattigArea();
     }
 }
-
 
 // function hideChat(){
 //     console.log("hiding opened chat");
@@ -410,7 +408,6 @@ async function sendMessage(event) {
         scrollToBottom(chatMessagesArea);
     }
 }
-
 
 async function onMessageReceived(payload) {
     const message = JSON.parse(payload.body);
@@ -568,7 +565,6 @@ function showCurrentUserProfile() {
     console.log("СМОТРИМ ПОЛНУЮ ИНФУ ЭТОГО ЮЗЕРА наверное тут get запрос");
 }
 
-
 function onError(error) {
     console.log('Error connecting');
 }
@@ -583,10 +579,6 @@ function onLogout() {
     window.location.replace('logout');
     // window.location.replace('http://localhost:8080/realms/chat_realm/protocol/openid-connect/logout?redirect_uri=http://localhost:8081');
 }
-
-// usernamePage.addEventListener('submit', connect, true);
-// chatPage.addEventListener('submit', sendMessage, true);
-// logout.addEventListener('click', onLogout, true);
 
 function formatLocalDateTime(dateTimeString) {
     const date = new Date(dateTimeString);
@@ -622,8 +614,8 @@ function resetSelectedUser() {
 }
 
 function onMessagesScroll() {
-    console.log("chatMessagesArea.scrollTop " + chatMessagesArea.scrollTop);
-    if (chatMessagesArea.scrollTop <= 150 && !messagesLoading && !messagesLastPage && selectedChatUser.username) {
+    const pxToTop = 250;
+    if (chatMessagesArea.scrollTop <= pxToTop && !messagesLoading && !messagesLastPage && selectedChatUser.username) {
         loadChatMessagesPage(selectedChatUser.username, false);
     }
 }

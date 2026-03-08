@@ -14,6 +14,7 @@
     --shadow_dark: #00000061;
 
 
+    --highlight_darkest: #322c5a;
     --highlight_dark: darkslateblue;
     --highlight_plain: slateblue;
     --highlight_light: rgb(157, 145, 234);
@@ -277,7 +278,11 @@ button:active {
 }
 
 .chat-item:hover {
-    /* color: var(--highlight_light); */
+     background-color: var(--highlight_darkest);
+}
+
+.chat-item.active {
+    background-color: var(--highlight_dark);
 }
 
 .chat-info {
@@ -344,9 +349,7 @@ button:active {
     font-size: 14px;
 }
 
-.chat-item.active {
-    background-color: var(--highlight_dark);
-}
+
 
 
 #chat-header-info.active {
