@@ -487,7 +487,7 @@ a.logout {
     flex-direction: column;
     gap: 10px;
     font-size: small;
-    scroll-behavior: smooth;
+    /*scroll-behavior: smooth;*/
 
 
     /* background-color: #333; */

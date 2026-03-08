@@ -22,6 +22,7 @@ const chatArea = document.querySelector('#chat-area');
 const pickChatInfoMessage = document.querySelector('#pick-chat-message');
 const emptyChatInfoMessage = document.querySelector('#empty-chat-message');
 
+const MESSAGES_PAGE_SIZE = 50;
 
 const chatsList = document.querySelector('#chats-list');
 
@@ -31,6 +32,9 @@ let selectedChatData = null;
 let selectedChatUser = {username: null, fullname: null};
 const pendingNewChats = new Set();
 const pendingMessagesForNewChats = new Map();
+let messagesPage = 0;
+let messagesLastPage = false;
+let messagesLoading = false;
 
 function initCurrentUser() {
     fetch("/user.getCurrent")
@@ -64,6 +68,7 @@ function setListeners() {
     usersSearchInput.addEventListener('input', usersSearch, true);
     usersSearchInput.addEventListener('input', updateSearchClearButton);
     searchClearBtn.addEventListener('click', clearSearch);
+    chatMessagesArea.addEventListener('scroll', onMessagesScroll);
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             hideDOMChattigArea();
@@ -320,19 +325,65 @@ function pickTheChat(event) {
 // }
 
 async function displayChatMessages(clickedChatData) {
-    const messagesResponse = await fetch(`/messages/all/${User.username}/${clickedChatData.username}`);
-    const messagesJson = await messagesResponse.json();
-    console.log('chat messages json:', messagesJson);
+    messagesPage = 0;
+    messagesLastPage = false;
     chatMessagesArea.innerHTML = '';
-    if (messagesJson.length > 0) {
-        emptyChatInfoMessage.classList.add('hidden');
+    await loadChatMessagesPage(clickedChatData.username, true);
+    scrollToBottom(chatMessagesArea);
+}
 
-        messagesJson.forEach(message => {
-            addMessage(message);
-        })
-        scrollToBottom(chatMessagesArea);
-    } else {
-        emptyChatInfoMessage.classList.remove('hidden');
+async function loadChatMessagesPage(chatUsername, reset) {
+    if (messagesLoading || !chatUsername) {
+        return;
+    }
+    messagesLoading = true;
+    try {
+        const pageToLoad = reset ? 0 : messagesPage + 1;
+        const messagesResponse = await fetch(`/messages/page/${User.username}/${chatUsername}?page=${pageToLoad}&size=${MESSAGES_PAGE_SIZE}`);
+        if (!messagesResponse.ok) {
+            console.error('не удалось получить сообщения чата постранично');
+            return;
+        }
+        const pageJson = await messagesResponse.json();
+        const messages = Array.isArray(pageJson) ? pageJson : (pageJson.content || []);
+
+        if (reset) {
+            chatMessagesArea.innerHTML = '';
+        }
+
+        if (messages.length === 0) {
+            if (reset) {
+                emptyChatInfoMessage.classList.remove('hidden');
+            }
+            messagesLastPage = true;
+            return;
+        } else {
+            emptyChatInfoMessage.classList.add('hidden');
+        }
+
+        if (reset) {
+            messages.slice().reverse().forEach(message => {
+                addMessage(message);
+            });
+        } else {
+            const oldScrollHeight = chatMessagesArea.scrollHeight;
+            const fragment = document.createDocumentFragment();
+            messages.slice().reverse().forEach(message => {
+                const el = createMessageElement(message);
+                fragment.appendChild(el);
+            });
+            chatMessagesArea.insertBefore(fragment, chatMessagesArea.firstChild);
+            chatMessagesArea.scrollTop = chatMessagesArea.scrollHeight - oldScrollHeight;
+        }
+
+        messagesPage = pageToLoad;
+        if (!Array.isArray(pageJson) && typeof pageJson === 'object' && pageJson !== null && 'last' in pageJson) {
+            messagesLastPage = pageJson.last;
+        } else {
+            messagesLastPage = messages.length < MESSAGES_PAGE_SIZE;
+        }
+    } finally {
+        messagesLoading = false;
     }
 }
 
@@ -356,6 +407,7 @@ async function sendMessage(event) {
         if (!thisMessageChat) await fetchAndAppendNewUserToList(message.recipientId, true);
         else updateLastMessageInfo(thisMessageChat, message)
         addMessage(message);
+        scrollToBottom(chatMessagesArea);
     }
 }
 
@@ -432,7 +484,7 @@ async function fetchAndAppendNewUserToList(targetUsername, openChat, message) {
     }
 }
 
-function addMessage(messageData) {
+function createMessageElement(messageData) {
     const messageContainer = document.createElement('div');
     const senderId = messageData.senderId;
     if (senderId === User.username) {
@@ -454,8 +506,13 @@ function addMessage(messageData) {
                 </div>
             </div>`
     }
+    return messageContainer;
+}
+
+function addMessage(messageData) {
+    const messageContainer = createMessageElement(messageData);
     chatMessagesArea.appendChild(messageContainer);
-    scrollToBottom(chatMessagesArea);
+    // scrollToBottom(chatMessagesArea);
 }
 
 function usersSearch() {
@@ -556,7 +613,6 @@ function formatLocalTime(dateTimeString) {
     return `${hours}:${minutes}`;
 }
 
-
 function scrollToBottom(area) {
     area.scrollTop = area.scrollHeight;
 }
@@ -565,6 +621,12 @@ function resetSelectedUser() {
     selectedChatUser = {username: null, fullname: null};
 }
 
+function onMessagesScroll() {
+    console.log("chatMessagesArea.scrollTop " + chatMessagesArea.scrollTop);
+    if (chatMessagesArea.scrollTop <= 150 && !messagesLoading && !messagesLastPage && selectedChatUser.username) {
+        loadChatMessagesPage(selectedChatUser.username, false);
+    }
+}
 
 initCurrentUser();
 
