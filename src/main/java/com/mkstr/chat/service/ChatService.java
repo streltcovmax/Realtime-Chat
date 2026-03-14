@@ -29,24 +29,32 @@ public class ChatService {
         return chatPairLocks.computeIfAbsent(key, k -> new Object());
     }
 
+    public Chat findExistingChat(String sender, String recipient) {
+        List<ChatParticipant> senderChatsList = participantRepository.findAllByUserUsername(sender);
+        List<ChatParticipant> recipientChatsList = participantRepository.findAllByUserUsername(recipient);
+
+        Set<Long> senderChatsSet = new HashSet<>();
+        for (ChatParticipant participant : senderChatsList) {
+            senderChatsSet.add(participant.getChat().getChatId());
+        }
+        for (ChatParticipant participant : recipientChatsList) {
+            Chat chat = participant.getChat();
+            Long chatId = chat.getChatId();
+            if (senderChatsSet.contains(chatId)) {
+                return chat;
+            }
+        }
+        return null;
+    }
+
     public Chat getOrCreateChat(String sender, String recipient) {
         synchronized (getLockForPair(sender, recipient)) {
-            List<ChatParticipant> senderChatsList = participantRepository.findAllByUserUsername(sender);
-            List<ChatParticipant> recipientChatsList = participantRepository.findAllByUserUsername(recipient);
-
-            Chat chat;
-
-            Set<Long> senderChatsSet = new HashSet<>();
-            for (ChatParticipant participant : senderChatsList)
-                senderChatsSet.add(participant.getChat().getChatId());
-            for (ChatParticipant participant : recipientChatsList) {
-                chat = participant.getChat();
-                Long chatId = chat.getChatId();
-                if (senderChatsSet.contains(chatId)) {
-                    return chat;
-                }
+            Chat existing = findExistingChat(sender, recipient);
+            if (existing != null) {
+                return existing;
             }
-            chat = new Chat();
+
+            Chat chat = new Chat();
             chatRepository.save(chat);
 
             ChatParticipantId participant1 = new ChatParticipantId(sender, chat.getChatId());

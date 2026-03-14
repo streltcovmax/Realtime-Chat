@@ -120,6 +120,13 @@ function removeChatsSelection() {
 }
 
 function hideDOMChattigArea() {
+    const activeChatItems = document.querySelectorAll('.chat-item.active');
+    activeChatItems.forEach(item => {
+        console.log(item);
+        if (item.chatData && item.chatData.hasChat === false) {
+            item.remove();
+        }
+    });
     removeChatsSelection();
     chatArea.classList.add('hidden');
     chatMessagesArea.innerHTML = '';
@@ -175,7 +182,7 @@ async function findAndShowChats() {
     });
 }
 
-function appendChatDataToList(chatData) {
+function appendChatDataToList(chatData, hasExistingChat = true) {
     const listItem = document.createElement('li');
 
     listItem.innerHTML = `<div class="chat-info">
@@ -188,23 +195,30 @@ function appendChatDataToList(chatData) {
                                 <span class="chat-message"> </span>
                             </div>
                             <div class="chat-nums">
-                                <span class="datetime">00:00</span>
-                                <span class="notificationMarker r hidden">0</span>
+                                <span class="datetime"></span>
+                                <span class="notificationMarker r hidden"></span>
                             </div>
                         </div>`
     listItem.classList.add('chat-item');
     updateDOMStatusIndicator(listItem, chatData.status);
-    listItem.chatData = chatData;
+    listItem.chatData = {...chatData, hasChat: hasExistingChat};
     listItem.id = chatData.username;
-    fetch(`/messages/last/${User.username}/${chatData.username}`).then(response => {
-        if (!response.ok) console.error('не удалось получить последнее сообщение чата');
-        else {
+    fetch(`/messages/last/${User.username}/${chatData.username}`)
+        .then(response => {
+            if (!response.ok || response.status === 204) {
+                return null;
+            }
             return response.json();
-        }
-    }).then(messageJson => {
-        listItem.querySelector('.chat-message').textContent = messageJson.content;
-        listItem.querySelector('.datetime').textContent = formatLocalDateTime(messageJson.dateCreated);
-    });
+        })
+        .then(messageJson => {
+            if (!messageJson) {
+                return;
+            }
+            listItem.querySelector('.chat-message').textContent = messageJson.content;
+            listItem.querySelector('.datetime').textContent = formatLocalDateTime(messageJson.dateCreated);
+            listItem.chatData.hasChat = true;
+        })
+        .catch(err => console.error('не удалось получить последнее сообщение чата', err));
     listItem.addEventListener('click', pickTheChat)
     chatsList.appendChild(listItem);
 }
@@ -267,11 +281,10 @@ function updateDOMStatusIndicator(element, status) {
 }
 
 function pickTheChat(event) {
-    //убираем выделение с чатов
-    removeChatsSelection();
     const clickedChatElement = event.currentTarget;
     const clickedChatData = event.currentTarget.chatData;
     if (clickedChatData.username !== selectedChatUser.username) {
+        removeChatsSelection();
         console.log('opening chat with', clickedChatData.username);
         clickedChatElement.classList.add('active');
 
@@ -294,33 +307,6 @@ function pickTheChat(event) {
         hideDOMChattigArea();
     }
 }
-
-// function hideChat(){
-//     console.log("hiding opened chat");
-//     if (event.key === 'Escape') {
-//         if(selectedChatUsername){
-//             const chatElement = document.querySelector(`#${selectedChatUsername}`);
-//             if(chatElement){
-//                 chatElement.classList.remove('active');
-//                 // chatElement.querySelector('.notificationMarker').classList.remove('hidden');
-//             }
-//             messageInput.placeholder = "...";
-//             chatPage.classList.add('narrow');
-//
-//             chat.classList.remove('activated');
-//             setTimeout(() => {
-//                 chat.classList.add('hidden');
-//             }, 500);
-//
-//
-//             selectedUserInfo.textContent = '';
-//             selectedUserInfo.classList.add('hidden');
-//             selectedChatUsername = null;
-//             chatMessagesArea.innerHTML='';
-//             document.removeEventListener('keydown', hideChat);
-//         }
-//     }
-// }
 
 async function displayChatMessages(clickedChatData) {
     messagesPage = 0;
@@ -402,10 +388,16 @@ async function sendMessage(event) {
         emptyChatInfoMessage.classList.add('hidden');
 
         let thisMessageChat = document.querySelector(`#${message.recipientId}`)
-        if (!thisMessageChat) await fetchAndAppendNewUserToList(message.recipientId, true);
-        else updateLastMessageInfo(thisMessageChat, message)
+        if (!thisMessageChat) {
+            await fetchAndAppendNewUserToList(message.recipientId, true);
+            thisMessageChat = document.querySelector(`#${message.recipientId}`);
+        } else {
+            updateLastMessageInfo(thisMessageChat, message)
+        }
+        if (thisMessageChat && thisMessageChat.chatData) {
+            thisMessageChat.chatData.hasChat = true;
+        }
         addMessage(message);
-        scrollToBottom(chatMessagesArea);
     }
 }
 
@@ -463,7 +455,7 @@ async function fetchAndAppendNewUserToList(targetUsername, openChat, message) {
             pendingNewChats.delete(targetUsername);
             return;
         }
-        appendChatDataToList(userJson);
+        appendChatDataToList(userJson, true);
         chat = document.querySelector(`#${targetUsername}`);
         if (!chat) return;
         const msgToShow = pendingMessagesForNewChats.get(targetUsername) || message;
@@ -548,7 +540,7 @@ function displayFoundUsers(payload) {
                 if (existingChat) {
                     existingChat.dispatchEvent(new Event('click', {bubbles: true}));
                 } else {
-                    appendChatDataToList(user);
+                    appendChatDataToList(user, false);
                     const newChat = document.querySelector(`#${user.username}`);
                     if (newChat) {
                         newChat.dispatchEvent(new Event('click', {bubbles: true}));

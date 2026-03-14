@@ -43,7 +43,11 @@ public class ChatController {
     @GetMapping("/messages/all/{username}/{selectedChat}")
     public ResponseEntity<List<Message>> findChatMessages(@PathVariable String username,
                                                           @PathVariable String selectedChat) {
-        Long chatId = chatService.getOrCreateChat(username, selectedChat).getChatId();
+        Chat chat = chatService.findExistingChat(username, selectedChat);
+        if (chat == null) {
+            return ResponseEntity.ok(List.of());
+        }
+        Long chatId = chat.getChatId();
         return ResponseEntity.ok(messageService.findAllByChatId(chatId));
     }
 
@@ -52,8 +56,12 @@ public class ChatController {
                                                               @PathVariable String selectedChat,
                                                               @RequestParam(defaultValue = "0") int page,
                                                               @RequestParam(defaultValue = "5") int size) {
-        Long chatId = chatService.getOrCreateChat(username, selectedChat).getChatId();
-        log.info("LOADING PAGE {} of size {}", page, size);
+        Chat chat = chatService.findExistingChat(username, selectedChat);
+        if (chat == null) {
+            Pageable emptyPageable = PageRequest.of(page, size);
+            return ResponseEntity.ok(Page.empty(emptyPageable));
+        }
+        Long chatId = chat.getChatId();
         Pageable pageable = PageRequest.of(page, size);
         Page<Message> messagePage = messageService.findByChatId(chatId, pageable);
         return ResponseEntity.ok(messagePage);
@@ -62,7 +70,11 @@ public class ChatController {
     @GetMapping("/messages/last/{username}/{selectedChat}")
     public ResponseEntity<Message> findLastMessageByChat(@PathVariable String username,
                                                          @PathVariable String selectedChat) {
-        Long chatId = chatService.getOrCreateChat(username, selectedChat).getChatId();
+        Chat chat = chatService.findExistingChat(username, selectedChat);
+        if (chat == null) {
+            return ResponseEntity.noContent().build();
+        }
+        Long chatId = chat.getChatId();
         Message message = messageService.findTopByChatIdOrderByDateCreatedDesc(chatId);
         return ResponseEntity.ok(message);
     }
