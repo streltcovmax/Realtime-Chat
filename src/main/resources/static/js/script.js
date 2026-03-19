@@ -72,6 +72,7 @@ function setListeners() {
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             hideDOMChattigArea();
+            hideDOMSearchArea();
         }
     });
 }
@@ -107,7 +108,7 @@ function onConnected() {
             setDOMUserData();
             setListeners();
             setSubscriptions();
-            findAndShowChats().then();
+            fetchAndShowChats().then();
         }
     });
 }
@@ -115,6 +116,13 @@ function onConnected() {
 function removeChatsSelection() {
     const activeChatItems = document.querySelectorAll('.chat-item.active');
     activeChatItems.forEach(item => {
+        item.classList.remove('active');
+    });
+}
+
+function removeSearchChatsSelection() {
+    const activeSearchItems = document.querySelectorAll('.search-result-item.active');
+    activeSearchItems.forEach(item => {
         item.classList.remove('active');
     });
 }
@@ -127,15 +135,22 @@ function hideDOMChattigArea() {
             item.remove();
         }
     });
-    removeChatsSelection();
     chatArea.classList.add('hidden');
     chatMessagesArea.innerHTML = '';
     pickChatInfoMessage.classList.remove('hidden');
     emptyChatInfoMessage.classList.add('hidden');
 
+    removeChatsSelection();
+    removeSearchChatsSelection();
     resetSelectedUser();
 
     console.log("hiding chat");
+}
+
+function hideDOMSearchArea() {
+    usersSearchInput.value = '';
+    searchClearBtn.classList.add('hidden');
+    hideSearchResults();
 }
 
 function updateSearchClearButton() {
@@ -169,7 +184,7 @@ function showDOMChattingArea() {
     chatArea.classList.remove('hidden');
 }
 
-async function findAndShowChats() {
+async function fetchAndShowChats() {
     const usersResponse = await fetch('/chats');
     let users = await usersResponse.json();
     console.log("trying to get users from db ", users);
@@ -178,11 +193,11 @@ async function findAndShowChats() {
     chatsList.innerHTML = '';
 
     users.forEach(user => {
-        appendChatDataToList(user);
+        appendChatToList(user);
     });
 }
 
-function appendChatDataToList(chatData, hasExistingChat = true) {
+function appendChatToList(chatData, hasExistingChat = true) {
     const listItem = document.createElement('li');
 
     listItem.innerHTML = `<div class="chat-info">
@@ -223,34 +238,6 @@ function appendChatDataToList(chatData, hasExistingChat = true) {
     chatsList.appendChild(listItem);
 }
 
-// function appendUserToList(user){
-//     const listItem = document.createElement('li');
-//     listItem.classList.add('user-item');
-//     listItem.id = user.username;
-//     listItem.fullname = user.fullname;
-//
-//     if(user.status === "ONLINE") {
-//         listItem.classList.add('online');
-//     }
-//
-//     const nameElement = document.createElement('span');
-//     nameElement.textContent = user.fullname;
-//
-//     const messageMarker = document.createElement('span');
-//     messageMarker.textContent = '0';
-//     messageMarker.classList.add('notificationMarker', 'hidden');
-//
-//     const separator = document.createElement('li');
-//     separator.classList.add('separator');
-//
-//     listItem.appendChild(nameElement);
-//     listItem.appendChild(messageMarker);
-//     listItem.addEventListener('click', pickChat);
-//
-//     chatsList.appendChild(listItem);
-//     chatsList.appendChild(separator);
-// }
-
 function updateUserStatus(payload) {
     const user = JSON.parse(payload.body);
     console.log('received ', user.username);
@@ -283,37 +270,66 @@ function updateDOMStatusIndicator(element, status) {
 function pickTheChat(event) {
     const clickedChatElement = event.currentTarget;
     const clickedChatData = event.currentTarget.chatData;
-    if (clickedChatData.username !== selectedChatUser.username) {
-        removeChatsSelection();
-        console.log('opening chat with', clickedChatData.username);
-        clickedChatElement.classList.add('active');
-
-        selectedChatUser.username = clickedChatData.username;
-        selectedChatUser.fullname = clickedChatData.fullname;
-
-        const notificationMarker = clickedChatElement.querySelector('.notificationMarker');
-        notificationMarker.classList.add('hidden');
-        notificationMarker.textContent = '0';
-
-        selectedUserInfo.querySelector('#chat-header-username').textContent = clickedChatData.username;
-        selectedUserInfo.querySelector('#chat-header-status').textContent = clickedChatData.status.toLowerCase();
-        selectedUserInfo.querySelector('.chat-avatar').textContent = clickedChatData.fullname[0];
-
-        showDOMChattingArea();
-
-        displayChatMessages(clickedChatData).then();
-    } else {
+    if (clickedChatData.username === selectedChatUser.username) {
         console.log('closing chat with', clickedChatData.username);
         hideDOMChattigArea();
+        return;
     }
+
+    console.log('opening chat with', clickedChatData.username);
+
+    setSelectedUser(clickedChatData);
+
+    hideDOMSearchArea();
+
+    const notificationMarker = clickedChatElement.querySelector('.notificationMarker');
+    notificationMarker.classList.add('hidden');
+    notificationMarker.textContent = '0';
+
+    fillDOMChattingAreaHeader(clickedChatData);
+    showDOMChattingArea();
+
+    setOneChatToActive(clickedChatElement);
+
+    displayChatMessages(clickedChatData).then();
+}
+
+function pickNewChat(clickedChatElement) {
+    const clickedChatData = clickedChatElement.chatData;
+    if (clickedChatData.username === selectedChatUser.username) {
+        console.log('closing chat with', clickedChatData.username);
+        hideDOMChattigArea();
+        return;
+    }
+    console.log('opening new chat with', clickedChatData.username);
+
+    setOneChatToActive(clickedChatElement);
+    setSelectedUser(clickedChatData);
+
+    fillDOMChattingAreaHeader(clickedChatData);
+    showDOMChattingArea();
+    resetChatArea();
+
+    showEmptyChatDOMMessage();
+    console.log('no need to fetch messages, new chat...');
+}
+
+function fillDOMChattingAreaHeader(chatData) {
+    selectedUserInfo.querySelector('#chat-header-username').textContent = chatData.username;
+    selectedUserInfo.querySelector('#chat-header-status').textContent = chatData.status.toLowerCase();
+    selectedUserInfo.querySelector('.chat-avatar').textContent = chatData.fullname[0];
 }
 
 async function displayChatMessages(clickedChatData) {
+    resetChatArea();
+    await loadChatMessagesPage(clickedChatData.username, true);
+    scrollToBottom(chatMessagesArea);
+}
+
+function resetChatArea() {
     messagesPage = 0;
     messagesLastPage = false;
     chatMessagesArea.innerHTML = '';
-    await loadChatMessagesPage(clickedChatData.username, true);
-    scrollToBottom(chatMessagesArea);
 }
 
 async function loadChatMessagesPage(chatUsername, reset) {
@@ -337,7 +353,7 @@ async function loadChatMessagesPage(chatUsername, reset) {
 
         if (messages.length === 0) {
             if (reset) {
-                emptyChatInfoMessage.classList.remove('hidden');
+                showEmptyChatDOMMessage();
             }
             messagesLastPage = true;
             return;
@@ -401,6 +417,10 @@ async function sendMessage(event) {
     }
 }
 
+function showEmptyChatDOMMessage() {
+    emptyChatInfoMessage.classList.remove('hidden');
+}
+
 async function onMessageReceived(payload) {
     const message = JSON.parse(payload.body);
     const senderId = message.senderId;
@@ -455,7 +475,7 @@ async function fetchAndAppendNewUserToList(targetUsername, openChat, message) {
             pendingNewChats.delete(targetUsername);
             return;
         }
-        appendChatDataToList(userJson, true);
+        appendChatToList(userJson, true);
         chat = document.querySelector(`#${targetUsername}`);
         if (!chat) return;
         const msgToShow = pendingMessagesForNewChats.get(targetUsername) || message;
@@ -524,33 +544,42 @@ function displayFoundUsers(payload) {
 
     showSearchResults();
 
-    if (foundUsers.length > 0) {
-        searchNoResults.classList.add('hidden');
-        foundUsers.forEach(user => {
-            const userElement = document.createElement('li');
-            userElement.classList.add('search-result-item');
-            userElement.innerHTML = `<span class="chat-avatar r">${user.fullname ? user.fullname[0] : '?'}</span> ${user.fullname || user.username} (@${user.username})`;
-            userElement.chatData = user;
-            foundUsersList.appendChild(userElement);
-            userElement.addEventListener('click', () => {
-                usersSearchInput.value = '';
-                searchClearBtn.classList.add('hidden');
-                hideSearchResults();
-                const existingChat = document.querySelector(`#${user.username}`);
-                if (existingChat) {
-                    existingChat.dispatchEvent(new Event('click', {bubbles: true}));
-                } else {
-                    appendChatDataToList(user, false);
-                    const newChat = document.querySelector(`#${user.username}`);
-                    if (newChat) {
-                        newChat.dispatchEvent(new Event('click', {bubbles: true}));
-                    }
-                }
-            });
-        });
-    } else {
+    searchNoResults.classList.add('hidden');
+    if (foundUsers.length <= 0) {
         searchNoResults.classList.remove('hidden');
     }
+    foundUsers.forEach(user => {
+        const userElement = document.createElement('li');
+        userElement.classList.add('search-result-item');
+        userElement.innerHTML = `<span class="chat-avatar r">${user.fullname ? user.fullname[0] : '?'}</span> ${user.fullname || user.username} (@${user.username})`;
+        userElement.chatData = user;
+        foundUsersList.appendChild(userElement);
+        userElement.addEventListener('click', () => {
+            pickChatFromSearch(userElement, user);
+        });
+    });
+}
+
+function pickChatFromSearch(userElement, user) {
+    setOneSearchChatToActive(userElement);
+    const existingChat = document.querySelector(`#${user.username}`);
+    if (existingChat) {
+        existingChat.dispatchEvent(new Event('click', {bubbles: true}));
+    } else {
+        pickNewChat(userElement);
+    }
+}
+
+function setOneChatToActive(chatToSetActive) {
+    console.log("Setting to active", chatToSetActive);
+    removeChatsSelection();
+    chatToSetActive.classList.add('active')
+}
+
+function setOneSearchChatToActive(chatToSetActive) {
+    console.log("Setting to active", chatToSetActive);
+    removeSearchChatsSelection();
+    chatToSetActive.classList.add('active')
 }
 
 function showCurrentUserProfile() {
@@ -599,6 +628,11 @@ function formatLocalTime(dateTimeString) {
 
 function scrollToBottom(area) {
     area.scrollTop = area.scrollHeight;
+}
+
+function setSelectedUser(selectedChatData) {
+    selectedChatUser.username = selectedChatData.username;
+    selectedChatUser.fullname = selectedChatData.fullname;
 }
 
 function resetSelectedUser() {

@@ -212,7 +212,7 @@ button:active {
 }
 
 #foundUsers .search-result-item:hover {
-    background-color: var(--highlight_dark);
+    background-color: var(--highlight_darkest);
 }
 
 #foundUsers .search-result-item .chat-avatar {
@@ -274,11 +274,15 @@ button:active {
 }
 
 .chat-item:hover {
-     background-color: var(--highlight_darkest);
+    background-color: var(--highlight_darkest);
 }
 
 .chat-item.active {
-    background-color: var(--highlight_dark);
+    background-color: var(--highlight_dark) !important;
+}
+
+.search-result-item.active {
+    background-color: var(--highlight_dark) !important;
 }
 
 .chat-info {
@@ -344,8 +348,6 @@ button:active {
     /* opacity: 50%; */
     font-size: 14px;
 }
-
-
 
 
 #chat-header-info.active {
