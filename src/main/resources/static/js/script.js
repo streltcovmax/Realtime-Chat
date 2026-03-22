@@ -71,7 +71,7 @@ function setListeners() {
     chatMessagesArea.addEventListener('scroll', onMessagesScroll);
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
-            hideDOMChattigArea();
+            hideDOMChatArea();
             hideDOMSearchArea();
         }
     });
@@ -104,7 +104,7 @@ function onConnected() {
     }).then(response => {
         if (!response.ok) console.error('Ошибка сохранения пользователя в БД');
         else {
-            hideDOMChattigArea();
+            hideDOMChatArea();
             setDOMUserData();
             setListeners();
             setSubscriptions();
@@ -127,7 +127,7 @@ function removeSearchChatsSelection() {
     });
 }
 
-function hideDOMChattigArea() {
+function hideDOMChatArea() {
     const activeChatItems = document.querySelectorAll('.chat-item.active');
     activeChatItems.forEach(item => {
         console.log(item);
@@ -198,6 +198,8 @@ async function fetchAndShowChats() {
 }
 
 function appendChatToList(chatData, hasExistingChat = true) {
+    console.log("appending chat to list", chatData)
+
     const listItem = document.createElement('li');
 
     listItem.innerHTML = `<div class="chat-info">
@@ -267,12 +269,25 @@ function updateDOMStatusIndicator(element, status) {
     selectedUserInfo.querySelector('#chat-header-status').textContent = status.toLowerCase();
 }
 
+function hasDOMChatWith(username) {
+    console.log('check if has dom chat');
+    const chatsListElements = chatsList.children;
+    for (let i = 0; i < chatsListElements.length; i++) {
+        if (chatsListElements[i].id === username) {
+            console.log('has');
+            return true;
+        }
+    }
+    console.log('hasnot');
+    return false;
+}
+
 function pickTheChat(event) {
     const clickedChatElement = event.currentTarget;
     const clickedChatData = event.currentTarget.chatData;
-    if (clickedChatData.username === selectedChatUser.username) {
+    if (clickedChatData.username === selectedChatUser.username && hasDOMChatWith(clickedChatData.username)) {
         console.log('closing chat with', clickedChatData.username);
-        hideDOMChattigArea();
+        hideDOMChatArea();
         return;
     }
 
@@ -298,7 +313,7 @@ function pickNewChat(clickedChatElement) {
     const clickedChatData = clickedChatElement.chatData;
     if (clickedChatData.username === selectedChatUser.username) {
         console.log('closing chat with', clickedChatData.username);
-        hideDOMChattigArea();
+        hideDOMChatArea();
         return;
     }
     console.log('opening new chat with', clickedChatData.username);
@@ -400,12 +415,15 @@ async function sendMessage(event) {
         stompClient.send("/app/chat", {}, JSON.stringify(message));
         messageInput.value = '';
 
-        console.log('sent message ', message)
+        console.log('sent message ', message);
         emptyChatInfoMessage.classList.add('hidden');
 
-        let thisMessageChat = document.querySelector(`#${message.recipientId}`)
+        let thisMessageChat = document.querySelector(`#${message.recipientId}`);
+        console.log('trying to find chat with ' + message.recipientId + ' found: ' + thisMessageChat);
         if (!thisMessageChat) {
-            await fetchAndAppendNewUserToList(message.recipientId, true);
+            console.log('appending new chat to list');
+            hideDOMSearchArea();
+            await fetchAndAppendNewUserToList(message.recipientId, message);
             thisMessageChat = document.querySelector(`#${message.recipientId}`);
         } else {
             updateLastMessageInfo(thisMessageChat, message)
@@ -435,12 +453,10 @@ async function onMessageReceived(payload) {
 
         } else {
             addMessage(message);
-            chatMessagesArea.scrollTop = chatMessagesArea.scrollHeight;
-
         }
         updateLastMessageInfo(thisChatInList, message);
     } else {
-        await fetchAndAppendNewUserToList(senderId, false, message);
+        await fetchAndAppendNewUserToList(senderId, message);
     }
 }
 
@@ -451,45 +467,23 @@ function updateLastMessageInfo(chatElement, message) {
     chatElement.querySelector('.datetime').textContent = formatLocalDateTime(message.dateCreated);
 }
 
-async function fetchAndAppendNewUserToList(targetUsername, openChat, message) {
-    if (pendingNewChats.has(targetUsername)) {
-        if (message) pendingMessagesForNewChats.set(targetUsername, message);
-        return;
-    }
+async function fetchAndAppendNewUserToList(targetUsername, message) {
     let chat = document.querySelector(`#${targetUsername}`);
     if (chat) {
         if (message) updateLastMessageInfo(chat, message);
-        if (!openChat) {
-            const notificationMarker = chat.querySelector('.notificationMarker');
-            notificationMarker.classList.remove('hidden');
-            notificationMarker.textContent = '';
-        } else chat.dispatchEvent(new Event('click', {bubbles: true}));
         return;
     }
-    pendingNewChats.add(targetUsername);
-    try {
-        const userResponse = await fetch(`/users/${targetUsername}`);
-        const userJson = await userResponse.json();
-        chat = document.querySelector(`#${targetUsername}`);
-        if (chat) {
-            pendingNewChats.delete(targetUsername);
-            return;
-        }
-        appendChatToList(userJson, true);
-        chat = document.querySelector(`#${targetUsername}`);
-        if (!chat) return;
-        const msgToShow = pendingMessagesForNewChats.get(targetUsername) || message;
-        if (msgToShow) updateLastMessageInfo(chat, msgToShow);
-        pendingMessagesForNewChats.delete(targetUsername);
-        if (openChat) {
-            chat.dispatchEvent(new Event('click', {bubbles: true}));
-        } else {
-            const notificationMarker = chat.querySelector('.notificationMarker');
-            notificationMarker.classList.remove('hidden');
-            notificationMarker.textContent = '';
-        }
-    } finally {
-        pendingNewChats.delete(targetUsername);
+    const userResponse = await fetch(`/users/${targetUsername}`);
+    const userJson = await userResponse.json();
+    appendChatToList(userJson, true);
+    chat = document.querySelector(`#${targetUsername}`);
+    if (!chat) {
+        console.error('error appending new chat to list');
+        return;
+    }
+    updateLastMessageInfo(chat, message);
+    if (selectedChatUser.username === targetUsername) {
+        setOneChatToActive(chat);
     }
 }
 
@@ -521,7 +515,7 @@ function createMessageElement(messageData) {
 function addMessage(messageData) {
     const messageContainer = createMessageElement(messageData);
     chatMessagesArea.appendChild(messageContainer);
-    // scrollToBottom(chatMessagesArea);
+    scrollToBottom(chatMessagesArea);
 }
 
 function usersSearch() {
