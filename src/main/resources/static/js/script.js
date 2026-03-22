@@ -1,6 +1,12 @@
 'use strict';
 
 import { User } from "./user.js";
+import {
+    initNotifications,
+    notifyNewMessage,
+    resetUnreadCount,
+    loadNotificationSettings
+} from "./notifications.js";
 
 // ============================================
 // КОНСТАНТЫ
@@ -116,6 +122,9 @@ function setupUI() {
     DOM.connectedUserFullname.textContent = User.fullname;
     setEventListeners();
     fetchAndShowChats();
+
+    loadNotificationSettings();
+    initNotifications();
 }
 
 function setEventListeners() {
@@ -403,6 +412,8 @@ function onChatItemClick(event) {
     setItemActive(chatElement, '.chat-item.active');
 
     displayChatMessages(chatData);
+
+    resetUnreadCount();
 }
 
 function openNewChat(chatElement) {
@@ -600,12 +611,21 @@ async function onMessageReceived(payload) {
         if (AppState.selectedUser.username !== senderId) {
             const marker = chatElement.querySelector('.notificationMarker');
             marker.classList.remove('hidden');
+
+            const senderName = chatElement.chatData?.fullname || senderId;
+            notifyNewMessage(senderName, message.content, senderName[0]);
         } else {
             addMessage(message);
+
+            resetUnreadCount();
         }
         updateChatPreview(chatElement, message);
     } else {
         await fetchAndAppendNewUser(senderId, message);
+
+        const newChat = document.querySelector(`#${senderId}`);
+        const senderName = newChat?.chatData?.fullname || senderId;
+        notifyNewMessage(senderName, message.content, senderName[0]);
     }
 }
 
