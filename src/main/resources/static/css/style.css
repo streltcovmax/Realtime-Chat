@@ -778,15 +778,19 @@ form#messageForm {
         display: none;
     }
 
-    /* Убираем overlay-сообщения на мобильных */
-    .info-message.overlay {
-        position: static;
-        text-align: center;
-        padding: 20px;
+    #pick-chat-message {
+        display: none !important;
     }
 
-    #pick-chat-message {
-        display: none;
+    #empty-chat-message {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        text-align: center;
+        background-color: var(--back_dark);
+        padding: 12px 20px;
     }
 
     /* Кнопка "назад" для мобильных — будет добавлена в JS */
