@@ -30,7 +30,6 @@
 
 <div class="chats" id="chat-page">
     <div class="chats-panel br-r">
-        <!-- <button onclick="showUsersSearch();">создать новый чат</button> -->
         <div class="search-input-wrapper">
             <input autocomplete="off" type="text" id="searchUsername" name="search" placeholder="поиск" class="r">
             <button type="button" id="search-clear-btn" class="search-clear-btn hidden" title="Очистить">×</button>
@@ -42,155 +41,23 @@
         </div>
         <div id="chats-list-container" class="chats-list-container">
             <ul id="chats-list">
-                <li class="chat-item active">
-                    <div class="chat-info">
-                        <div class="chat-avatar r">.</div>
-                        <div class="chat-text">
-                            <span class="chat-name">user1</span>
-                            <span class="chat-message"> some txt mesage</span>
-                        </div>
-                        <div class="chat-nums">
-                            <span class="datetime">23:01</span>
-                        </div>
-                </li>
-                <li class="chat-item ">
-                    <div class="chat-info">
-                        <div class="chat-avatar r">1</div>
-                        <div class="chat-text">
-                            <span class="chat-name">user1</span>
-                            <span class="chat-message"> some txt mesage</span>
-                        </div>
-                        <div class="chat-nums">
-                            <span class="datetime">23:01</span>
-                        </div>
-                </li>
-                <li class="chat-item ">
-                    <div class="chat-info">
-                        <div class="chat-avatar r">1</div>
-                        <div class="chat-text">
-                            <span class="chat-name">user1</span>
-                            <span class="chat-message"> some txt mesage</span>
-                        </div>
-                        <div class="chat-nums">
-                            <span class="datetime">23:01</span>
-                        </div>
-                </li>
-                <li class="chat-item">
-                    <div class="chat-info">
-                        <div class="chat-avatar r">1</div>
-                        <div class="chat-text">
-                            <span class="chat-name">user1</span>
-                            <span class="chat-message"> some txt mesage</span>
-                        </div>
-                        <div class="chat-nums">
-                            <span class="datetime">23:01</span>
-                            <span class="notificationMarker r">8</span>
-                        </div>
-                </li>
-                <li class="chat-item">
-                    <div class="chat-info">
-                        <div class="chat-avatar r">1</div>
-                        <div class="chat-text">
-                            <span class="chat-name">user1</span>
-                            <span class="chat-message"> some txt mesage</span>
-                        </div>
-                        <div class="chat-nums">
-                            <span class="datetime">23:01</span>
-                            <span class="notificationMarker r">8</span>
-                        </div>
-                </li>
-                <li class="chat-item ">
-                    <div class="chat-info">
-                        <div class="chat-avatar r">1</div>
-                        <div class="chat-text">
-                            <span class="chat-name">user1</span>
-                            <span class="chat-message"> some txt mesage</span>
-                        </div>
-                        <div class="chat-nums">
-                            <span class="datetime">23:01</span>
-                        </div>
-                </li>
-                <li class="chat-item ">
-                    <div class="chat-info">
-                        <div class="chat-avatar r">1</div>
-                        <div class="chat-text">
-                            <span class="chat-name">user1</span>
-                            <span class="chat-message"> some txt mesage</span>
-                        </div>
-                        <div class="chat-nums">
-                            <span class="datetime">23:01</span>
-                        </div>
-                </li>
-                <li class="chat-item">
-                    <div class="chat-info">
-                        <div class="chat-avatar r">1</div>
-                        <div class="chat-text">
-                            <span class="chat-name">user1</span>
-                            <span class="chat-message"> some txt mesage</span>
-                        </div>
-                        <div class="chat-nums">
-                            <span class="datetime">23:01</span>
-                            <span class="notificationMarker r">8</span>
-                        </div>
-                </li>
-                <li class="chat-item">
-                    <div class="chat-info">
-                        <div class="chat-avatar r">1</div>
-                        <div class="chat-text">
-                            <span class="chat-name">user1</span>
-                            <span class="chat-message"> some txt mesage</span>
-                        </div>
-                        <div class="chat-nums">
-                            <span class="datetime">23:01</span>
-                            <span class="notificationMarker r">8</span>
-                        </div>
-
-                </li>
-                <li class="chat-item ">
-                    <div class="chat-info">
-                        <div class="chat-avatar r">1</div>
-                        <div class="chat-text">
-                            <span class="chat-name">user1</span>
-                            <span class="chat-message"> some txt mesage</span>
-                        </div>
-                        <div class="chat-nums">
-                            <span class="datetime">23:01</span>
-                        </div>
-                </li>
             </ul>
         </div>
         <div>
-            <p id="connected-user-fullname">USERNAME VALUE</p>
+            <p id="connected-user-fullname"></p>
         </div>
     </div>
 
-    <!--    <div class="chat-area-wrap">-->
     <div class="chat-area-wrap">
-        <div class="chat-area" id="chat-area">
+        <div class="chat-area hidden" id="chat-area">
             <div class="br-b" id="chat-header-info">
-                <div class="chat-avatar r" id="selected-chat-avatar">B</div>
+                <div class="chat-avatar r" id="selected-chat-avatar"></div>
                 <div>
-                    <p id="chat-header-username">user1</p>
-                    <span id="chat-header-status">last seen 3 years ago</span>
+                    <p id="chat-header-username"></p>
+                    <span id="chat-header-status"></span>
                 </div>
             </div>
             <div id="chat-messages" class="r">
-                <div class="message">
-                    <div class="chat-avatar gr-g r">A</div>
-                    <span class="message-content sender r">mesag</span>
-                </div>
-                <div class="message">
-                    <div class="chat-avatar gr-r r">B</div>
-                    <span class="message-content receiver r">response</span>
-                </div>
-                <div class="message">
-                    <div class="chat-avatar gr-g r">A</div>
-                    <span class="message-content sender r">mesag</span>
-                </div>
-                <div class="message">
-                    <div class="chat-avatar gr-r r">B</div>
-                    <span class="message-content receiver r">response</span>
-                </div>
             </div>
             <form id="messageForm" name="messageForm" class="br-t">
                 <div class="message-input">
