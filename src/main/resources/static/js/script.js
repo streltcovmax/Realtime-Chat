@@ -9,6 +9,7 @@ import { User } from "./user.js";
 const MESSAGES_PAGE_SIZE = 50;
 const SCROLL_THRESHOLD_PX = 250;
 const MIN_SEARCH_LENGTH = 2;
+const MOBILE_BREAKPOINT = 600;
 
 // ============================================
 // DOM ЭЛЕМЕНТЫ (сгруппированы по назначению)
@@ -118,6 +119,7 @@ function setupUI() {
 }
 
 function setEventListeners() {
+    window.addEventListener('resize', onWindowResize);
     // Кнопки
     document.querySelector('#this-profile-button').addEventListener('click', showCurrentUserProfile);
     document.querySelector('#logout-button').addEventListener('click', onLogout);
@@ -173,11 +175,17 @@ function hideChatArea() {
     clearSelection('.chat-item.active');
     clearSelection('.search-result-item.active');
     resetSelectedUser();
+
+    document.body.classList.remove('mobile-chat-open');
 }
 
 function showChatArea() {
     DOM.pickChatInfoMessage.classList.add('hidden');
     DOM.chatArea.classList.remove('hidden');
+
+    if (isMobile()) {
+        document.body.classList.add('mobile-chat-open');
+    }
 }
 
 function showEmptyChatMessage() {
@@ -423,6 +431,24 @@ function hasChatWith(username) {
 
 function fillChatHeader(chatData) {
     const header = DOM.chatHeaderInfo;
+
+    // Удаляем старую кнопку "назад" если есть
+    const oldBackBtn = header.querySelector('.mobile-back-btn');
+    if (oldBackBtn) oldBackBtn.remove();
+
+    // Добавляем кнопку "назад" на мобильных
+    if (isMobile()) {
+        const backBtn = document.createElement('button');
+        backBtn.className = 'mobile-back-btn';
+        backBtn.innerHTML = '←';
+        backBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            hideChatArea();
+        });
+        header.insertBefore(backBtn, header.firstChild);
+    }
+    // === КОНЕЦ БЛОКА ===
+
     header.querySelector('#chat-header-username').textContent = chatData.username;
     header.querySelector('#chat-header-status').textContent = chatData.status.toLowerCase();
     header.querySelector('.chat-avatar').textContent = chatData.fullname[0];
@@ -651,6 +677,10 @@ function scrollToBottom(element) {
     element.scrollTop = element.scrollHeight;
 }
 
+function isMobile() {
+    return window.innerWidth <= MOBILE_BREAKPOINT;
+}
+
 // ============================================
 // ФОРМАТИРОВАНИЕ
 // ============================================
@@ -683,6 +713,34 @@ function showCurrentUserProfile() {
 function onLogout() {
     User.status = 'OFFLINE';
     window.location.replace('logout');
+}
+
+function onWindowResize() {
+    // Если перешли с мобильного на десктоп — убираем класс
+    if (!isMobile()) {
+        document.body.classList.remove('mobile-chat-open');
+
+        // Убираем кнопку "назад" если она есть
+        const backBtn = DOM.chatHeaderInfo.querySelector('.mobile-back-btn');
+        if (backBtn) backBtn.remove();
+    } else {
+        // Если чат открыт и перешли на мобильный — добавляем класс
+        if (!DOM.chatArea.classList.contains('hidden')) {
+            document.body.classList.add('mobile-chat-open');
+
+            // Добавляем кнопку "назад" если её нет
+            if (!DOM.chatHeaderInfo.querySelector('.mobile-back-btn')) {
+                const backBtn = document.createElement('button');
+                backBtn.className = 'mobile-back-btn';
+                backBtn.innerHTML = '←';
+                backBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    hideChatArea();
+                });
+                DOM.chatHeaderInfo.insertBefore(backBtn, DOM.chatHeaderInfo.firstChild);
+            }
+        }
+    }
 }
 
 // ============================================
