@@ -1,0 +1,17 @@
+package com.mkstr.chat.dto;
+
+import jakarta.persistence.Embeddable;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.io.Serializable;
+
+@Embeddable
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class ChatParticipantId implements Serializable {
+    private String userId;
+    private Long chatId;
+}

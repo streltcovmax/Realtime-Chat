@@ -3,36 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" media="all" href="/static/css/style.css" />
+    <link rel="stylesheet" type="text/css" media="all" href="/static/css/style.css"/>
     <!-- <link rel="stylesheet" type="text/css" media="all" href="/static/css/new_style.css" /> -->
-<!--    <link rel="stylesheet" type="text/css" media="all" href="/static/css/common.css" />-->
+    <!--    <link rel="stylesheet" type="text/css" media="all" href="/static/css/common.css" />-->
     <!--    <link href='https://fonts.googleapis.com/css?family=Raleway' rel='stylesheet'>-->
     <link rel="icon" type="image/x-icon" href="/static/images/icon_colored.ico">
     <title>CHAT</title>
 </head>
 <body>
 
-<div class="login r" id="login-page">
+<div class="login r hidden" id="login-page">
     <h2>ВОЙТИ</h2>
     <form id="login-form">
         <div class="inputContainer">
-            <input autocomplete="off" type="text" id="fullname-input" name="fullname" placeholder="имя" title="введите имя" class="r animated" required>
+            <input autocomplete="off" type="text" id="fullname-input" name="fullname" placeholder="имя"
+                   title="введите имя" class="r animated" required>
         </div>
         <div class="inputContainer">
-            <input autocomplete="off" type="text" id="username-input" name="username" placeholder="никнейм" title="введите никнейм" class="r animated" required>
+            <input autocomplete="off" type="text" id="username-input" name="username" placeholder="никнейм"
+                   title="введите никнейм" class="r animated" required>
         </div>
 
         <button class="r" id="login-button-submit">далее</button>
     </form>
 </div>
 
-<div class="chats hidden" id="chat-page">
-
-
+<div class="chats" id="chat-page">
     <div class="chats-panel br-r">
         <!-- <button onclick="showUsersSearch();">создать новый чат</button> -->
-        <input autocomplete="off" type="text" id="search" name="search" placeholder="поиск" class="r">
-        <div class="chats-list-container ">
+        <div class="search-input-wrapper">
+            <input autocomplete="off" type="text" id="searchUsername" name="search" placeholder="поиск" class="r">
+            <button type="button" id="search-clear-btn" class="search-clear-btn hidden" title="Очистить">×</button>
+        </div>
+        <div id="search-results-container" class="search-results-container hidden">
+            <p class="search-results-label">Найдено:</p>
+            <p id="search-no-results" class="search-no-results hidden">Ничего не найдено</p>
+            <ul id="foundUsers"></ul>
+        </div>
+        <div id="chats-list-container" class="chats-list-container">
             <ul id="chats-list">
                 <li class="chat-item active">
                     <div class="chat-info">
@@ -42,7 +50,7 @@
                             <span class="chat-message"> some txt mesage</span>
                         </div>
                         <div class="chat-nums">
-                            <span class="time">23:01</span>
+                            <span class="datetime">23:01</span>
                         </div>
                 </li>
                 <li class="chat-item ">
@@ -53,7 +61,7 @@
                             <span class="chat-message"> some txt mesage</span>
                         </div>
                         <div class="chat-nums">
-                            <span class="time">23:01</span>
+                            <span class="datetime">23:01</span>
                         </div>
                 </li>
                 <li class="chat-item ">
@@ -64,7 +72,7 @@
                             <span class="chat-message"> some txt mesage</span>
                         </div>
                         <div class="chat-nums">
-                            <span class="time">23:01</span>
+                            <span class="datetime">23:01</span>
                         </div>
                 </li>
                 <li class="chat-item">
@@ -75,7 +83,7 @@
                             <span class="chat-message"> some txt mesage</span>
                         </div>
                         <div class="chat-nums">
-                            <span class="time">23:01</span>
+                            <span class="datetime">23:01</span>
                             <span class="notificationMarker r">8</span>
                         </div>
                 </li>
@@ -87,7 +95,7 @@
                             <span class="chat-message"> some txt mesage</span>
                         </div>
                         <div class="chat-nums">
-                            <span class="time">23:01</span>
+                            <span class="datetime">23:01</span>
                             <span class="notificationMarker r">8</span>
                         </div>
                 </li>
@@ -99,7 +107,7 @@
                             <span class="chat-message"> some txt mesage</span>
                         </div>
                         <div class="chat-nums">
-                            <span class="time">23:01</span>
+                            <span class="datetime">23:01</span>
                         </div>
                 </li>
                 <li class="chat-item ">
@@ -110,7 +118,7 @@
                             <span class="chat-message"> some txt mesage</span>
                         </div>
                         <div class="chat-nums">
-                            <span class="time">23:01</span>
+                            <span class="datetime">23:01</span>
                         </div>
                 </li>
                 <li class="chat-item">
@@ -121,7 +129,7 @@
                             <span class="chat-message"> some txt mesage</span>
                         </div>
                         <div class="chat-nums">
-                            <span class="time">23:01</span>
+                            <span class="datetime">23:01</span>
                             <span class="notificationMarker r">8</span>
                         </div>
                 </li>
@@ -133,7 +141,7 @@
                             <span class="chat-message"> some txt mesage</span>
                         </div>
                         <div class="chat-nums">
-                            <span class="time">23:01</span>
+                            <span class="datetime">23:01</span>
                             <span class="notificationMarker r">8</span>
                         </div>
 
@@ -146,24 +154,27 @@
                             <span class="chat-message"> some txt mesage</span>
                         </div>
                         <div class="chat-nums">
-                            <span class="time">23:01</span>
+                            <span class="datetime">23:01</span>
                         </div>
                 </li>
             </ul>
         </div>
-        <!-- <div>
-            <p id="connected-user-firstName"></p>
-            <a class="logout" href="javascript:void(0)" id="logout">выйти</a>
-        </div> -->
+        <div>
+            <p id="connected-user-fullname">USERNAME VALUE</p>
+        </div>
     </div>
 
+    <!--    <div class="chat-area-wrap">-->
     <div class="chat-area-wrap">
         <div class="chat-area" id="chat-area">
-            <div class="br-b" id="chat-userInfo" >
-                <p>user1</p>
-                <span>last seen 3 years ago</span>
+            <div class="br-b" id="chat-header-info">
+                <div class="chat-avatar r" id="selected-chat-avatar">B</div>
+                <div>
+                    <p id="chat-header-username">user1</p>
+                    <span id="chat-header-status">last seen 3 years ago</span>
+                </div>
             </div>
-            <div id="chat-messages">
+            <div id="chat-messages" class="r">
                 <div class="message">
                     <div class="chat-avatar gr-g r">A</div>
                     <span class="message-content sender r">mesag</span>
@@ -183,30 +194,25 @@
             </div>
             <form id="messageForm" name="messageForm" class="br-t">
                 <div class="message-input">
-                    <input autocomplete="off" type="text" id="messageInput" placeholder="введите сообщение..." class="r">
-                    <button class="r">></button>
+                    <input autocomplete="off" type="text" id="messageInput" placeholder="введите сообщение..."
+                           class="r">
+                    <button class="r" id="send-message-button">></button>
                 </div>
             </form>
         </div>
-        <div class="info-message r" id="pick-chat-message"> выберите чат! </div>
+        <div class="info-message r overlay" id="pick-chat-message"> выберите чат!</div>
+        <div class="info-message r overlay hidden" id="empty-chat-message"> здесь пока пусто...</div>
     </div>
 
 
     <div class="sidepanel br-l">
-        <p id="logout-button">logout</p>
-        <p id="connected-user-firstName"></p>
+        <button id="this-profile-button" class="r" type="button">профиль</button>
+        <button id="logout-button" class="r">выйти</button>
     </div>
 </div>
 
 <div class="user-form hidden" id="search-page">
     <h2>Найти пользователей</h2>
-    <form id="searchUserForm">
-        <label for="username">Никнейм:</label>
-        <input autocomplete="off" type="text" id="searchUsername" name="username">
-    </form>
-    <h2>Найдено:</h2>
-    <ul id="foundUsers">
-    </ul>
 </div>
 
 
@@ -214,7 +220,8 @@
 <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js" integrity="sha512-iKDtgDyTHjAitUDdLljGhenhPwrbBfqTKWO1mkhSFH3A7blITC9MhYon6SjnMhp4o0rADGw9yAC6EW4t5a4K3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>-->
 <script src="/static/js/lib/sockjs.min.js"></script>
 <script src="/static/js/lib/stomp.min.js"></script>
-<script src="/static/js/script.js"></script>
+<script type="module" src="/static/js/user.js"></script>
+<script type="module" src="/static/js/script.js"></script>
 </body>
 </html>
 

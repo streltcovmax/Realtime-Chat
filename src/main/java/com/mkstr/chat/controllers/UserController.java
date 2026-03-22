@@ -1,8 +1,8 @@
 package com.mkstr.chat.controllers;
 
-import com.mkstr.chat.data.User;
-import com.mkstr.chat.services.ChatService;
-import com.mkstr.chat.services.UserService;
+import com.mkstr.chat.model.User;
+import com.mkstr.chat.service.ChatService;
+import com.mkstr.chat.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -10,14 +10,12 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
 @Slf4j
 public class UserController {
@@ -25,29 +23,28 @@ public class UserController {
     private final UserService userService;
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
-    private String username;
+    private final CurrentUserProvider currentUserProvider;
 
+    @GetMapping("/user.getCurrent")
+    public User getCurrentUser() {
+        return currentUserProvider.getCurrentUser();
+    }
 
-    @MessageMapping("/user.addUser")
-    @SendTo("/user/public/")
-    public User addUser(
-            @Payload User user,
-            StompHeaderAccessor headerAccessor
-    ){
-        username = user.getUsername();
-        headerAccessor.getSessionAttributes().put("username", username);
-        log.info("___Added this in WS session" + user);
+    @PostMapping("/user.addUser")
+    @ResponseBody
+    public User addUser(@RequestBody User user) {
+        log.info("User connected: {}", user);
         userService.save(user);
+        messagingTemplate.convertAndSend("/user/public/", user);
         return user;
-
     }
 
     @MessageMapping("/user.disconnectUser")
     @SendTo("/user/public/")
     public User disconnectUser(
             @Payload User user
-    ){
-        log.info("___Disconnected {}", user);
+    ) {
+        log.info("disconnected {}", user);
         userService.disconnect(user.getUsername());
         return user;
     }
@@ -55,23 +52,32 @@ public class UserController {
     @MessageMapping("/user.findUsers")
     public void findUsers(
             @Payload String targetUsername,
-            StompHeaderAccessor headerAccessor
-    ){
-        String username = (String) headerAccessor.getSessionAttributes().get("username");
-        log.info(targetUsername);
-        log.info(username);
+            Principal principal
+    ) {
+        if (principal == null) {
+            log.warn("findUsers called without authenticated principal");
+            return;
+        }
+        String currentUsername = principal.getName();
         List<User> foundUsers = userService.findAllByUsername(targetUsername);
-        messagingTemplate.convertAndSend("/user/" + username + "/usersSearch", foundUsers);
+
+        log.info("Found users {}", foundUsers);
+        log.info("Request came from {}", currentUsername);
+
+        messagingTemplate.convertAndSend("/user/" + currentUsername + "/usersSearch", foundUsers);
     }
 
     @GetMapping("/chats")
-    public ResponseEntity<List<User>> getContacts(){
-        log.info(username + " " + chatService.findContacts(username).toString());
-        return ResponseEntity.ok(chatService.findContacts(username));
+    public ResponseEntity<List<User>> getChats() {
+        List<User> chats = chatService.findChatsByUsername(currentUserProvider.getCurrentUser().getUsername());
+        return ResponseEntity.ok(chats);
     }
 
     @GetMapping("/users/{targetUsername}")
-    public ResponseEntity<User> getUser(@PathVariable String targetUsername){
+    public ResponseEntity<User> getUser(@PathVariable String targetUsername) {
         return ResponseEntity.ok(userService.findByUsername(targetUsername));
     }
 }
+
+//TODO: профили юзеров
+//TODO: ПОТОМ шаблон предзагрузки на фронте

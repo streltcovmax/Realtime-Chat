@@ -1,0 +1,18 @@
+package com.mkstr.chat.model;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Data;
+
+@Data
+@Entity
+@Table(name = "chats")
+public class Chat {
+    @Id
+    @GeneratedValue
+    private Long chatId;
+    private String lastMessage;
+    private String name;
+}
