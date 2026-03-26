@@ -20,4 +20,5 @@ public class Message {
     private String recipientId;
     private Long chatId;
     private Date dateCreated;
+    private Boolean read;
 }
