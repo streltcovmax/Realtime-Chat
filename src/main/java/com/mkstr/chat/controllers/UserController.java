@@ -80,4 +80,3 @@ public class UserController {
 }
 
 //TODO: профили юзеров
-//TODO: ПОТОМ шаблон предзагрузки на фронте

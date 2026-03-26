@@ -52,10 +52,10 @@ public class ChatController {
     }
 
     @GetMapping("/messages/page/{username}/{selectedChat}")
-    public ResponseEntity<Page<Message>> findChatMessagesPage(@PathVariable String username,
-                                                              @PathVariable String selectedChat,
-                                                              @RequestParam(defaultValue = "0") int page,
-                                                              @RequestParam(defaultValue = "5") int size) {
+    public ResponseEntity<Page<Message>> findAndReadChatMessagesPage(@PathVariable String username,
+                                                                     @PathVariable String selectedChat,
+                                                                     @RequestParam(defaultValue = "0") int page,
+                                                                     @RequestParam(defaultValue = "5") int size) {
         Chat chat = chatService.findExistingChat(username, selectedChat);
         if (chat == null) {
             Pageable emptyPageable = PageRequest.of(page, size);
@@ -64,6 +64,7 @@ public class ChatController {
         Long chatId = chat.getChatId();
         Pageable pageable = PageRequest.of(page, size);
         Page<Message> messagePage = messageService.findByChatId(chatId, pageable);
+        messageService.readPage(messagePage);
         return ResponseEntity.ok(messagePage);
     }
 
@@ -77,5 +78,17 @@ public class ChatController {
         Long chatId = chat.getChatId();
         Message message = messageService.findTopByChatIdOrderByDateCreatedDesc(chatId);
         return ResponseEntity.ok(message);
+    }
+
+    @GetMapping("/messages/{username}/{selectedChat}/count-unread")
+    public ResponseEntity<Integer> getUnreadMessagesCount(@PathVariable String username,
+                                                          @PathVariable String selectedChat) {
+        Chat chat = chatService.findExistingChat(username, selectedChat);
+        if (chat == null) {
+            return ResponseEntity.noContent().build();
+        }
+        Long chatId = chat.getChatId();
+        Integer count = messageService.countByChatIdAndRecipientIdAndReadIsFalse(chatId, username);
+        return ResponseEntity.ok(count);
     }
 }
