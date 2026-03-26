@@ -1,12 +1,7 @@
 'use strict';
 
-import { User } from "./user.js";
-import {
-    initNotifications,
-    notifyNewMessage,
-    resetUnreadCount,
-    loadNotificationSettings
-} from "./notifications.js";
+import {User} from "./user.js";
+import {initNotifications, loadNotificationSettings, notifyNewMessage, resetUnreadCount} from "./notifications.js";
 
 // ============================================
 // КОНСТАНТЫ
@@ -102,7 +97,7 @@ function onConnected() {
 function registerUser() {
     fetch('/user.addUser', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
             username: User.username,
             fullname: User.fullname,
@@ -281,7 +276,7 @@ function onSearchResultClick(element, user) {
 
     const existingChat = document.querySelector(`#${user.username}`);
     if (existingChat) {
-        existingChat.dispatchEvent(new Event('click', { bubbles: true }));
+        existingChat.dispatchEvent(new Event('click', {bubbles: true}));
     } else {
         openNewChat(element);
     }
@@ -399,7 +394,7 @@ async function fetchAndAppendNewUser(targetUsername, message) {
 
 function updateChatPreview(chatElement, message) {
     chatElement.querySelector('.chat-message').textContent = message.content;
-    chatElement.querySelector('.datetime').textContent = formatDateTime(message.dateCreated);
+    chatElement.querySelector('.datetime').textContent = formatDateTimeForChat(message.dateCreated);
 }
 
 function updateChatNotificationMarker(chatElement, count) {
@@ -732,14 +727,25 @@ function isMobile() {
 // ФОРМАТИРОВАНИЕ
 // ============================================
 
-function formatDateTime(dateTimeString) {
+function formatDateTimeForChat(dateTimeString) {
     const date = new Date(dateTimeString);
     const pad = num => String(num).padStart(2, '0');
 
     const time = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
     const dateStr = `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${String(date.getFullYear()).slice(-2)}`;
 
-    return `${time} ${dateStr}`;
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === now.toDateString()) {
+        return time;
+    }
+    if (date.toDateString() === yesterday.toDateString()) {
+        return 'вчера';
+    }
+
+    return `${dateStr}`;
 }
 
 function formatTime(dateTimeString) {
