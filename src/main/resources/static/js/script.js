@@ -306,21 +306,21 @@ async function fetchAndShowChats() {
     }
 }
 
-function appendChatToList(chatData, hasExistingChat = true) {
+function appendChatToList(chatData) {
     const listItem = document.createElement('li');
     listItem.classList.add('chat-item');
     listItem.id = chatData.username;
-    listItem.chatData = { ...chatData, hasChat: hasExistingChat };
+    listItem.chatData = {...chatData};
 
     listItem.innerHTML = `
-        <div class="chat-info">
+          <div class="chat-info">
             <div class="chat-avatar r">${chatData.fullname[0]}
                 <span class="online-indicator hidden"></span>
             </div>
         </div>
         <div class="chat-text">
             <span class="chat-name">${chatData.fullname}</span>
-            <span class="chat-message"> </span>
+            <span class="chat-message"></span>
         </div>
         <div class="chat-nums">
             <span class="datetime"></span>
@@ -332,8 +332,8 @@ function appendChatToList(chatData, hasExistingChat = true) {
     listItem.addEventListener('click', onChatItemClick);
     DOM.chatsList.appendChild(listItem);
 
-    // Загружаем последнее сообщение асинхронно
     loadLastMessage(listItem, chatData.username);
+    loadUnreadMessagesCount(listItem, chatData.username)
 }
 
 async function loadLastMessage(chatElement, targetUsername) {
@@ -344,12 +344,29 @@ async function loadLastMessage(chatElement, targetUsername) {
         const message = await response.json();
         if (message) {
             updateChatPreview(chatElement, message);
-            chatElement.chatData.hasChat = true;
         }
     } catch (error) {
         console.error('Не удалось получить последнее сообщение:', error);
     }
 }
+
+async function loadUnreadMessagesCount(chatElement, targetUsername) {
+    try {
+        const response = await fetch(`/messages/${User.username}/${targetUsername}/count-unread`);
+        if (!response.ok || response.status === 204) return;
+
+        const count = await response.json();
+
+        console.log("loading unread messages count from " + targetUsername, " found " + count);
+
+        if (count !== null) {
+            updateChatNotificationMarker(chatElement, count);
+        }
+    } catch (error) {
+        console.error('Не удалось посчитать непрочитанные сообщения:', error);
+    }
+}
+
 
 async function fetchAndAppendNewUser(targetUsername, message) {
     let chatElement = document.querySelector(`#${targetUsername}`);
@@ -385,6 +402,17 @@ function updateChatPreview(chatElement, message) {
     chatElement.querySelector('.datetime').textContent = formatDateTime(message.dateCreated);
 }
 
+function updateChatNotificationMarker(chatElement, count) {
+    const notificationMarker = chatElement.querySelector('.notificationMarker');
+    if (count === 0) {
+        notificationMarker.classList.add('hidden');
+        notificationMarker.textContent = '';
+        return;
+    }
+    notificationMarker.classList.remove('hidden');
+    notificationMarker.textContent = count;
+}
+
 // ============================================
 // ВЫБОР ЧАТА
 // ============================================
@@ -402,18 +430,16 @@ function onChatItemClick(event) {
     setSelectedUser(chatData);
     hideSearchArea();
 
-    // Скрываем маркер уведомлений
-    const notificationMarker = chatElement.querySelector('.notificationMarker');
-    notificationMarker.classList.add('hidden');
-    notificationMarker.textContent = '0';
-
     fillChatHeader(chatData);
     showChatArea();
     setItemActive(chatElement, '.chat-item.active');
 
-    displayChatMessages(chatData);
-
-    resetUnreadCount();
+    displayChatMessages(chatData).then(() => {
+            const notificationMarker = chatElement.querySelector('.notificationMarker');
+            if (notificationMarker.textContent !== 0 && notificationMarker.textContent !== '')
+                loadUnreadMessagesCount(chatElement, AppState.selectedUser.username);
+        }
+    );
 }
 
 function openNewChat(chatElement) {
@@ -483,7 +509,7 @@ function resetMessagesState() {
 }
 
 async function loadChatMessagesPage(chatUsername, isReset) {
-    const { pagination } = AppState;
+    const {pagination} = AppState;
 
     if (pagination.isLoading || !chatUsername) return;
 
@@ -568,7 +594,7 @@ async function sendMessage(event) {
     event.preventDefault();
 
     const content = DOM.messageInput.value.trim();
-    const { selectedUser, stompClient } = AppState;
+    const {selectedUser, stompClient} = AppState;
 
     if (!content || !stompClient || !selectedUser.username) return;
 
@@ -609,8 +635,9 @@ async function onMessageReceived(payload) {
     if (chatElement) {
         // Если это не активный чат — показываем уведомление
         if (AppState.selectedUser.username !== senderId) {
-            const marker = chatElement.querySelector('.notificationMarker');
-            marker.classList.remove('hidden');
+            const markerTextContent = chatElement.querySelector('.notificationMarker').textContent;
+            const unreadMessagesCount = !markerTextContent ? 0 : parseInt(markerTextContent);
+            updateChatNotificationMarker(chatElement, unreadMessagesCount + 1)
 
             const senderName = chatElement.chatData?.fullname || senderId;
             notifyNewMessage(senderName, message.content, senderName[0]);
@@ -630,9 +657,9 @@ async function onMessageReceived(payload) {
 }
 
 function onMessagesScroll() {
-    const { scrollTop } = DOM.chatMessagesArea;
-    const { isLoading, isLastPage } = AppState.pagination;
-    const { username } = AppState.selectedUser;
+    const {scrollTop} = DOM.chatMessagesArea;
+    const {isLoading, isLastPage} = AppState.pagination;
+    const {username} = AppState.selectedUser;
 
     if (scrollTop <= SCROLL_THRESHOLD_PX && !isLoading && !isLastPage && username) {
         loadChatMessagesPage(username, false);
@@ -675,7 +702,7 @@ function setSelectedUser(chatData) {
 }
 
 function resetSelectedUser() {
-    AppState.selectedUser = { username: null, fullname: null };
+    AppState.selectedUser = {username: null, fullname: null};
 }
 
 // ============================================

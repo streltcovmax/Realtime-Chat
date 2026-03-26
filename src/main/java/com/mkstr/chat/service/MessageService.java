@@ -29,4 +29,13 @@ public class MessageService {
     public Page<Message> findByChatId(Long chatId, Pageable pageable) {
         return messageRepository.findByChatIdOrderByDateCreatedDesc(chatId, pageable);
     }
+
+    public Integer countByChatIdAndRecipientIdAndReadIsFalse(Long chatId, String recipientId) {
+        return messageRepository.countByChatIdAndRecipientIdAndReadIsFalse(chatId, recipientId);
+    }
+
+    public void readPage(Page<Message> messages) {
+        messages.forEach(message -> message.setRead(true));
+        messageRepository.saveAll(messages);
+    }
 }

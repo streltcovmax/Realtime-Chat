@@ -13,4 +13,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     Message findTopByChatIdOrderByDateCreatedDesc(Long chatId);
 
     Page<Message> findByChatIdOrderByDateCreatedDesc(Long chatId, Pageable pageable);
+
+    Integer countByChatIdAndRecipientIdAndReadIsFalse(Long chatId, String recipientId);
 }
