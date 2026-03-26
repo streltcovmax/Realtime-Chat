@@ -597,7 +597,8 @@ async function sendMessage(event) {
         senderId: User.username,
         recipientId: selectedUser.username,
         content,
-        dateCreated: new Date()
+        dateCreated: new Date(),
+        read: false
     };
 
     stompClient.send("/app/chat", {}, JSON.stringify(message));
