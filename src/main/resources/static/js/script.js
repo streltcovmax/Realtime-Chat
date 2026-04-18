@@ -52,6 +52,8 @@ const DOM = {
 
 const AppState = {
     stompClient: null,
+    reconnectTimer: null,
+    isConnected: false,
     selectedUser: {
         username: null,
         fullname: null
@@ -85,6 +87,12 @@ function initCurrentUser() {
 }
 
 function onConnected() {
+    AppState.isConnected = true;
+    if (AppState.reconnectTimer) {
+        clearTimeout(AppState.reconnectTimer);
+        AppState.reconnectTimer = null;
+    }
+
     // Подписки на WebSocket каналы
     AppState.stompClient.subscribe(`/user/${User.username}/messages`, onMessageReceived);
     AppState.stompClient.subscribe(`/user/public/`, onUserStatusUpdate);
@@ -150,13 +158,32 @@ function setEventListeners() {
 // ============================================
 
 function connectWS() {
+    if (AppState.isConnected) return;
+
     const socket = new SockJS('/ws');
     AppState.stompClient = Stomp.over(socket);
+    AppState.stompClient.heartbeat.outgoing = 20_000;
+    AppState.stompClient.heartbeat.incoming = 20_000;
     AppState.stompClient.connect({}, onConnected, onWSError);
+
+    socket.onclose = () => {
+        AppState.isConnected = false;
+        scheduleReconnect();
+    };
 }
 
 function onWSError(error) {
+    AppState.isConnected = false;
     console.error('WebSocket connection error:', error);
+    scheduleReconnect();
+}
+
+function scheduleReconnect() {
+    if (AppState.reconnectTimer || AppState.isConnected) return;
+    AppState.reconnectTimer = setTimeout(() => {
+        AppState.reconnectTimer = null;
+        connectWS();
+    }, 3_000);
 }
 
 // ============================================
