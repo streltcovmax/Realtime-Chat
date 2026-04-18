@@ -28,6 +28,11 @@ services:
 
       KC_HOSTNAME: auth.pelmesh.su
       KC_PROXY_HEADERS: xforwarded # Обязательно для работы за Nginx/Proxy
+      KC_SPI_THEME_STATIC_MAX_AGE: -1
+      KC_SPI_THEME_CACHE_THEMES: false
+      KC_SPI_THEME_CACHE_TEMPLATES: false
+    volumes:
+      - ./themes:/opt/keycloak/themes
     depends_on:
       - db
     restart: always
