@@ -1,6 +1,5 @@
 package com.mkstr.chat.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,9 +13,6 @@ import org.springframework.security.web.authentication.logout.LogoutSuccessHandl
 public class SecurityConfig {
 
     private final ClientRegistrationRepository clientRegistrationRepository;
-
-    @Value("${app.base-url}")
-    private String appBaseUrl;
 
     public SecurityConfig(ClientRegistrationRepository clientRegistrationRepository) {
         this.clientRegistrationRepository = clientRegistrationRepository;
@@ -43,7 +39,7 @@ public class SecurityConfig {
     private LogoutSuccessHandler oidcLogoutSuccessHandler() {
         OidcClientInitiatedLogoutSuccessHandler handler =
                 new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
-        handler.setPostLogoutRedirectUri(appBaseUrl);
+        handler.setPostLogoutRedirectUri("{baseUrl}");
         return handler;
     }
 }
