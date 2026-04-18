@@ -1,35 +1,68 @@
 version: '3.8'
 
 services:
-  postgres:
+  db:
     image: postgres:16
-    container_name: dev_postgres
+    container_name: messenger_db
     environment:
-      POSTGRES_USER: kiribirka
-      POSTGRES_PASSWORD: pass
-      POSTGRES_DB: chat_dev_db
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8"
-      PGDATA: /var/lib/postgresql/data/pgdata
-      LANG: en_US.utf8
-    ports:
-      - "5430:5432"
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-
+      - postgres_production_data:/var/lib/postgresql/data
+    restart: always
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.2.1
     container_name: keycloak
+    command: start
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_HOSTNAME: localhost
+      KC_HTTP_ENABLED: "true"
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/${KC_DB_NAME}
+      KC_DB_USERNAME: ${DB_USERNAME}
+      KC_DB_PASSWORD: ${DB_PASSWORD}
+
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USER}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASS}
+
+      KC_HOSTNAME: auth.pelmesh.su
+      KC_PROXY_HEADERS: xforwarded # Обязательно для работы за Nginx/Proxy
+    depends_on:
+      - db
+    restart: always
+
+  app:
+    build: .
+    container_name: messenger_app
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KC_ISSUER_URI: ${KC_ISSUER_URI}
+      KC_CLIENT_SECRET: ${KC_CLIENT_SECRET}
     ports:
-      - "8080:8080"
-    command:
-      - start-dev
-    restart: unless-stopped
+      - "8081:8081"
+    depends_on:
+      - db
+      - keycloak
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - app
+      - keycloak
+    restart: always
 
 volumes:
-  postgres_data:
+  postgres_production_data:
