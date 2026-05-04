@@ -111,7 +111,7 @@
     <script type="text/javascript">
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('input').forEach(el => {
-                el.placeholder = el.placeholder.trim().toLowerCase();
+                el.placeholder = el.placeholder.trim();
             });
         });
     </script>
