@@ -17,6 +17,12 @@ jobs:
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKER_PASS }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
 
+      - name: Build keycloak image
+        run: docker build -t ${{ secrets.DOCKER_USER }}/keycloak-custom:latest -f Dockerfile.keycloak .
+
+      - name: Push keycloak image
+        run: docker push ${{ secrets.DOCKER_USER }}/keycloak-custom:latest
+
       - name: Build app image
         run: docker build -t ${{ secrets.DOCKER_USER }}/messenger_app:latest .
 
@@ -32,4 +38,4 @@ jobs:
           script: |
             cd /root/app
             docker compose pull app
-            docker compose up -d --force-recreate app
+            docker compose up -d app

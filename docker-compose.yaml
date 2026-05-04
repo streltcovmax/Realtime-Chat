@@ -13,7 +13,7 @@ services:
     restart: always
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.2.1
+    image: ${DOCKER_USER}/keycloak-custom:latest
     container_name: keycloak
     command: start
     environment:
@@ -31,8 +31,6 @@ services:
       KC_SPI_THEME_STATIC_MAX_AGE: -1
       KC_SPI_THEME_CACHE_THEMES: false
       KC_SPI_THEME_CACHE_TEMPLATES: false
-    volumes:
-      - ./themes:/opt/keycloak/themes
     depends_on:
       - db
     restart: always
