@@ -3,7 +3,7 @@ name: Deploy Messenger
 on:
   push:
     branches:
-      - main
+      - deploy
 
 jobs:
   deploy:
