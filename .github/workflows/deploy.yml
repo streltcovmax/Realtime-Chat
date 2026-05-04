@@ -32,4 +32,4 @@ jobs:
           script: |
             cd /root/app
             docker compose pull app
-            docker compose up -d app
+            docker compose up -d --force-recreate app
