@@ -38,7 +38,7 @@ services:
     restart: always
 
   app:
-    build: .
+    image: ${DOCKER_USER}/messenger_app:latest
     container_name: messenger_app
     environment:
       DB_HOST: db
