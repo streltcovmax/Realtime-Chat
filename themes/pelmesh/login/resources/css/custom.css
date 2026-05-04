@@ -1,0 +1,311 @@
+/* ============================================
+   1. БАЗОВЫЕ ПЕРЕМЕННЫЕ
+   ============================================ */
+:root {
+    --back_plain: #222;
+    --text-highlight: #fff;
+    --text-plain: #bbb;
+    --fields_middle: #555;
+    --highlight_dark: darkslateblue;
+    --highlight_plain: slateblue;
+    --highlight_light: rgb(157, 145, 234);
+    --scale_modifier: 1.03;
+    --scale_modifier_button: 1.03;
+
+    --radius-pill: 1.3cap;
+}
+
+/* Центрирование */
+.pf-v5-c-login {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 100vh !important;
+    width: 100% !important;
+    background-color: var(--back_plain) !important;
+}
+
+.pf-v5-c-login__container {
+    margin: 0 auto !important;
+    justify-self: center !important;
+    align-self: center !important;
+}
+
+@media (min-width: 1200px) {
+    .pf-v5-c-login__container {
+        display: grid !important;
+        grid-template-areas:
+            "header"
+            "main"
+            "footer" !important;
+        grid-template-columns: minmax(320px, 420px) !important;
+        grid-column-gap: 0 !important;
+        justify-content: center !important;
+        justify-items: center !important;
+        padding-inline-start: 0 !important;
+        padding-inline-end: 0 !important;
+        margin-inline: auto !important;
+    }
+}
+
+.pf-v5-c-login__main {
+    background-color: transparent !important;
+    width: 420px !important;
+    max-width: 95vw !important;
+    box-shadow: none !important;
+}
+
+/* ============================================
+   2. ИНПУТЫ (Максимальное скругление и очистка)
+   ============================================ */
+
+/* Группа ввода (контейнер для инпута и кнопки глаза) */
+.pf-v5-c-input-group {
+    background-color: var(--fields_middle) !important;
+    border-radius: var(--radius-pill) !important; /* Скругляем весь контейнер */
+    border: none !important;
+    box-shadow: none !important;
+    /*transition: transform 0.1s ease-in !important;*/
+}
+
+.pf-v5-c-form-control {
+    background-color: var(--fields_middle) !important;
+    color: var(--text-highlight) !important;
+    border: none !important;
+    border-radius: var(--radius-pill) !important;
+    height: 45px !important;
+    padding: 0 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    box-shadow: none !important;
+    /*transition: transform 0.1s ease-in !important;*/
+}
+
+/* УБИРАЕМ СИНЮЮ ПОЛОСКУ */
+.pf-v5-c-form-control::after,
+.pf-v5-c-form-control:focus::after,
+.pf-v5-c-input-group::after,
+.pf-v5-c-input-group:focus-within::after {
+    display: none !important;
+    content: none !important;
+    border: none !important;
+}
+
+/* СОСТОЯНИЕ ФОКУСА (без квадратов и обводок) */
+.pf-v5-c-form-control:focus,
+.pf-v5-c-form-control:focus-within,
+.pf-v5-c-input-group:focus-within {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    /*transform: scale(var(--scale_modifier));*/
+}
+
+.pf-v5-c-form-control input,
+.pf-v5-c-form-control input:focus,
+.pf-v5-c-form-control input:focus-visible,
+.pf-v5-c-input-group input,
+.pf-v5-c-input-group input:focus,
+.pf-v5-c-input-group input:focus-visible,
+.pf-v5-c-button.pf-m-control:focus,
+.pf-v5-c-button.pf-m-control:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+.pf-v5-c-form-control input {
+    width: 100% !important;
+    height: 100% !important;
+    line-height: 31px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    color: var(--text-highlight) !important;
+    text-align: left !important;
+    vertical-align: middle !important;
+}
+
+.pf-v5-c-form-control input::placeholder,
+.pf-v5-c-input-group input::placeholder {
+    color: var(--text-plain) !important;
+    opacity: 1 !important;
+    text-align: left !important;
+}
+
+.pf-v5-c-form__group-label {
+    display: none !important;
+}
+
+/* Кнопка скрытия пароля (Глаз) */
+.pf-v5-c-button.pf-m-control {
+    background-color: transparent !important;
+    color: var(--text-highlight) !important;
+    border: none !important;
+    border-radius: var(--radius-pill) !important;
+    padding-right: 15px !important;
+    box-shadow: none !important;
+}
+
+.pf-v5-c-button.pf-m-control::after {
+    display: none !important; /* Убираем полоску под кнопкой */
+}
+
+.pf-v5-c-button.pf-m-control:hover {
+    color: var(--highlight_light) !important;
+}
+
+/* ============================================
+   3. КНОПКА ВХОДА
+   ============================================ */
+.pf-v5-c-button.pf-m-primary {
+    background-color: var(--highlight_dark) !important;
+    color: var(--text-highlight) !important;
+    border: none !important;
+    border-radius: var(--radius-pill) !important;
+    padding: 12px !important;
+    font-weight: bold !important;
+    transition: all 0.1s ease-in !important;
+    margin-top: 15px !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+}
+
+.pf-v5-c-button.pf-m-primary:hover {
+    background-color: var(--highlight_plain) !important;
+    transform: scale(var(--scale_modifier_button)) !important;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3) !important;
+}
+
+.pf-v5-c-button.pf-m-primary::after {
+    display: none !important;
+}
+
+#kc-login,
+#kc-login::before,
+#kc-login::after,
+.pf-v5-c-form__actions,
+.pf-v5-c-form__actions::before,
+.pf-v5-c-form__actions::after {
+    border: none !important;
+    box-shadow: none !important;
+    background-image: none !important;
+}
+
+/* ============================================
+   4. ЧЕКБОКС (Запомнить меня)
+   ============================================ */
+.pf-v5-c-check {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding-left: 0 !important;
+    margin: 0 !important;
+}
+
+.pf-v5-c-check__input {
+    width: 18px !important;
+    height: 18px !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background: transparent !important;
+    border: 2px solid var(--highlight_plain) !important;
+    cursor: pointer;
+    border-radius: var(--radius-pill) !important;
+    outline: none !important;
+    box-shadow: none !important;
+    display: inline-grid !important;
+    place-content: center !important;
+    margin: 0 !important;
+    flex: 0 0 18px !important;
+    overflow: hidden !important;
+    vertical-align: middle !important;
+}
+
+.pf-v5-c-check__input::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    transform: scale(0);
+    transition: transform 0.12s ease-in-out;
+    background-color: var(--highlight_plain);
+}
+
+.pf-v5-c-check__input:checked::before {
+    transform: scale(1);
+}
+
+.pf-v5-c-check__input:focus,
+.pf-v5-c-check__input:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: var(--highlight_light) !important;
+}
+
+.pf-v5-c-check__label {
+    display: inline-flex !important;
+    align-items: center !important;
+    color: var(--text-plain) !important;
+    line-height: 1 !important;
+    cursor: pointer;
+    margin: 0 !important;
+}
+
+.pf-v5-c-form__helper-text {
+    margin-top: 14px !important;
+    margin-bottom: 14px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.pf-v5-c-form__helper-text .pf-v5-c-helper-text {
+    width: 100% !important;
+    margin: 0 !important;
+    align-items: center !important;
+}
+
+.pf-v5-c-form__helper-text .pf-v5-c-helper-text__item {
+    margin: 0 !important;
+}
+
+/* ============================================
+   5. ОСТАЛЬНЫЕ ТЕКСТЫ И ССЫЛКИ
+   ============================================ */
+.pf-v5-c-title {
+    font-weight: 100 !important;
+    color: var(--text-highlight) !important;
+    font-size: 2rem !important;
+    margin-bottom: 25px !important;
+    text-align: center;
+}
+
+/* Ссылки (Забыли пароль, Регистрация) */
+.pf-v5-c-login__main-footer-band a,
+.pf-v5-c-login__main-footer-links a {
+    color: var(--highlight_light) !important;
+    font-size: 0.9rem !important;
+    text-decoration: none !important;
+    transition: color 0.2s;
+}
+
+.pf-v5-c-login__main-footer-band a:hover {
+    color: var(--text-highlight) !important;
+}
+
+.pf-v5-c-login__main-footer-band {
+    border-block-start: none !important;
+    border-top: none !important;
+}
+
+#kc-header-wrapper {
+    display: none !important;
+}
+
+body#keycloak-bg {
+    min-height: 100vh !important;
+    margin: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: var(--back_plain) !important;
+}
