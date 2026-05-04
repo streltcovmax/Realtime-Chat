@@ -37,5 +37,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /root/app
+            docker compose pull keycloak
+            docker compose up -d --force-recreate keycloak
             docker compose pull app
-            docker compose up -d app
+            docker compose up -d --force-recreate app
