@@ -11,7 +11,7 @@ spring:
         registration:
           keycloak :
             client-id: chat-client
-            client-secret: s80glz7AACXWOeJkoTwJpLF54Y9Zvgds
+            client-secret: vxnZ89TZ8cSBLyDw86S3VqneXQWUdHnU
             authorization-grant-type: authorization_code
             redirect-uri: "http://localhost:8081/login/oauth2/code/keycloak"
             scope: openid, profile

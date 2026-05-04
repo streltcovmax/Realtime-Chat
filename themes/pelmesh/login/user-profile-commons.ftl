@@ -87,12 +87,16 @@
 </#macro>
 
 <#macro inputTag attribute value>
+	<#assign placeholderText=advancedMsg(attribute.displayName!'')>
+	<#if attribute.required>
+		<#assign placeholderText=placeholderText + " *">
+	</#if>
 	<span class="${properties.kcInputClass} <#if error?has_content>${properties.kcError}</#if>">
 		<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" name="${attribute.name}" value="${(value!'')}" class="${properties.kcInputClass!}"
 			aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
 			<#if attribute.readOnly>disabled</#if>
 			<#if attribute.autocomplete??>autocomplete="${attribute.autocomplete}"</#if>
-			<#if attribute.annotations.inputTypePlaceholder??>placeholder="${advancedMsg(attribute.annotations.inputTypePlaceholder)}"</#if>
+			placeholder="<#if attribute.annotations.inputTypePlaceholder??>${advancedMsg(attribute.annotations.inputTypePlaceholder)}<#else>${placeholderText}</#if>"
 			<#if attribute.annotations.inputTypePattern??>pattern="${attribute.annotations.inputTypePattern}"</#if>
 			<#if attribute.annotations.inputTypeSize??>size="${attribute.annotations.inputTypeSize}"</#if>
 			<#if attribute.annotations.inputTypeMaxlength??>maxlength="${attribute.annotations.inputTypeMaxlength}"</#if>

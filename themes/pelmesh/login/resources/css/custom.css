@@ -268,6 +268,22 @@
     margin: 0 !important;
 }
 
+.pf-v5-c-form__group,
+.pf-v5-c-form__helper-text,
+.pf-v5-c-helper-text,
+.pf-v5-c-helper-text__item,
+.pf-v5-c-helper-text__item-text,
+#input-error-container-username,
+#input-error-container-password {
+    max-width: 100% !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+}
+
+.pf-v5-c-helper-text__item-text {
+    white-space: normal !important;
+}
+
 /* ============================================
    5. ОСТАЛЬНЫЕ ТЕКСТЫ И ССЫЛКИ
    ============================================ */
