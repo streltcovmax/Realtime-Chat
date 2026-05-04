@@ -42,21 +42,29 @@
 </#macro>
 
 <#macro input name label value="" required=false autocomplete="off" fieldName=name error=kcSanitize(messagesPerField.get(fieldName))?no_esc autofocus=false>
+    <#assign placeholderText=label>
+    <#if required>
+        <#assign placeholderText=placeholderText + " *">
+    </#if>
     <@group name=name label=label error=error required=required>
         <span class="${properties.kcInputClass} <#if error?has_content>${properties.kcError}</#if>">
-        <input id="${name}" name="${name}" value="${value}" type="text" autocomplete="${autocomplete}" placeholder="${label}" <#if autofocus>autofocus</#if>
+        <input id="${name}" name="${name}" value="${value}" type="text" autocomplete="${autocomplete}" placeholder="${placeholderText}" <#if autofocus>autofocus</#if>
                 aria-invalid="<#if error?has_content>true</#if>"/>
         <@errorIcon error=error/>
     </span>
     </@group>
 </#macro>
 
-<#macro password name label value="" required=false forgotPassword=false fieldName=name error=kcSanitize(messagesPerField.get(fieldName))?no_esc autocomplete="off" autofocus=false>
+<#macro password name label value="" required=false forgotPassword=false showHelperText=forgotPassword fieldName=name error=kcSanitize(messagesPerField.get(fieldName))?no_esc autocomplete="off" autofocus=false>
+    <#assign placeholderText=label>
+    <#if required>
+        <#assign placeholderText=placeholderText + " *">
+    </#if>
     <@group name=name label=label error=error required=required>
         <div class="${properties.kcInputGroup}">
             <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">
         <span class="${properties.kcInputClass} <#if error?has_content>${properties.kcError}</#if>">
-          <input id="${name}" name="${name}" value="${value}" type="password" autocomplete="${autocomplete}" placeholder="${label}" <#if autofocus>autofocus</#if>
+          <input id="${name}" name="${name}" value="${value}" type="password" autocomplete="${autocomplete}" placeholder="${placeholderText}" <#if autofocus>autofocus</#if>
                   aria-invalid="<#if error?has_content>true</#if>"/>
           <@errorIcon error=error/>
         </span>
@@ -70,19 +78,21 @@
                 </button>
             </div>
         </div>
-        <div class="${properties.kcFormHelperTextClass}" aria-live="polite">
-            <div class="${properties.kcInputHelperTextClass}">
-                <#-- Additional helper items -->
-                <#nested>
-                <#if forgotPassword>
-                    <div class="${properties.kcInputHelperTextItemClass}">
-                  <span class="${properties.kcInputHelperTextItemTextClass}">
-                      <a href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a>
-                  </span>
-                    </div>
-                </#if>
+        <#if showHelperText>
+            <div class="${properties.kcFormHelperTextClass}" aria-live="polite">
+                <div class="${properties.kcInputHelperTextClass}">
+                    <#-- Additional helper items -->
+                    <#nested>
+                    <#if forgotPassword>
+                        <div class="${properties.kcInputHelperTextItemClass}">
+                      <span class="${properties.kcInputHelperTextItemTextClass}">
+                          <a href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a>
+                      </span>
+                        </div>
+                    </#if>
+                </div>
             </div>
-        </div>
+        </#if>
 
     </@group>
 </#macro>
