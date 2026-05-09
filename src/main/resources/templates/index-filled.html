@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en" spellcheck="false">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" type="text/css" media="all" href="../static/css/style.css">
+    <link rel="icon" type="image/x-icon" href="../static/images/icon_colored.ico">
+    <title>CHAT</title>
+</head>
+<body>
+
+
+<div class="login r hidden" id="login-page">
+    <h2>ВОЙТИ</h2>
+    <form id="login-form">
+        <div class="inputContainer">
+            <input autocomplete="off" type="text" id="fullname-input" name="fullname" placeholder="имя"
+                   title="введите имя" class="r animated" required>
+        </div>
+        <div class="inputContainer">
+            <input autocomplete="off" type="text" id="username-input" name="username" placeholder="никнейм"
+                   title="введите никнейм" class="r animated" required>
+        </div>
+        <span class="hidden">debug</span>
+        <button class="r" id="login-button-submit">далее</button>
+    </form>
+</div>
+
+<div class="chats" id="chat-page">
+    <div class="chats-panel br-r">
+        <div class="search-input-wrapper">
+            <input autocomplete="off" type="text" id="searchUsername" name="search" placeholder="поиск" class="r">
+            <button type="button" id="search-clear-btn" class="search-clear-btn hidden" title="Очистить">×</button>
+        </div>
+        <div id="search-results-container" class="search-results-container hidden">
+            <p class="search-results-label">Найдено:</p>
+            <p id="search-no-results" class="search-no-results hidden">Ничего не найдено</p>
+            <ul id="foundUsers">
+                <!-- MOCK: как createSearchResultElement — для офлайн-просмотра можно временно убрать hidden у контейнера выше -->
+                <li class="search-result-item">
+                    <span class="chat-avatar r">Д</span>
+                    Дмитрий Орлов (@dm_orlov)
+                </li>
+                <li class="search-result-item">
+                    <span class="chat-avatar r">Е</span>
+                    Елена Соколова (@elena_sk)
+                </li>
+                <li class="search-result-item">
+                    <span class="chat-avatar r">И</span>
+                    Игорь Волков (@igor_v)
+                </li>
+                <li class="search-result-item">
+                    <span class="chat-avatar r">К</span>
+                    Кристина Лебедева (@kris_l)
+                </li>
+                <li class="search-result-item">
+                    <span class="chat-avatar r">Н</span>
+                    Никита Жуков (@zhuk_n)
+                </li>
+            </ul>
+        </div>
+        <div id="chats-list-container" class="chats-list-container">
+            <ul id="chats-list">
+                <!-- MOCK: структура как в appendChatToList(); id = username для совместимости с селекторами в JS -->
+                <li class="chat-item active" id="maria_dev">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">М<span class="online-indicator"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Мария Кузнецова</span>
+                        <span class="chat-message">Договорились, скину макеты завтра до обеда</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">14:02</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="alex_p">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">А<span class="online-indicator"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Алексей Петров</span>
+                        <span class="chat-message">Ок, жду ревью</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">вчера</span>
+                        <span class="notificationMarker r">3</span>
+                    </div>
+                </li>
+                <li class="chat-item" id="ksen_web">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">К<span class="online-indicator hidden"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Ксения Вебер</span>
+                        <span class="chat-message">Миграцию откатили на staging</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">08.05.26</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="boris_ops">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">Б<span class="online-indicator"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Борис Одинцов</span>
+                        <span class="chat-message">Логи глянул — там OOM воркера</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">13:47</span>
+                        <span class="notificationMarker r">1</span>
+                    </div>
+                </li>
+                <li class="chat-item" id="vera_design">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">В<span class="online-indicator hidden"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Вера Дизайн</span>
+                        <span class="chat-message">Файл в Figma обновила</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">07.05.26</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="timur_qa">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">Т<span class="online-indicator hidden"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Тимур Кадыров</span>
+                        <span class="chat-message">Баг CHAT-142 воспроизвёл</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">11:20</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="olga_pm">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">О<span class="online-indicator"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Ольга Мельник</span>
+                        <span class="chat-message">Спринт планируем во вторник</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">09:05</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="pavel_java">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">П<span class="online-indicator hidden"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Павел Архипов</span>
+                        <span class="chat-message">endpoint готов, докину curl</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">06.05.26</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="sveta_hr">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">С<span class="online-indicator hidden"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Светлана Романова</span>
+                        <span class="chat-message">Оффер отправила на почту</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">03.05.26</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="max_mobile">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">М<span class="online-indicator"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Максим Иванов</span>
+                        <span class="chat-message">На iOS глюк с клавиатурой</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">12:58</span>
+                        <span class="notificationMarker r">12</span>
+                    </div>
+                </li>
+                <li class="chat-item" id="julia_docs">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">Ю<span class="online-indicator hidden"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Юлия Писарева</span>
+                        <span class="chat-message">README поправила в ветке docs</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">02.05.26</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="anton_sec">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">А<span class="online-indicator hidden"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Антон Белов</span>
+                        <span class="chat-message">Токены ротируем в пятницу</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">30.04.26</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="liza_support">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">Л<span class="online-indicator"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Елизавета Тихонова</span>
+                        <span class="chat-message">Клиент писал про зависание</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">15:33</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="nikita_front">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">Н<span class="online-indicator hidden"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Никита Фронтов</span>
+                        <span class="chat-message">SSR отключил в превью</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">29.04.26</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="irina_data">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">И<span class="online-indicator hidden"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Ирина Датская</span>
+                        <span class="chat-message">Выгрузка за март готова</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">28.04.26</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="sergey_devops">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">С<span class="online-indicator"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Сергей Насыров</span>
+                        <span class="chat-message">деплой в 22:00 МСК</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">16:01</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="katya_intern">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">Е<span class="online-indicator hidden"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Екатерина Ли</span>
+                        <span class="chat-message">Можешь глянуть PR #88?</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">27.04.26</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="roman_ui">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">Р<span class="online-indicator hidden"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Роман Юй</span>
+                        <span class="chat-message">Отступы на модалке поправил</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">26.04.26</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="anna_lead">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">А<span class="online-indicator"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Анна Лебедева</span>
+                        <span class="chat-message">1:1 перенесла на среду</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">10:15</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+                <li class="chat-item" id="viktor_bot">
+                    <div class="chat-info">
+                        <div class="chat-avatar r">В<span class="online-indicator hidden"></span></div>
+                    </div>
+                    <div class="chat-text">
+                        <span class="chat-name">Виктор Зимин</span>
+                        <span class="chat-message">Webhook для алертов настроил</span>
+                    </div>
+                    <div class="chat-nums">
+                        <span class="datetime">25.04.26</span>
+                        <span class="notificationMarker r hidden"></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div>
+            <p id="connected-user-fullname">Демо-пользователь</p>
+            <button id="logout-button" class="r">выйти</button>
+        </div>
+    </div>
+
+    <div class="chat-area-wrap">
+        <div class="chat-area online" id="chat-area">
+            <div class="br-b online" id="chat-header-info">
+                <div class="chat-avatar r" id="selected-chat-avatar">М</div>
+                <div>
+                    <p id="chat-header-username">maria_dev</p>
+                    <span id="chat-header-status">online</span>
+                </div>
+            </div>
+            <div id="chat-messages" class="r">
+                <!-- MOCK: как createMessageElement — обёртка div, внутри .message.sender|.receiver -->
+                <div>
+                    <div class="message receiver">
+                        <div class="message-content receiver">
+                            <span>Привет! Ты смотрел тред про новый чат?</span>
+                            <span class="time">10:12</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message sender">
+                        <div class="message-content sender">
+                            <span>Да, бегло. Хочу добить пагинацию сообщений.</span>
+                            <span class="time">10:14</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message receiver">
+                        <div class="message-content receiver">
+                            <span>Супер. На бэке уже есть /messages/page/…?</span>
+                            <span class="time">10:15</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message sender">
+                        <div class="message-content sender">
+                            <span>Есть, отдаёт страницами по 50, нужно только корректно склеить порядок на клиенте.</span>
+                            <span class="time">10:17</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message receiver">
+                        <div class="message-content receiver">
+                            <span>Ок. Ещё вопрос — маркер непрочитанных синхронизируем по WS или достаточно после открытия чата?</span>
+                            <span class="time">10:18</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message sender">
+                        <div class="message-content sender">
+                            <span>Сейчас после открытия дергаем count-unread — потом можно оптимизировать.</span>
+                            <span class="time">10:19</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message receiver">
+                        <div class="message-content receiver">
+                            <span>Поняла. Я тогда завтра скину макеты сайдбара.</span>
+                            <span class="time">10:21</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message sender">
+                        <div class="message-content sender">
+                            <span>Спасибо. Кинь ещё ссылку на прототип кликабельный.</span>
+                            <span class="time">10:22</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message receiver">
+                        <div class="message-content receiver">
+                            <span>Сделаю в Figma, пришлю инвайт на почту.</span>
+                            <span class="time">10:23</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message sender">
+                        <div class="message-content sender">
+                            <span>👍</span>
+                            <span class="time">10:23</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message receiver">
+                        <div class="message-content receiver">
+                            <span>Кстати, по поиску пользователей — фильтруем текущего на клиенте, верно?</span>
+                            <span class="time">11:02</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message sender">
+                        <div class="message-content sender">
+                            <span>Да, в onSearchResults выкидываем username текущего пользователя.</span>
+                            <span class="time">11:03</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message receiver">
+                        <div class="message-content receiver">
+                            <span>Тогда добавлю подсказку если меньше 3 символов запроса.</span>
+                            <span class="time">11:05</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message sender">
+                        <div class="message-content sender">
+                            <span>У нас MIN_SEARCH_LENGTH = 2, то есть от 3 символов уже шлём на сервер.</span>
+                            <span class="time">11:06</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message receiver">
+                        <div class="message-content receiver">
+                            <span>Точно, перепутала с «больше двух» 😅</span>
+                            <span class="time">11:07</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message sender">
+                        <div class="message-content sender">
+                            <span>Вечером гляну твою ветку с анимацией сообщений.</span>
+                            <span class="time">11:08</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message receiver">
+                        <div class="message-content receiver">
+                            <span>Договорились, скину макеты завтра до обеда.</span>
+                            <span class="time">14:02</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message sender">
+                        <div class="message-content sender">
+                            <span>Отлично, жду.</span>
+                            <span class="time">14:03</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message receiver">
+                        <div class="message-content receiver">
+                            <span>Если успею — добавлю тёмную тему в эти же макеты.</span>
+                            <span class="time">14:04</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message sender">
+                        <div class="message-content sender">
+                            <span>Было бы круто. У нас уже переменные в CSS заведены.</span>
+                            <span class="time">14:05</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message receiver">
+                        <div class="message-content receiver">
+                            <span>Вижу в style.css — подстрою палитру под них.</span>
+                            <span class="time">14:06</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="message sender">
+                        <div class="message-content sender">
+                            <span>Супер, спасибо!</span>
+                            <span class="time">14:06</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <form id="messageForm" name="messageForm" class="br-t">
+                <div class="message-input">
+                    <input autocomplete="off" type="text" id="messageInput" placeholder="введите сообщение..."
+                           class="r">
+                    <button class="r" id="send-message-button">></button>
+                </div>
+            </form>
+        </div>
+        <div class="info-message r overlay hidden" id="pick-chat-message"> выберите чат!</div>
+        <div class="info-message r overlay hidden" id="empty-chat-message"> здесь пока пусто...</div>
+    </div>
+
+
+    <div class="sidepanel br-l">
+        <button id="this-profile-button" class="r" type="button">профиль</button>
+    </div>
+</div>
+
+<div class="user-form hidden" id="search-page">
+    <h2>Найти пользователей</h2>
+</div>
+
+
+<script src="../static/js/lib/sockjs.min.js"></script>
+<script src="../static/js/lib/stomp.min.js"></script>
+<script type="module" src="../static/js/user.js"></script>
+<script type="module" src="../static/js/script.js"></script>
+</body>
+</html>
