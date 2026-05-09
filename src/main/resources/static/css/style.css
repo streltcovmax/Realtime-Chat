@@ -21,7 +21,7 @@
     --highlight_light: rgb(157, 145, 234);
 
     --scale_modifier: 1.03;
-    --scale_modifier_button: 1.1;
+    --scale_modifier_button: 1.03;
 
     --border-color: var(--text-dark);
     --border-width: 2px;
@@ -165,7 +165,7 @@ button {
     border: none;
     padding: 10px 15px;
     cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+    transition: background-color 0.3s ease, transform 0.05s ease;
 }
 
 button:hover {
@@ -670,7 +670,7 @@ form#messageForm {
 .message-input {
     display: flex;
     gap: 10px;
-    align-items: flex-end;
+    align-items: center;
 }
 
 .message-length-error {
@@ -683,10 +683,10 @@ form#messageForm {
 .message-input textarea {
     flex: 1;
     padding: 10px 14px;
-    font-size: clamp(14px, 3.5vw, 16px);
+    font-size: clamp(11px, 3.5vw, 13px);
     font-family: inherit;
     line-height: 1.35;
-    min-height: 44px;
+    min-height: 37px;
     box-sizing: border-box;
     width: 0;
     border: none;
@@ -695,7 +695,6 @@ form#messageForm {
     color: var(--text-highlight);
     resize: none;
     overflow-x: hidden;
-    transition: transform 0.1s ease-in;
 }
 
 .message-input textarea:focus.animated {
@@ -715,13 +714,12 @@ form#messageForm {
 }
 
 .message-input button {
-    padding: 10px 20px;
+    padding: 11px 20px;
     border: none;
     background-color: var(--highlight_plain);
     color: var(--text-highlight);
     font-weight: bold;
     cursor: pointer;
-    transition: background-color 0.2s ease;
 }
 
 /* ============================================
