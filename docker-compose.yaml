@@ -4,6 +4,8 @@ services:
   db:
     image: postgres:16
     container_name: messenger_db
+    ports:
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
