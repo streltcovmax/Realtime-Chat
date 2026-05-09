@@ -2,6 +2,7 @@
    ПЕРЕМЕННЫЕ
    ============================================ */
 :root {
+    --app-height: 100vh;
     --text-highlight: #fff;
     --text-plain: #bbb;
     --text-dark: #aaa;
@@ -43,8 +44,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: stretch;
-    min-height: 100dvh;
-    min-height: 100vh; /* fallback */
+    min-height: var(--app-height);
     margin: 0;
     padding: 0;
     background-color: var(--back_plain);
@@ -200,8 +200,7 @@ h2 {
 .chats {
     display: flex;
     width: 100%;
-    height: 100dvh;
-    height: 100vh; /* fallback */
+    height: var(--app-height);
     margin: 0;
     overflow: hidden;
     background-color: var(--back_plain);
@@ -723,8 +722,7 @@ form#messageForm {
 @media (max-width: 600px) {
     .chats {
         flex-direction: column;
-        height: 100dvh;
-        height: 100vh;
+        height: var(--app-height);
         min-height: 0;
         overflow: hidden;
     }
@@ -784,8 +782,7 @@ form#messageForm {
         right: 0;
         bottom: 0;
         z-index: 100;
-        height: 100dvh;
-        height: 100vh;
+        height: var(--app-height);
         display: none; /* по умолчанию скрыта */
         align-items: stretch;
     }

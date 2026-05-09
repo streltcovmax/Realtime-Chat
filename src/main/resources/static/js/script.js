@@ -65,6 +65,11 @@ const AppState = {
     }
 };
 
+function updateAppHeightVar() {
+    const viewportHeight = window.visualViewport?.height || window.innerHeight;
+    document.documentElement.style.setProperty('--app-height', `${Math.round(viewportHeight)}px`);
+}
+
 // ============================================
 // ИНИЦИАЛИЗАЦИЯ
 // ============================================
@@ -132,6 +137,11 @@ function setupUI() {
 
 function setEventListeners() {
     window.addEventListener('resize', onWindowResize);
+    window.addEventListener('orientationchange', updateAppHeightVar);
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', updateAppHeightVar);
+        window.visualViewport.addEventListener('scroll', updateAppHeightVar);
+    }
     // Кнопки
     document.querySelector('#this-profile-button').addEventListener('click', showCurrentUserProfile);
     document.querySelector('#logout-button').addEventListener('click', onLogout);
@@ -797,6 +807,8 @@ function onLogout() {
 }
 
 function onWindowResize() {
+    updateAppHeightVar();
+
     // Если перешли с мобильного на десктоп — убираем класс
     if (!isMobile()) {
         document.body.classList.remove('mobile-chat-open');
@@ -828,4 +840,5 @@ function onWindowResize() {
 // ЗАПУСК
 // ============================================
 
+updateAppHeightVar();
 initCurrentUser();
