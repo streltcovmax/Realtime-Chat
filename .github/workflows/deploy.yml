@@ -19,8 +19,8 @@ jobs:
 
       - name: Debug files
         run: |
-          find src/main/resources/static -type f
-          cat src/main/resources/static/css/style.css
+          find src/main/resources/templates -type f
+          cat src/main/templates/index.html
 
       - name: Build keycloak image
         run: docker build --no-cache -t ${{ secrets.DOCKER_USER }}/keycloak-custom:latest -f Dockerfile.keycloak .
