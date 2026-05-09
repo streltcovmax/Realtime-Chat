@@ -46,3 +46,4 @@ jobs:
             docker compose up -d --force-recreate keycloak
             docker compose pull app
             docker compose up -d --force-recreate app
+
