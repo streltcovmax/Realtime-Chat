@@ -7,6 +7,7 @@ import com.mkstr.chat.model.User;
 import com.mkstr.chat.repositories.ChatParticipantRepository;
 import com.mkstr.chat.repositories.ChatRepository;
 import com.mkstr.chat.repositories.UserRepository;
+import com.mkstr.chat.utlis.Constant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -72,8 +73,18 @@ public class ChatService {
     }
 
     public void saveLastMessage(Chat chat, String messageText) {
-        chat.setLastMessage(messageText);
+        chat.setLastMessage(truncateToLastMessagePreview(messageText));
         chatRepository.save(chat);
+    }
+
+    private static String truncateToLastMessagePreview(String text) {
+        if (text == null) return null;
+        int max = Constant.CHAT_LAST_MESSAGE_MAX_LENGTH;
+        if (text.codePointCount(0, text.length()) <= max) {
+            return text;
+        }
+        int end = text.offsetByCodePoints(0, max);
+        return text.substring(0, end);
     }
 
     public List<Long> findUserChatsIds(String username) {
