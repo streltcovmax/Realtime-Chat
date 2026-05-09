@@ -46,6 +46,7 @@ const DOM = {
 
     // Информация о текущем пользователе
     connectedUserFullname: document.querySelector('#connected-user-fullname'),
+    connectedUserAvatar: document.querySelector('#connected-user-avatar'),
 
     messageForm: document.querySelector('#messageForm'),
     messageLengthError: document.querySelector('#message-length-error'),
@@ -136,6 +137,7 @@ function registerUser() {
 function setupUI() {
     hideChatArea();
     DOM.connectedUserFullname.textContent = User.fullname;
+    DOM.connectedUserAvatar.textContent = User.fullname[0];
     readMaxMessageLengthFromDom();
     setEventListeners();
     initMessageComposer();
