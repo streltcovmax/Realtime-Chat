@@ -413,7 +413,12 @@ async function fetchAndShowChats() {
     }
 }
 
-function appendChatToList(chatData) {
+function moveChatToTop(chatElement) {
+    if (!chatElement || chatElement.parentElement !== DOM.chatsList) return;
+    DOM.chatsList.prepend(chatElement);
+}
+
+function appendChatToList(chatData, prependToList = false) {
     const listItem = document.createElement('li');
     listItem.classList.add('chat-item');
     listItem.id = chatData.username;
@@ -437,7 +442,11 @@ function appendChatToList(chatData) {
 
     updateStatusIndicator(listItem, chatData.status);
     listItem.addEventListener('click', onChatItemClick);
-    DOM.chatsList.appendChild(listItem);
+    if (prependToList) {
+        DOM.chatsList.prepend(listItem);
+    } else {
+        DOM.chatsList.appendChild(listItem);
+    }
 
     loadLastMessage(listItem, chatData.username);
     loadUnreadMessagesCount(listItem, chatData.username)
@@ -480,6 +489,7 @@ async function fetchAndAppendNewUser(targetUsername, message) {
 
     if (chatElement) {
         if (message) updateChatPreview(chatElement, message);
+        moveChatToTop(chatElement);
         return;
     }
 
@@ -728,6 +738,7 @@ async function sendMessage(event) {
         chatElement = document.querySelector(`#${message.recipientId}`);
     } else {
         updateChatPreview(chatElement, message);
+        moveChatToTop(chatElement);
     }
 
     if (chatElement?.chatData) {
@@ -758,6 +769,7 @@ async function onMessageReceived(payload) {
             resetUnreadCount();
         }
         updateChatPreview(chatElement, message);
+        moveChatToTop(chatElement);
     } else {
         await fetchAndAppendNewUser(senderId, message);
 

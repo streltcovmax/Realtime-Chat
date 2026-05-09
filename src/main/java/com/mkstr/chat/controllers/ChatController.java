@@ -41,7 +41,7 @@ public class ChatController {
     @MessageMapping("/chat")
     public ResponseEntity<Message> processMessage(@Payload Message message) {
         Chat chat = chatService.getOrCreateChat(message.getSenderId(), message.getRecipientId());
-        chatService.saveLastMessage(chat, message.getContent());
+        chatService.saveLastMessage(chat, message.getContent(), message.getDateCreated());
         Long chatId = chat.getChatId();
         message.setChatId(chatId);
         messageService.save(message);

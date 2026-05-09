@@ -72,8 +72,9 @@ public class ChatService {
         }
     }
 
-    public void saveLastMessage(Chat chat, String messageText) {
+    public void saveLastMessage(Chat chat, String messageText, Date sentAt) {
         chat.setLastMessage(truncateToLastMessagePreview(messageText));
+        chat.setLastMessageAt(sentAt != null ? sentAt : new Date());
         chatRepository.save(chat);
     }
 
@@ -98,19 +99,31 @@ public class ChatService {
     }
 
     public List<User> findChatsByUsername(String username) {
-        List<Long> userChats = findUserChatsIds(username);
-        log.info("user chats ids: {}", userChats);
-        Set<ChatParticipant> participants = new HashSet<>();
-        for (Long id : userChats) {
-            participants.addAll(participantRepository.findAllByChatChatId(id));
+        List<Long> chatIds = findUserChatsIds(username);
+        log.info("user chats ids: {}", chatIds);
+
+        List<AbstractMap.SimpleImmutableEntry<User, Date>> paired = new ArrayList<>();
+        for (Long chatId : chatIds) {
+            Chat chat = chatRepository.findById(chatId).orElse(null);
+            Date lastAt = chat != null ? chat.getLastMessageAt() : null;
+
+            for (ChatParticipant cp : participantRepository.findAllByChatChatId(chatId)) {
+                User other = userRepository.findByUsername(cp.getUser().getUsername());
+                if (other != null && !Objects.equals(other.getUsername(), username)) {
+                    paired.add(new AbstractMap.SimpleImmutableEntry<>(other, lastAt));
+                    break;
+                }
+            }
         }
-        List<User> users = new ArrayList<>();
-        for (ChatParticipant part : participants) {
-            User user = userRepository.findByUsername(part.getUser().getUsername());
-            if (!Objects.equals(user.getUsername(), username))
-                users.add(user);
+
+        Comparator<Date> byNewestFirst = Comparator.nullsLast(Collections.reverseOrder());
+        paired.sort(Map.Entry.<User, Date>comparingByValue(byNewestFirst));
+
+        Map<String, User> orderedUnique = new LinkedHashMap<>();
+        for (Map.Entry<User, Date> e : paired) {
+            orderedUnique.putIfAbsent(e.getKey().getUsername(), e.getKey());
         }
-        return users;
+        return new ArrayList<>(orderedUnique.values());
     }
 }
 
