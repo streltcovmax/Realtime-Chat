@@ -227,6 +227,7 @@ h2 {
     min-height: fit-content;
     padding: 3px;
     margin-bottom: 12px;
+    margin-left: 25px;
 }
 
 #this-profile-button {
@@ -242,8 +243,8 @@ a.logout {
    ПАНЕЛЬ СПИСКА ЧАТОВ
    ============================================ */
 .chats-panel {
-    width: 400px;
-    flex: 0 0 400px;
+    width: 500px;
+    flex: 0 0 500px;
     min-width: 0;
     padding-top: 12px;
     display: flex;
