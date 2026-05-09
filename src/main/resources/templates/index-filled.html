@@ -519,11 +519,12 @@
                     </div>
                 </div>
             </div>
-            <form id="messageForm" name="messageForm" class="br-t">
+            <form id="messageForm" name="messageForm" class="br-t" data-max-message-length="2048">
+                <p id="message-length-error" class="message-length-error hidden" role="alert" aria-live="polite"></p>
                 <div class="message-input">
-                    <input autocomplete="off" type="text" id="messageInput" placeholder="введите сообщение..."
-                           class="r">
-                    <button class="r" id="send-message-button">></button>
+                    <textarea autocomplete="off" id="messageInput" placeholder="введите сообщение..."
+                              class="r animated" rows="1"></textarea>
+                    <button type="button" class="r" id="send-message-button">></button>
                 </div>
             </form>
         </div>

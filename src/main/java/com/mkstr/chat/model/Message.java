@@ -1,12 +1,10 @@
 package com.mkstr.chat.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.util.Date;
+import static com.mkstr.chat.utlis.Constant.MAX_MESSAGE_LENGTH;
 
 @Data
 @Entity
@@ -15,6 +13,7 @@ public class Message {
     @Id
     @GeneratedValue
     private Long message_id;
+    @Column(length = MAX_MESSAGE_LENGTH)
     private String content;
     private String senderId;
     private String recipientId;

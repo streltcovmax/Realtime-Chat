@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" spellcheck="false">
+<html lang="ru" xmlns:th="http://www.thymeleaf.org" spellcheck="false">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -57,11 +57,13 @@
             </div>
             <div id="chat-messages" class="r">
             </div>
-            <form id="messageForm" name="messageForm" class="br-t">
+            <form id="messageForm" name="messageForm" class="br-t"
+                  th:data-max-message-length="${maxMessageLength}">
+                <p id="message-length-error" class="message-length-error hidden" role="alert" aria-live="polite"></p>
                 <div class="message-input">
-                    <input autocomplete="off" type="text" id="messageInput" placeholder="введите сообщение..."
-                           class="r">
-                    <button class="r" id="send-message-button">></button>
+                    <textarea autocomplete="off" id="messageInput" placeholder="введите сообщение..."
+                              class="r animated" rows="1"></textarea>
+                    <button type="button" class="r" id="send-message-button">></button>
                 </div>
             </form>
         </div>

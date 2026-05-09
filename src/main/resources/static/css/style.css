@@ -670,12 +670,48 @@ form#messageForm {
 .message-input {
     display: flex;
     gap: 10px;
+    align-items: flex-end;
 }
 
-.message-input input {
+.message-length-error {
+    color: #e07070;
+    font-size: clamp(12px, 2.8vw, 13px);
+    margin: 0 0 8px 2px;
+    line-height: 1.35;
+}
+
+.message-input textarea {
     flex: 1;
     padding: 10px 14px;
     font-size: clamp(14px, 3.5vw, 16px);
+    font-family: inherit;
+    line-height: 1.35;
+    min-height: 44px;
+    box-sizing: border-box;
+    width: 0;
+    border: none;
+    outline: none;
+    background-color: var(--fields_middle);
+    color: var(--text-highlight);
+    resize: none;
+    overflow-x: hidden;
+    transition: transform 0.1s ease-in;
+}
+
+.message-input textarea:focus.animated {
+    transform: scale(var(--scale_modifier));
+}
+
+.message-input button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    pointer-events: none;
+}
+
+.message-input button:disabled:hover {
+    background-color: var(--highlight_plain);
+    transform: none;
 }
 
 .message-input button {
@@ -905,7 +941,7 @@ form#messageForm {
         font-size: 14px;
     }
 
-    .message-input input {
+    .message-input textarea {
         padding: 8px 10px;
     }
 

@@ -14,11 +14,14 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
+
+import static com.mkstr.chat.utlis.Constant.MAX_MESSAGE_LENGTH;
 
 @Slf4j
 @Controller
@@ -28,6 +31,12 @@ public class ChatController {
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
     private final MessageService messageService;
+
+    @GetMapping("/")
+    public String index(Model model) {
+        model.addAttribute("maxMessageLength", MAX_MESSAGE_LENGTH);
+        return "index";
+    }
 
     @MessageMapping("/chat")
     public ResponseEntity<Message> processMessage(@Payload Message message) {

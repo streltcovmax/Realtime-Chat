@@ -11,6 +11,8 @@ const MESSAGES_PAGE_SIZE = 50;
 const SCROLL_THRESHOLD_PX = 250;
 const MIN_SEARCH_LENGTH = 2;
 const MOBILE_BREAKPOINT = 600;
+/** Макс. высота поля ввода в строках (локально для UI); лимит символов с бэкенда — data-max-message-length на форме. */
+const MESSAGE_COMPOSER_MAX_LINES = 12;
 
 // ============================================
 // DOM ЭЛЕМЕНТЫ (сгруппированы по назначению)
@@ -44,6 +46,10 @@ const DOM = {
 
     // Информация о текущем пользователе
     connectedUserFullname: document.querySelector('#connected-user-fullname'),
+
+    messageForm: document.querySelector('#messageForm'),
+    messageLengthError: document.querySelector('#message-length-error'),
+    sendMessageButton: document.querySelector('#send-message-button'),
 };
 
 // ============================================
@@ -62,7 +68,9 @@ const AppState = {
         page: 0,
         isLastPage: false,
         isLoading: false,
-    }
+    },
+    /** Подтягивается из `data-max-message-length` формы сообщения после setupUI */
+    maxMessageLength: 2048,
 };
 
 function updateAppHeightVar() {
@@ -128,7 +136,9 @@ function registerUser() {
 function setupUI() {
     hideChatArea();
     DOM.connectedUserFullname.textContent = User.fullname;
+    readMaxMessageLengthFromDom();
     setEventListeners();
+    initMessageComposer();
     fetchAndShowChats();
 
     loadNotificationSettings();
@@ -161,6 +171,71 @@ function setEventListeners() {
             hideSearchArea();
         }
     });
+}
+
+// ============================================
+// ПОЛЕ ВВОДА СООБЩЕНИЯ (лимит длины, авто‑высота)
+// ============================================
+
+function readMaxMessageLengthFromDom() {
+    const raw = DOM.messageForm?.dataset?.maxMessageLength;
+    const n = parseInt(raw, 10);
+    AppState.maxMessageLength = Number.isFinite(n) && n > 0 ? n : 2048;
+}
+
+function autosizeMessageInput() {
+    const ta = DOM.messageInput;
+    if (!ta) return;
+
+    const styles = getComputedStyle(ta);
+    let lineHeight = parseFloat(styles.lineHeight);
+    if (!Number.isFinite(lineHeight) || lineHeight <= 0) {
+        lineHeight = (parseFloat(styles.fontSize) || 16) * 1.35;
+    }
+    const paddingY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
+    const borderY = parseFloat(styles.borderTopWidth) + parseFloat(styles.borderBottomWidth);
+    const maxHeight = lineHeight * MESSAGE_COMPOSER_MAX_LINES + paddingY + borderY;
+
+    ta.style.maxHeight = `${maxHeight}px`;
+    ta.style.height = '0px';
+    const scrollH = ta.scrollHeight;
+    const next = Math.min(scrollH, maxHeight);
+    ta.style.height = `${next}px`;
+    ta.style.overflowY = scrollH > maxHeight ? 'auto' : 'hidden';
+}
+
+function syncMessageComposerState() {
+    if (!DOM.messageInput || !DOM.messageLengthError || !DOM.sendMessageButton) return;
+
+    const trimmedLength = DOM.messageInput.value.trim().length;
+    const tooLong = trimmedLength > AppState.maxMessageLength;
+    const limit = AppState.maxMessageLength;
+
+    DOM.messageLengthError.classList.toggle('hidden', !tooLong);
+    DOM.messageLengthError.textContent = tooLong
+        ? `Слишком длинное сообщение: максимум ${limit} символов, сейчас ${trimmedLength}.`
+        : '';
+
+    DOM.sendMessageButton.disabled = tooLong;
+    autosizeMessageInput();
+}
+
+function initMessageComposer() {
+    if (!DOM.messageForm || !DOM.messageInput) return;
+
+    DOM.messageForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        sendMessage(e);
+    });
+
+    DOM.messageInput.addEventListener('input', syncMessageComposerState);
+    DOM.messageInput.addEventListener('keydown', e => {
+        if (e.key !== 'Enter' || e.shiftKey) return;
+        e.preventDefault();
+        sendMessage(e);
+    });
+
+    syncMessageComposerState();
 }
 
 // ============================================
@@ -623,10 +698,12 @@ function addMessage(messageData) {
 }
 
 async function sendMessage(event) {
-    event.preventDefault();
+    event?.preventDefault?.();
 
     const content = DOM.messageInput.value.trim();
     const {selectedUser, stompClient} = AppState;
+
+    if (content.length > AppState.maxMessageLength) return;
 
     if (!content || !stompClient || !selectedUser.username) return;
 
@@ -640,6 +717,7 @@ async function sendMessage(event) {
 
     stompClient.send("/app/chat", {}, JSON.stringify(message));
     DOM.messageInput.value = '';
+    syncMessageComposerState();
     DOM.emptyChatInfoMessage.classList.add('hidden');
 
     let chatElement = document.querySelector(`#${message.recipientId}`);
@@ -834,6 +912,8 @@ function onWindowResize() {
             }
         }
     }
+
+    syncMessageComposerState();
 }
 
 // ============================================
