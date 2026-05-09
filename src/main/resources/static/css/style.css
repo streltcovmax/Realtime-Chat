@@ -648,7 +648,7 @@ a.logout {
     align-items: flex-end;
     align-self: flex-start;
     gap: 0.4em;
-    max-width: 70%;
+    max-width: 35%;
     box-sizing: border-box;
     padding: 8px 10px;
 }
