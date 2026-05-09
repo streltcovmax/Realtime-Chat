@@ -259,7 +259,7 @@ a.logout {
 
 #connected-user-fullname {
     padding: 12px 16px;
-    margin: 0;
+    margin: 0 0 0 18px;
     color: var(--text-highlight);
     font-size: 14px;
     background-color: var(--back_dark);
@@ -403,7 +403,6 @@ a.logout {
     padding: 8px 0;
     cursor: pointer;
     color: var(--text-highlight);
-    font-weight: lighter;
     width: 100%;
     transition: background-color 0.15s ease;
 }
@@ -414,10 +413,6 @@ a.logout {
 
 .chat-item.active {
     background-color: var(--highlight_dark) !important;
-}
-
-.chat-item.online {
-    color: var(--highlight_dark);
 }
 
 .chat-info {
@@ -435,11 +430,12 @@ a.logout {
     align-items: start;
     width: 80%;
     height: 80%;
-    margin-left: 10px;
+    margin-left: 12px;
     min-width: 0;
 }
 
 .chat-name {
+    font-size: clamp(14px, 2.4vw, 16px);
     width: 100%;
     color: var(--text-highlight);
     font-weight: normal;
@@ -449,7 +445,7 @@ a.logout {
 }
 
 .chat-message {
-    font-size: clamp(14px, 2.4vw, 16px);
+    font-size: clamp(12px, 2.4vw, 14px);
     color: var(--text-dark);
     white-space: nowrap;
     overflow: hidden;
@@ -458,7 +454,7 @@ a.logout {
 }
 
 .chat-nums {
-    font-size: 14px;
+    font-size: clamp(10px, 2.4vw, 12px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -468,7 +464,7 @@ a.logout {
 }
 
 .datetime {
-    font-weight: lighter;
+    font-weight: 100;
     text-align: end;
     opacity: 0.7;
 }
@@ -596,11 +592,13 @@ a.logout {
     font-size: small;
 }
 
-#chat-messages span {
-    display: inline-block;
-    max-width: 70%;
-    padding: 8px 10px;
+/* Только текст сообщения — не трогаем .time; max-width задаётся на самом пузыре (.message-content) */
+#chat-messages .message-content > span:first-of-type {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
     word-wrap: break-word;
+    overflow-wrap: break-word;
     opacity: 0;
     animation: fadeIn 0.4s forwards;
 }
@@ -627,8 +625,13 @@ a.logout {
 }
 
 .message-content {
-    display: flex;
+    display: inline-flex;
+    align-items: flex-end;
     align-self: flex-start;
+    gap: 0.4em;
+    max-width: 70%;
+    box-sizing: border-box;
+    padding: 8px 10px;
 }
 
 .message-content.sender {
@@ -648,9 +651,9 @@ a.logout {
 }
 
 .time {
+    flex-shrink: 0;
     padding: 0 !important;
-    padding-right: 5px !important;
-    margin-top: 15px !important;
+    margin: 0 !important;
     opacity: 0.6 !important;
     font-size: x-small !important;
 }
@@ -857,7 +860,7 @@ form#messageForm {
         gap: 8px;
     }
 
-    #chat-messages span {
+    #chat-messages .message-content {
         max-width: 85%;
     }
 
