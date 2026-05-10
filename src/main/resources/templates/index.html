@@ -9,22 +9,6 @@
 </head>
 <body th:data-csrf-token="${csrfToken}" th:data-csrf-header="${csrfHeaderName}">
 
-<div class="login r hidden" id="login-page">
-    <h2>ВОЙТИ</h2>
-    <form id="login-form">
-        <div class="inputContainer">
-            <input autocomplete="off" type="text" id="fullname-input" name="fullname" placeholder="имя"
-                   title="введите имя" class="r animated" required>
-        </div>
-        <div class="inputContainer">
-            <input autocomplete="off" type="text" id="username-input" name="username" placeholder="никнейм"
-                   title="введите никнейм" class="r animated" required>
-        </div>
-        <span class="hidden">debug</span>
-        <button class="r" id="login-button-submit">далее</button>
-    </form>
-</div>
-
 <div class="chats" id="chat-page">
     <div class="chats-panel br-r">
         <div class="search-input-wrapper">

@@ -226,10 +226,12 @@ h2 {
     width: 55px !important;
     min-height: fit-content;
     background-color: transparent;
+    padding-right: 0;
 }
 
 #this-profile-button {
     background-color: transparent;
+    padding-left: 0;
 }
 
 .footer-panel {
@@ -827,25 +829,39 @@ form#messageForm {
         height: 16px;
     }
 
+    .chat-item {
+        justify-content: space-between;
+    }
+
     /* Боковая панель — горизонтально снизу */
     .sidepanel {
-        flex-direction: row;
-        flex: 0 0 auto;
-        width: 100%;
-        height: auto;
-        min-height: 56px;
-        align-items: center;
-        justify-content: space-around;
-        padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
-        order: 3;
-        z-index: 5;
+        display: none;
+        /*flex-direction: row;*/
+        /*flex: 0 0 auto;*/
+        /*width: 100%;*/
+        /*height: auto;*/
+        /*min-height: 56px;*/
+        /*align-items: center;*/
+        /*justify-content: space-around;*/
+        /*padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));*/
+        /*order: 3;*/
+        /*z-index: 5;*/
     }
 
     #logout-button {
         width: auto !important;
         min-width: 0 !important;
-        padding: 8px 16px;
+        padding: 8px 0 8px 16px;
         margin: 0;
+    }
+
+    .footer-panel {
+        margin-right: 12px;
+        margin-left: 12px;
+    }
+
+    .current-user-footer-container {
+
     }
 
     /* Область чата — поверх всего при открытии */
@@ -946,10 +962,10 @@ form#messageForm {
         padding: 10px 16px;
     }
 
-    /* Имя пользователя внизу */
-    #connected-user-fullname {
-        display: none;
-    }
+    /*!* Имя пользователя внизу *!*/
+    /*#connected-user-fullname {*/
+    /*    display: none;*/
+    /*}*/
 }
 
 /* ============================================
