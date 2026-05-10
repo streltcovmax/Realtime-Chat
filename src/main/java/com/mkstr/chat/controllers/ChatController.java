@@ -4,6 +4,7 @@ import com.mkstr.chat.model.Chat;
 import com.mkstr.chat.model.Message;
 import com.mkstr.chat.service.ChatService;
 import com.mkstr.chat.service.MessageService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -14,15 +15,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.security.web.csrf.CsrfToken;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 import java.security.Principal;
 import java.util.List;
@@ -149,6 +146,13 @@ public class ChatController {
         Long chatId = chat.getChatId();
         Integer count = messageService.countByChatIdAndRecipientIdAndReadIsFalse(chatId, username);
         return ResponseEntity.ok(count);
+    }
+
+    @PutMapping("/messages/read/{messageId}")
+    @ResponseBody
+    public ResponseEntity<Void> markOneMessageRead(@PathVariable long messageId) {
+        messageService.markReadForRecipient(messageId, currentUserProvider.requireCurrentUsername());
+        return ResponseEntity.noContent().build();
     }
 
     private void assertPathUsernameMatchesSession(String pathUsername) {

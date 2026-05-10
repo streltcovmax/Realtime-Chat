@@ -100,7 +100,29 @@ function jsonFetchHeaders() {
     return headers;
 }
 
+function jsonFetchHeadersForEmptyBody() {
+    const headers = {};
+    const {token, headerName} = resolveCsrfForFetch();
+    if (token) {
+        headers[headerName] = token;
+    }
+    return headers;
+}
+
 const SAME_ORIGIN_FETCH = {credentials: 'same-origin'};
+
+function markMessageReadOnServer(message) {
+    const id = message.message_id ?? message.messageId;
+    if (id == null || message.recipientId !== User.username) {
+        return Promise.resolve();
+    }
+
+    return fetch(`/messages/read/${id}`, {
+        method: 'PUT',
+        ...SAME_ORIGIN_FETCH,
+        headers: jsonFetchHeadersForEmptyBody()
+    });
+}
 
 // ============================================
 // ИНИЦИАЛИЗАЦИЯ
@@ -823,8 +845,11 @@ async function onMessageReceived(payload) {
             notifyNewMessage(senderName, message.content, senderName[0]);
         } else {
             addMessage(message);
-
             resetUnreadCount();
+            markMessageReadOnServer(message)
+                .then(() => loadUnreadMessagesCount(chatElement, senderId))
+                .catch(() => {
+                });
         }
         updateChatPreview(chatElement, message);
         moveChatToTop(chatElement);
@@ -833,7 +858,22 @@ async function onMessageReceived(payload) {
 
         const newChat = document.querySelector(`#${senderId}`);
         const senderName = newChat?.chatData?.fullname || senderId;
-        notifyNewMessage(senderName, message.content, senderName[0]);
+
+        const dialogOpenWithSender =
+            AppState.selectedUser.username === senderId
+            && !DOM.chatArea.classList.contains('hidden');
+
+        if (dialogOpenWithSender) {
+            DOM.emptyChatInfoMessage.classList.add('hidden');
+            addMessage(message);
+            resetUnreadCount();
+            markMessageReadOnServer(message)
+                .then(() => newChat && loadUnreadMessagesCount(newChat, senderId))
+                .catch(() => {
+                });
+        } else {
+            notifyNewMessage(senderName, message.content, senderName[0]);
+        }
     }
 }
 
