@@ -951,7 +951,7 @@ function showCurrentUserProfile() {
 
 function onLogout() {
     User.status = 'OFFLINE';
-    window.location.replace('logout');
+    window.location.assign('/logout');
 }
 
 function onWindowResize() {
