@@ -1,0 +1,58 @@
+name: Deploy Messenger
+
+on:
+  push:
+    branches:
+      - deploy
+
+jobs:
+  deploy:
+    environment: messenger_deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASS }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
+
+      - name: Debug files
+        run: |
+          find src/main/resources/templates -type f
+          cat src/main/resources/templates/index.html
+
+      - name: Build keycloak image
+        run: docker build --no-cache -t ${{ secrets.DOCKER_USER }}/keycloak-custom:latest -f Dockerfile.keycloak .
+
+      - name: Push keycloak image
+        run: docker push ${{ secrets.DOCKER_USER }}/keycloak-custom:latest
+
+      - name: Build app image
+        run: |
+          docker build --no-cache \
+            -t ${{ secrets.DOCKER_USER }}/messenger_app:${{ github.sha }} \
+            -t ${{ secrets.DOCKER_USER }}/messenger_app:latest .
+
+      - name: Push image
+        run: |
+          docker push ${{ secrets.DOCKER_USER }}/messenger_app:${{ github.sha }}
+          docker push ${{ secrets.DOCKER_USER }}/messenger_app:latest
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /root/app
+            if [ -d .git ]; then
+              git pull --ff-only
+            fi
+            docker compose pull keycloak
+            docker compose up -d --force-recreate keycloak
+            export APP_IMAGE_TAG=${{ github.sha }}
+            docker compose pull app
+            docker compose up -d --force-recreate app
+            docker image prune -f

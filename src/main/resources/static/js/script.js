@@ -11,6 +11,8 @@ const MESSAGES_PAGE_SIZE = 50;
 const SCROLL_THRESHOLD_PX = 250;
 const MIN_SEARCH_LENGTH = 2;
 const MOBILE_BREAKPOINT = 600;
+/** Макс. высота поля ввода в строках (локально для UI); лимит символов с бэкенда — data-max-message-length на форме. */
+const MESSAGE_COMPOSER_MAX_LINES = 12;
 
 // ============================================
 // DOM ЭЛЕМЕНТЫ (сгруппированы по назначению)
@@ -44,6 +46,11 @@ const DOM = {
 
     // Информация о текущем пользователе
     connectedUserFullname: document.querySelector('#connected-user-fullname'),
+    connectedUserAvatar: document.querySelector('#connected-user-avatar'),
+
+    messageForm: document.querySelector('#messageForm'),
+    messageLengthError: document.querySelector('#message-length-error'),
+    sendMessageButton: document.querySelector('#send-message-button'),
 };
 
 // ============================================
@@ -52,6 +59,8 @@ const DOM = {
 
 const AppState = {
     stompClient: null,
+    reconnectTimer: null,
+    isConnected: false,
     selectedUser: {
         username: null,
         fullname: null
@@ -60,16 +69,73 @@ const AppState = {
         page: 0,
         isLastPage: false,
         isLoading: false,
-    }
+    },
+    // Подтягивается из data-max-message-length формы сообщения после setupUI
+    maxMessageLength: 2048,
+    chatTailDayKey: null,
 };
+
+function updateAppHeightVar() {
+    const viewportHeight = window.visualViewport?.height || window.innerHeight;
+    document.documentElement.style.setProperty('--app-height', `${Math.round(viewportHeight)}px`);
+}
+
+function readXsrfTokenFromCookie() {
+    const m = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
+    return m ? decodeURIComponent(m[1]) : '';
+}
+
+function resolveCsrfForFetch() {
+    const ds = document.body?.dataset;
+    const token = (ds?.csrfToken && ds.csrfToken.trim()) || readXsrfTokenFromCookie();
+    const headerName = ds?.csrfHeader || 'X-XSRF-TOKEN';
+    return {token, headerName};
+}
+
+function jsonFetchHeaders() {
+    const headers = {'Content-Type': 'application/json'};
+    const {token, headerName} = resolveCsrfForFetch();
+    if (token) {
+        headers[headerName] = token;
+    }
+    return headers;
+}
+
+function jsonFetchHeadersForEmptyBody() {
+    const headers = {};
+    const {token, headerName} = resolveCsrfForFetch();
+    if (token) {
+        headers[headerName] = token;
+    }
+    return headers;
+}
+
+const SAME_ORIGIN_FETCH = {credentials: 'same-origin'};
+
+function markMessageReadOnServer(message) {
+    const id = message.message_id ?? message.messageId;
+    if (id == null || message.recipientId !== User.username) {
+        return Promise.resolve();
+    }
+
+    return fetch(`/messages/read/${id}`, {
+        method: 'PUT',
+        ...SAME_ORIGIN_FETCH,
+        headers: jsonFetchHeadersForEmptyBody()
+    });
+}
 
 // ============================================
 // ИНИЦИАЛИЗАЦИЯ
 // ============================================
 
 function initCurrentUser() {
-    fetch("/user.getCurrent")
+    fetch("/user.getCurrent", SAME_ORIGIN_FETCH)
         .then(response => {
+            if (response.status === 401) {
+                window.location.href = '/oauth2/authorization/keycloak';
+                throw new Error("Unauthorized");
+            }
             if (!response.ok) throw new Error("Ошибка загрузки пользователя");
             return response.json();
         })
@@ -85,6 +151,12 @@ function initCurrentUser() {
 }
 
 function onConnected() {
+    AppState.isConnected = true;
+    if (AppState.reconnectTimer) {
+        clearTimeout(AppState.reconnectTimer);
+        AppState.reconnectTimer = null;
+    }
+
     // Подписки на WebSocket каналы
     AppState.stompClient.subscribe(`/user/${User.username}/messages`, onMessageReceived);
     AppState.stompClient.subscribe(`/user/public/`, onUserStatusUpdate);
@@ -97,7 +169,8 @@ function onConnected() {
 function registerUser() {
     fetch('/user.addUser', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        ...SAME_ORIGIN_FETCH,
+        headers: jsonFetchHeaders(),
         body: JSON.stringify({
             username: User.username,
             fullname: User.fullname,
@@ -115,7 +188,10 @@ function registerUser() {
 function setupUI() {
     hideChatArea();
     DOM.connectedUserFullname.textContent = User.fullname;
+    DOM.connectedUserAvatar.textContent = User.fullname[0];
+    readMaxMessageLengthFromDom();
     setEventListeners();
+    initMessageComposer();
     fetchAndShowChats();
 
     loadNotificationSettings();
@@ -124,6 +200,11 @@ function setupUI() {
 
 function setEventListeners() {
     window.addEventListener('resize', onWindowResize);
+    window.addEventListener('orientationchange', updateAppHeightVar);
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', updateAppHeightVar);
+        window.visualViewport.addEventListener('scroll', updateAppHeightVar);
+    }
     // Кнопки
     document.querySelector('#this-profile-button').addEventListener('click', showCurrentUserProfile);
     document.querySelector('#logout-button').addEventListener('click', onLogout);
@@ -146,17 +227,101 @@ function setEventListeners() {
 }
 
 // ============================================
+// ПОЛЕ ВВОДА СООБЩЕНИЯ (лимит длины, авто‑высота)
+// ============================================
+
+function readMaxMessageLengthFromDom() {
+    const raw = DOM.messageForm?.dataset?.maxMessageLength;
+    const n = parseInt(raw, 10);
+    AppState.maxMessageLength = Number.isFinite(n) && n > 0 ? n : 2048;
+}
+
+function autosizeMessageInput() {
+    const ta = DOM.messageInput;
+    if (!ta) return;
+
+    const styles = getComputedStyle(ta);
+    let lineHeight = parseFloat(styles.lineHeight);
+    if (!Number.isFinite(lineHeight) || lineHeight <= 0) {
+        lineHeight = (parseFloat(styles.fontSize) || 16) * 1.35;
+    }
+    const paddingY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
+    const borderY = parseFloat(styles.borderTopWidth) + parseFloat(styles.borderBottomWidth);
+    const maxHeight = lineHeight * MESSAGE_COMPOSER_MAX_LINES + paddingY + borderY;
+
+    ta.style.maxHeight = `${maxHeight}px`;
+    ta.style.height = '0px';
+    const scrollH = ta.scrollHeight;
+    const next = Math.min(scrollH, maxHeight);
+    ta.style.height = `${next}px`;
+    ta.style.overflowY = scrollH > maxHeight ? 'auto' : 'hidden';
+}
+
+function syncMessageComposerState() {
+    if (!DOM.messageInput || !DOM.messageLengthError || !DOM.sendMessageButton) return;
+
+    const trimmedLength = DOM.messageInput.value.trim().length;
+    const tooLong = trimmedLength > AppState.maxMessageLength;
+    const limit = AppState.maxMessageLength;
+
+    DOM.messageLengthError.classList.toggle('hidden', !tooLong);
+    DOM.messageLengthError.textContent = tooLong
+        ? `Слишком длинное сообщение: максимум ${limit} символов, сейчас ${trimmedLength}.`
+        : '';
+
+    DOM.sendMessageButton.disabled = tooLong;
+    autosizeMessageInput();
+}
+
+function initMessageComposer() {
+    if (!DOM.messageForm || !DOM.messageInput) return;
+
+    DOM.messageForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        sendMessage(e);
+    });
+
+    DOM.messageInput.addEventListener('input', syncMessageComposerState);
+    DOM.messageInput.addEventListener('keydown', e => {
+        if (e.key !== 'Enter' || e.shiftKey) return;
+        e.preventDefault();
+        sendMessage(e);
+    });
+
+    syncMessageComposerState();
+}
+
+// ============================================
 // WEBSOCKET
 // ============================================
 
 function connectWS() {
+    if (AppState.isConnected) return;
+
     const socket = new SockJS('/ws');
     AppState.stompClient = Stomp.over(socket);
+    AppState.stompClient.heartbeat.outgoing = 20_000;
+    AppState.stompClient.heartbeat.incoming = 20_000;
     AppState.stompClient.connect({}, onConnected, onWSError);
+
+    socket.onclose = () => {
+        AppState.isConnected = false;
+        scheduleReconnect();
+    };
 }
 
 function onWSError(error) {
+    AppState.isConnected = false;
     console.error('WebSocket connection error:', error);
+    scheduleReconnect();
+}
+
+function scheduleReconnect() {
+    if (AppState.reconnectTimer || AppState.isConnected) return;
+    AppState.reconnectTimer = setTimeout(() => {
+        AppState.reconnectTimer = null;
+        connectWS();
+    }, 3_000);
 }
 
 // ============================================
@@ -173,6 +338,7 @@ function hideChatArea() {
 
     DOM.chatArea.classList.add('hidden');
     DOM.chatMessagesArea.innerHTML = '';
+    AppState.chatTailDayKey = null;
     DOM.pickChatInfoMessage.classList.remove('hidden');
     DOM.emptyChatInfoMessage.classList.add('hidden');
 
@@ -263,10 +429,16 @@ function createSearchResultElement(user) {
     const element = document.createElement('li');
     element.classList.add('search-result-item');
     element.chatData = user;
-    element.innerHTML = `
-        <span class="chat-avatar r">${user.fullname?.[0] || '?'}</span> 
-        ${user.fullname || user.username} (@${user.username})
-    `;
+
+    const avatar = document.createElement('span');
+    avatar.classList.add('chat-avatar', 'r');
+    avatar.textContent = user.fullname?.[0] || '?';
+
+    const label = document.createElement('span');
+    label.textContent = ` ${user.fullname || user.username} (@${user.username})`;
+
+    element.appendChild(avatar);
+    element.appendChild(label);
     element.addEventListener('click', () => onSearchResultClick(element, user));
     return element;
 }
@@ -288,7 +460,7 @@ function onSearchResultClick(element, user) {
 
 async function fetchAndShowChats() {
     try {
-        const response = await fetch('/chats');
+        const response = await fetch('/chats', SAME_ORIGIN_FETCH);
         const users = await response.json();
 
         DOM.chatsList.innerHTML = '';
@@ -301,31 +473,57 @@ async function fetchAndShowChats() {
     }
 }
 
-function appendChatToList(chatData) {
+function moveChatToTop(chatElement) {
+    if (!chatElement || chatElement.parentElement !== DOM.chatsList) return;
+    DOM.chatsList.prepend(chatElement);
+}
+
+function appendChatToList(chatData, prependToList = false) {
     const listItem = document.createElement('li');
     listItem.classList.add('chat-item');
     listItem.id = chatData.username;
     listItem.chatData = {...chatData};
 
-    listItem.innerHTML = `
-          <div class="chat-info">
-            <div class="chat-avatar r">${chatData.fullname[0]}
-                <span class="online-indicator hidden"></span>
-            </div>
-        </div>
-        <div class="chat-text">
-            <span class="chat-name">${chatData.fullname}</span>
-            <span class="chat-message"></span>
-        </div>
-        <div class="chat-nums">
-            <span class="datetime"></span>
-            <span class="notificationMarker r hidden"></span>
-        </div>
-    `;
+    const chatInfo = document.createElement('div');
+    chatInfo.classList.add('chat-info');
+    const avatarWrap = document.createElement('div');
+    avatarWrap.classList.add('chat-avatar', 'r');
+    avatarWrap.appendChild(document.createTextNode(chatData.fullname?.[0] || '?'));
+    const onlineIndicator = document.createElement('span');
+    onlineIndicator.classList.add('online-indicator', 'hidden');
+    avatarWrap.appendChild(onlineIndicator);
+    chatInfo.appendChild(avatarWrap);
+
+    const chatText = document.createElement('div');
+    chatText.classList.add('chat-text');
+    const nameSpan = document.createElement('span');
+    nameSpan.classList.add('chat-name');
+    nameSpan.textContent = chatData.fullname ?? '';
+    const previewSpan = document.createElement('span');
+    previewSpan.classList.add('chat-message');
+    chatText.appendChild(nameSpan);
+    chatText.appendChild(previewSpan);
+
+    const chatNums = document.createElement('div');
+    chatNums.classList.add('chat-nums');
+    const datetimeSpan = document.createElement('span');
+    datetimeSpan.classList.add('datetime');
+    const markerSpan = document.createElement('span');
+    markerSpan.classList.add('notificationMarker', 'r', 'hidden');
+    chatNums.appendChild(datetimeSpan);
+    chatNums.appendChild(markerSpan);
+
+    listItem.appendChild(chatInfo);
+    listItem.appendChild(chatText);
+    listItem.appendChild(chatNums);
 
     updateStatusIndicator(listItem, chatData.status);
     listItem.addEventListener('click', onChatItemClick);
-    DOM.chatsList.appendChild(listItem);
+    if (prependToList) {
+        DOM.chatsList.prepend(listItem);
+    } else {
+        DOM.chatsList.appendChild(listItem);
+    }
 
     loadLastMessage(listItem, chatData.username);
     loadUnreadMessagesCount(listItem, chatData.username)
@@ -333,7 +531,7 @@ function appendChatToList(chatData) {
 
 async function loadLastMessage(chatElement, targetUsername) {
     try {
-        const response = await fetch(`/messages/last/${User.username}/${targetUsername}`);
+        const response = await fetch(`/messages/last/${User.username}/${targetUsername}`, SAME_ORIGIN_FETCH);
         if (!response.ok || response.status === 204) return;
 
         const message = await response.json();
@@ -347,7 +545,7 @@ async function loadLastMessage(chatElement, targetUsername) {
 
 async function loadUnreadMessagesCount(chatElement, targetUsername) {
     try {
-        const response = await fetch(`/messages/${User.username}/${targetUsername}/count-unread`);
+        const response = await fetch(`/messages/${User.username}/${targetUsername}/count-unread`, SAME_ORIGIN_FETCH);
         if (!response.ok || response.status === 204) return;
 
         const count = await response.json();
@@ -368,11 +566,12 @@ async function fetchAndAppendNewUser(targetUsername, message) {
 
     if (chatElement) {
         if (message) updateChatPreview(chatElement, message);
+        moveChatToTop(chatElement);
         return;
     }
 
     try {
-        const response = await fetch(`/users/${targetUsername}`);
+        const response = await fetch(`/users/${targetUsername}`, SAME_ORIGIN_FETCH);
         const user = await response.json();
         appendChatToList(user, true);
 
@@ -500,6 +699,7 @@ async function displayChatMessages(chatData) {
 function resetMessagesState() {
     AppState.pagination.page = 0;
     AppState.pagination.isLastPage = false;
+    AppState.chatTailDayKey = null;
     DOM.chatMessagesArea.innerHTML = '';
 }
 
@@ -513,7 +713,7 @@ async function loadChatMessagesPage(chatUsername, isReset) {
     try {
         const pageToLoad = isReset ? 0 : pagination.page + 1;
         const url = `/messages/page/${User.username}/${chatUsername}?page=${pageToLoad}&size=${MESSAGES_PAGE_SIZE}`;
-        const response = await fetch(url);
+        const response = await fetch(url, SAME_ORIGIN_FETCH);
 
         if (!response.ok) {
             console.error('Не удалось получить сообщения чата');
@@ -551,45 +751,90 @@ async function loadChatMessagesPage(chatUsername, isReset) {
     }
 }
 
+function peerDayKeyStartingFrom(node) {
+    let n = node;
+    while (n) {
+        if (n.nodeType !== Node.ELEMENT_NODE) {
+            n = n.nextSibling;
+            continue;
+        }
+        if (n.classList?.contains('message-day-divider')) {
+            n = n.nextSibling;
+            continue;
+        }
+        if (n.dataset?.dayKey) {
+            return n.dataset.dayKey;
+        }
+        n = n.nextSibling;
+    }
+    return null;
+}
+
 function prependMessages(messages) {
     const oldScrollHeight = DOM.chatMessagesArea.scrollHeight;
-    const fragment = document.createDocumentFragment();
 
-    messages.forEach(message => {
-        fragment.appendChild(createMessageElement(message));
-    });
+    const reversed = messages.slice().reverse();
+    let anchor = DOM.chatMessagesArea.firstChild;
 
-    DOM.chatMessagesArea.insertBefore(fragment, DOM.chatMessagesArea.firstChild);
+    for (const message of reversed) {
+        const msgDay = calendarDayKey(message.dateCreated);
+        const belowDay = peerDayKeyStartingFrom(anchor);
+
+        if (belowDay !== null && msgDay !== belowDay) {
+            const divider = createDayDividerElement(formatDayDividerLabel(message.dateCreated));
+            DOM.chatMessagesArea.insertBefore(divider, anchor);
+        }
+
+        const el = createMessageElement(message);
+        DOM.chatMessagesArea.insertBefore(el, anchor);
+        anchor = el;
+    }
+
     DOM.chatMessagesArea.scrollTop = DOM.chatMessagesArea.scrollHeight - oldScrollHeight;
 }
 
 function createMessageElement(messageData) {
     const container = document.createElement('div');
+    container.classList.add('chat-message-row');
+    container.dataset.dayKey = calendarDayKey(messageData.dateCreated);
+
     const isSender = messageData.senderId === User.username;
     const type = isSender ? 'sender' : 'receiver';
 
-    container.innerHTML = `
-        <div class="message ${type}">
-            <div class="message-content ${type}">
-                <span>${messageData.content}</span>
-                <span class="time">${formatTime(messageData.dateCreated)}</span>
-            </div>
-        </div>
-    `;
+    const row = document.createElement('div');
+    row.classList.add('message', type);
+    const contentBox = document.createElement('div');
+    contentBox.classList.add('message-content', type);
+    const textSpan = document.createElement('span');
+    textSpan.textContent = messageData.content ?? '';
+    const timeSpan = document.createElement('span');
+    timeSpan.classList.add('time');
+    timeSpan.textContent = formatTime(messageData.dateCreated);
+    contentBox.appendChild(textSpan);
+    contentBox.appendChild(timeSpan);
+    row.appendChild(contentBox);
+    container.appendChild(row);
 
     return container;
 }
 
 function addMessage(messageData) {
+    const dayKey = calendarDayKey(messageData.dateCreated);
+    if (AppState.chatTailDayKey !== dayKey) {
+        DOM.chatMessagesArea.appendChild(createDayDividerElement(formatDayDividerLabel(messageData.dateCreated)));
+        AppState.chatTailDayKey = dayKey;
+    }
     DOM.chatMessagesArea.appendChild(createMessageElement(messageData));
     scrollToBottom(DOM.chatMessagesArea);
 }
 
 async function sendMessage(event) {
-    event.preventDefault();
+    event?.preventDefault?.();
 
     const content = DOM.messageInput.value.trim();
     const {selectedUser, stompClient} = AppState;
+
+    if (content.length > AppState.maxMessageLength) return;
 
     if (!content || !stompClient || !selectedUser.username) return;
 
@@ -603,6 +848,7 @@ async function sendMessage(event) {
 
     stompClient.send("/app/chat", {}, JSON.stringify(message));
     DOM.messageInput.value = '';
+    syncMessageComposerState();
     DOM.emptyChatInfoMessage.classList.add('hidden');
 
     let chatElement = document.querySelector(`#${message.recipientId}`);
@@ -613,6 +859,7 @@ async function sendMessage(event) {
         chatElement = document.querySelector(`#${message.recipientId}`);
     } else {
         updateChatPreview(chatElement, message);
+        moveChatToTop(chatElement);
     }
 
     if (chatElement?.chatData) {
@@ -639,16 +886,35 @@ async function onMessageReceived(payload) {
             notifyNewMessage(senderName, message.content, senderName[0]);
         } else {
             addMessage(message);
-
             resetUnreadCount();
+            markMessageReadOnServer(message)
+                .then(() => loadUnreadMessagesCount(chatElement, senderId))
+                .catch(() => {
+                });
         }
         updateChatPreview(chatElement, message);
+        moveChatToTop(chatElement);
     } else {
         await fetchAndAppendNewUser(senderId, message);
 
         const newChat = document.querySelector(`#${senderId}`);
         const senderName = newChat?.chatData?.fullname || senderId;
-        notifyNewMessage(senderName, message.content, senderName[0]);
+
+        const dialogOpenWithSender =
+            AppState.selectedUser.username === senderId
+            && !DOM.chatArea.classList.contains('hidden');
+
+        if (dialogOpenWithSender) {
+            DOM.emptyChatInfoMessage.classList.add('hidden');
+            addMessage(message);
+            resetUnreadCount();
+            markMessageReadOnServer(message)
+                .then(() => newChat && loadUnreadMessagesCount(newChat, senderId))
+                .catch(() => {
+                });
+        } else {
+            notifyNewMessage(senderName, message.content, senderName[0]);
+        }
     }
 }
 
@@ -755,6 +1021,44 @@ function formatTime(dateTimeString) {
     return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+// Локальный календарный день для группировки (YYYY-MM-DD).
+function calendarDayKey(dateTimeString) {
+    const date = new Date(dateTimeString);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function formatDayDividerLabel(dateTimeString) {
+    const date = new Date(dateTimeString);
+    const pad = num => String(num).padStart(2, '0');
+    const dateStr = `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()}`;
+
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === now.toDateString()) {
+        return 'сегодня';
+    }
+    if (date.toDateString() === yesterday.toDateString()) {
+        return 'вчера';
+    }
+    return dateStr;
+}
+
+function createDayDividerElement(labelText) {
+    const wrap = document.createElement('div');
+    wrap.className = 'message-day-divider';
+    wrap.setAttribute('role', 'presentation');
+    const pill = document.createElement('span');
+    pill.className = 'message-day-divider-label r';
+    pill.textContent = labelText;
+    wrap.appendChild(pill);
+    return wrap;
+}
+
 // ============================================
 // ДРУГИЕ ДЕЙСТВИЯ
 // ============================================
@@ -766,10 +1070,12 @@ function showCurrentUserProfile() {
 
 function onLogout() {
     User.status = 'OFFLINE';
-    window.location.replace('logout');
+    window.location.assign('/logout');
 }
 
 function onWindowResize() {
+    updateAppHeightVar();
+
     // Если перешли с мобильного на десктоп — убираем класс
     if (!isMobile()) {
         document.body.classList.remove('mobile-chat-open');
@@ -795,10 +1101,13 @@ function onWindowResize() {
             }
         }
     }
+
+    syncMessageComposerState();
 }
 
 // ============================================
 // ЗАПУСК
 // ============================================
 
+updateAppHeightVar();
 initCurrentUser();

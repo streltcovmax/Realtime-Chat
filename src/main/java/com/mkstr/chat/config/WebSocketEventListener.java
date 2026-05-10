@@ -1,5 +1,6 @@
 package com.mkstr.chat.config;
 
+import com.mkstr.chat.model.User;
 import com.mkstr.chat.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,10 +8,12 @@ import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Component;
-import org.springframework.web.socket.messaging.SessionConnectEvent;
+import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import java.security.Principal;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Slf4j
 @Component
@@ -19,27 +22,61 @@ public class WebSocketEventListener {
 
     private final UserService userService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ConcurrentMap<String, String> sessionToUser = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Integer> userSessionsCount = new ConcurrentHashMap<>();
 
     @EventListener
-    public void handleWebSocketConnectListener(SessionConnectEvent event) {
+    public void handleWebSocketConnectListener(SessionConnectedEvent event) {
         StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
-        var userPrincipal = headerAccessor.getUser();
-        headerAccessor.getSessionAttributes().put("user", userPrincipal);
-        log.info("User got in web socket connect listener: {}", userPrincipal);
+        Principal userPrincipal = headerAccessor.getUser();
+        String sessionId = headerAccessor.getSessionId();
+
+        if (userPrincipal == null || sessionId == null) {
+            log.warn("Connect event without principal/sessionId. principal={}, sessionId={}", userPrincipal, sessionId);
+            return;
+        }
+
+        String username = userPrincipal.getName();
+        sessionToUser.put(sessionId, username);
+        userSessionsCount.merge(username, 1, Integer::sum);
+        log.info("WebSocket connected: username={}, sessionId={}, activeSessions={}",
+                username, sessionId, userSessionsCount.get(username));
     }
 
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
-        Principal user = headerAccessor.getUser();
+        String sessionId = headerAccessor.getSessionId();
+        String username = null;
 
-        if (user != null) {
-            String username = user.getName();
-            log.info("User disconnected: {}", username);
-            userService.disconnect(username);
-            messagingTemplate.convertAndSend("/user/public/", userService.findByUsername(username));
+        if (sessionId != null) {
+            username = sessionToUser.remove(sessionId);
+        }
+
+        if (username == null) {
+            log.info("Ignoring disconnect for unknown session. sessionId={}", sessionId);
+            return;
+        }
+
+        Integer updatedSessions = userSessionsCount.compute(username, (key, oldValue) -> {
+            if (oldValue == null || oldValue <= 1) return null;
+            return oldValue - 1;
+        });
+        int activeSessions = updatedSessions == null ? 0 : updatedSessions;
+
+        if (activeSessions > 0) {
+            log.info("Ignoring disconnect: username={}, sessionId={}, activeSessions={}",
+                    username, sessionId, activeSessions);
+            return;
+        }
+
+        log.info("User disconnected: username={}, sessionId={}", username, sessionId);
+        userService.disconnect(username);
+        User offlineUser = userService.findByUsername(username);
+        if (offlineUser != null) {
+            messagingTemplate.convertAndSend("/user/public/", offlineUser);
         } else {
-            log.warn("No user found on disconnect");
+            log.warn("Disconnected user {} not found in DB; skip status broadcast", username);
         }
     }
 }

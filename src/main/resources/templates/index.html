@@ -1,29 +1,13 @@
 <!DOCTYPE html>
-<html lang="en" spellcheck="false">
+<html lang="ru" xmlns:th="http://www.thymeleaf.org" spellcheck="false">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" media="all" href="/static/css/style.css"/>
+    <link rel="stylesheet" type="text/css" media="all" href="/static/css/style.css">
     <link rel="icon" type="image/x-icon" href="/static/images/icon_colored.ico">
     <title>CHAT</title>
 </head>
-<body>
-
-<div class="login r hidden" id="login-page">
-    <h2>ВОЙТИ</h2>
-    <form id="login-form">
-        <div class="inputContainer">
-            <input autocomplete="off" type="text" id="fullname-input" name="fullname" placeholder="имя"
-                   title="введите имя" class="r animated" required>
-        </div>
-        <div class="inputContainer">
-            <input autocomplete="off" type="text" id="username-input" name="username" placeholder="никнейм"
-                   title="введите никнейм" class="r animated" required>
-        </div>
-
-        <button class="r" id="login-button-submit">далее</button>
-    </form>
-</div>
+<body th:data-csrf-token="${csrfToken}" th:data-csrf-header="${csrfHeaderName}">
 
 <div class="chats" id="chat-page">
     <div class="chats-panel br-r">
@@ -40,8 +24,14 @@
             <ul id="chats-list">
             </ul>
         </div>
-        <div>
-            <p id="connected-user-fullname"></p>
+        <div class="footer-panel">
+            <button class="current-user-footer-container" id="this-profile-button">
+                <span id="connected-user-avatar" class="chat-avatar r"></span>
+                <span id="connected-user-fullname"></span>
+            </button>
+            <button id="logout-button">
+              <img src="/static/images/exit.svg" alt="exit">
+            </button>
         </div>
     </div>
 
@@ -56,11 +46,13 @@
             </div>
             <div id="chat-messages" class="r">
             </div>
-            <form id="messageForm" name="messageForm" class="br-t">
+            <form id="messageForm" name="messageForm" class="br-t"
+                  th:data-max-message-length="${maxMessageLength}">
+                <p id="message-length-error" class="message-length-error hidden" role="alert" aria-live="polite"></p>
                 <div class="message-input">
-                    <input autocomplete="off" type="text" id="messageInput" placeholder="введите сообщение..."
-                           class="r">
-                    <button class="r" id="send-message-button">></button>
+                    <textarea autocomplete="off" id="messageInput" placeholder="введите сообщение..."
+                              class="r" rows="1"></textarea>
+                    <button type="button" class="r" id="send-message-button">></button>
                 </div>
             </form>
         </div>
@@ -68,10 +60,7 @@
         <div class="info-message r overlay hidden" id="empty-chat-message"> здесь пока пусто...</div>
     </div>
 
-
     <div class="sidepanel br-l">
-        <button id="this-profile-button" class="r" type="button">профиль</button>
-        <button id="logout-button" class="r">выйти</button>
     </div>
 </div>
 
@@ -86,5 +75,3 @@
 <script type="module" src="/static/js/script.js"></script>
 </body>
 </html>
-
-

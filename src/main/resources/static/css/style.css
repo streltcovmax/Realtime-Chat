@@ -2,6 +2,7 @@
    ПЕРЕМЕННЫЕ
    ============================================ */
 :root {
+    --app-height: 100vh;
     --text-highlight: #fff;
     --text-plain: #bbb;
     --text-dark: #aaa;
@@ -20,7 +21,7 @@
     --highlight_light: rgb(157, 145, 234);
 
     --scale_modifier: 1.03;
-    --scale_modifier_button: 1.1;
+    --scale_modifier_button: 1.03;
 
     --border-color: var(--text-dark);
     --border-width: 2px;
@@ -43,8 +44,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: stretch;
-    min-height: 100dvh;
-    min-height: 100vh; /* fallback */
+    min-height: var(--app-height);
     margin: 0;
     padding: 0;
     background-color: var(--back_plain);
@@ -165,7 +165,7 @@ button {
     border: none;
     padding: 10px 15px;
     cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+    transition: background-color 0.3s ease, transform 0.05s ease;
 }
 
 button:hover {
@@ -200,8 +200,7 @@ h2 {
 .chats {
     display: flex;
     width: 100%;
-    height: 100dvh;
-    height: 100vh; /* fallback */
+    height: var(--app-height);
     margin: 0;
     overflow: hidden;
     background-color: var(--back_plain);
@@ -226,12 +225,22 @@ h2 {
     min-width: 55px !important;
     width: 55px !important;
     min-height: fit-content;
-    padding: 3px;
-    margin-bottom: 12px;
+    background-color: transparent;
+    padding-right: 0;
 }
 
 #this-profile-button {
-    margin-top: 12px;
+    background-color: transparent;
+    padding-left: 0;
+}
+
+.footer-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    margin-left: 25px;
+    margin-right: 25px;
 }
 
 a.logout {
@@ -243,8 +252,8 @@ a.logout {
    ПАНЕЛЬ СПИСКА ЧАТОВ
    ============================================ */
 .chats-panel {
-    width: 400px;
-    flex: 0 0 400px;
+    width: 500px;
+    flex: 0 0 500px;
     min-width: 0;
     padding-top: 12px;
     display: flex;
@@ -258,11 +267,23 @@ a.logout {
 }
 
 #connected-user-fullname {
-    padding: 12px 16px;
-    margin: 0;
-    color: var(--text-highlight);
-    font-size: 14px;
-    background-color: var(--back_dark);
+    margin: 0 0 0 0;
+    color: var(--back_light);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+#settings-button {
+    background-color: transparent;
+    padding: 0;
+}
+
+.current-user-footer-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background-color: transparent;
+    padding: 0;
 }
 
 /* ============================================
@@ -403,7 +424,6 @@ a.logout {
     padding: 8px 0;
     cursor: pointer;
     color: var(--text-highlight);
-    font-weight: lighter;
     width: 100%;
     transition: background-color 0.15s ease;
 }
@@ -414,10 +434,6 @@ a.logout {
 
 .chat-item.active {
     background-color: var(--highlight_dark) !important;
-}
-
-.chat-item.online {
-    color: var(--highlight_dark);
 }
 
 .chat-info {
@@ -435,11 +451,12 @@ a.logout {
     align-items: start;
     width: 80%;
     height: 80%;
-    margin-left: 10px;
+    margin-left: 12px;
     min-width: 0;
 }
 
 .chat-name {
+    font-size: clamp(14px, 2.4vw, 16px);
     width: 100%;
     color: var(--text-highlight);
     font-weight: normal;
@@ -449,7 +466,7 @@ a.logout {
 }
 
 .chat-message {
-    font-size: clamp(14px, 2.4vw, 16px);
+    font-size: clamp(12px, 2.4vw, 14px);
     color: var(--text-dark);
     white-space: nowrap;
     overflow: hidden;
@@ -458,7 +475,7 @@ a.logout {
 }
 
 .chat-nums {
-    font-size: 14px;
+    font-size: clamp(10px, 2.4vw, 12px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -468,7 +485,7 @@ a.logout {
 }
 
 .datetime {
-    font-weight: lighter;
+    font-weight: 100;
     text-align: end;
     opacity: 0.7;
 }
@@ -596,13 +613,37 @@ a.logout {
     font-size: small;
 }
 
-#chat-messages span {
-    display: inline-block;
-    max-width: 70%;
-    padding: 8px 10px;
+/* Только текст сообщения — не трогаем .time; max-width задаётся на самом пузыре (.message-content) */
+#chat-messages .chat-message-row .message-content > span:first-of-type {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
     word-wrap: break-word;
+    overflow-wrap: break-word;
     opacity: 0;
     animation: fadeIn 0.4s forwards;
+}
+
+.message-day-divider {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    margin: 6px 0 4px;
+}
+
+.message-day-divider-label {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: clamp(11px, 2.5vw, 12px);
+    font-weight: normal;
+    color: var(--text-plain);
+    background-color: var(--fields_middle);
+    opacity: 0.95;
+}
+
+.chat-message-row {
+    display: contents;
 }
 
 /* ============================================
@@ -627,8 +668,13 @@ a.logout {
 }
 
 .message-content {
-    display: flex;
+    display: inline-flex;
+    align-items: flex-end;
     align-self: flex-start;
+    gap: 0.4em;
+    max-width: 35%;
+    box-sizing: border-box;
+    padding: 8px 10px;
 }
 
 .message-content.sender {
@@ -648,9 +694,9 @@ a.logout {
 }
 
 .time {
+    flex-shrink: 0;
     padding: 0 !important;
-    padding-right: 5px !important;
-    margin-top: 15px !important;
+    margin: 0 !important;
     opacity: 0.6 !important;
     font-size: x-small !important;
 }
@@ -667,22 +713,56 @@ form#messageForm {
 .message-input {
     display: flex;
     gap: 10px;
+    align-items: center;
 }
 
-.message-input input {
+.message-length-error {
+    color: #e07070;
+    font-size: clamp(12px, 2.8vw, 13px);
+    margin: 0 0 8px 2px;
+    line-height: 1.35;
+}
+
+.message-input textarea {
     flex: 1;
     padding: 10px 14px;
-    font-size: clamp(14px, 3.5vw, 16px);
+    font-size: clamp(11px, 3.5vw, 13px);
+    font-family: inherit;
+    line-height: 1.35;
+    min-height: 37px;
+    box-sizing: border-box;
+    width: 0;
+    border: none;
+    outline: none;
+    background-color: var(--fields_middle);
+    color: var(--text-highlight);
+    resize: none;
+    overflow-x: hidden;
+}
+
+.message-input textarea:focus.animated {
+    transform: scale(var(--scale_modifier));
+}
+
+.message-input button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    pointer-events: none;
+}
+
+.message-input button:disabled:hover {
+    background-color: var(--highlight_plain);
+    transform: none;
 }
 
 .message-input button {
-    padding: 10px 20px;
+    padding: 11px 20px;
     border: none;
     background-color: var(--highlight_plain);
     color: var(--text-highlight);
     font-weight: bold;
     cursor: pointer;
-    transition: background-color 0.2s ease;
 }
 
 /* ============================================
@@ -701,17 +781,12 @@ form#messageForm {
         flex-basis: 320px;
     }
 
-    .chat-text {
-        width: 65%;
-    }
-
     .sidepanel {
         flex: 0 0 60px;
     }
 
     #logout-button,
     #this-profile-button {
-        width: 50px !important;
         min-width: 50px !important;
         font-size: 12px;
     }
@@ -723,14 +798,19 @@ form#messageForm {
 @media (max-width: 600px) {
     .chats {
         flex-direction: column;
+        height: var(--app-height);
+        min-height: 0;
+        overflow: hidden;
     }
 
     /* Панель списка чатов — полная ширина */
     .chats-panel {
         width: 100%;
-        flex: 1 1 auto;
+        flex: 1 1 0;
+        min-height: 0;
         max-height: none;
         order: 1;
+        overflow: hidden;
     }
 
     .chat-nums {
@@ -744,28 +824,39 @@ form#messageForm {
         height: 16px;
     }
 
+    .chat-item {
+        justify-content: space-between;
+    }
+
     /* Боковая панель — горизонтально снизу */
     .sidepanel {
-        flex-direction: row;
-        flex: 0 0 56px;
-        width: 100%;
-        height: 56px;
-        align-items: center;
-        justify-content: space-around;
-        padding: 8px 16px;
-        order: 3;
+        display: none;
+        /*flex-direction: row;*/
+        /*flex: 0 0 auto;*/
+        /*width: 100%;*/
+        /*height: auto;*/
+        /*min-height: 56px;*/
+        /*align-items: center;*/
+        /*justify-content: space-around;*/
+        /*padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));*/
+        /*order: 3;*/
+        /*z-index: 5;*/
     }
 
     #logout-button {
         width: auto !important;
         min-width: 0 !important;
-        padding: 8px 16px;
+        padding: 8px 0 8px 16px;
         margin: 0;
     }
 
-    #this-profile-button {
-        margin: 0;
-        padding: 8px 16px;
+    .footer-panel {
+        margin-right: 12px;
+        margin-left: 12px;
+    }
+
+    .current-user-footer-container {
+
     }
 
     /* Область чата — поверх всего при открытии */
@@ -776,9 +867,9 @@ form#messageForm {
         right: 0;
         bottom: 0;
         z-index: 100;
-        height: 100dvh;
-        height: 100vh;
+        height: var(--app-height);
         display: none; /* по умолчанию скрыта */
+        align-items: stretch;
     }
 
     /* Когда чат открыт — показываем обёртку */
@@ -850,7 +941,7 @@ form#messageForm {
         gap: 8px;
     }
 
-    #chat-messages span {
+    #chat-messages .message-content {
         max-width: 85%;
     }
 
@@ -859,15 +950,11 @@ form#messageForm {
         padding: 10px 12px;
         /* Учитываем безопасную зону на iPhone */
         padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        margin-top: auto;
     }
 
     .message-input button {
         padding: 10px 16px;
-    }
-
-    /* Имя пользователя внизу */
-    #connected-user-fullname {
-        display: none;
     }
 }
 
@@ -894,7 +981,7 @@ form#messageForm {
         font-size: 14px;
     }
 
-    .message-input input {
+    .message-input textarea {
         padding: 8px 10px;
     }
 

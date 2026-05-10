@@ -1,10 +1,12 @@
 package com.mkstr.chat.controllers;
 
+import com.mkstr.chat.model.Status;
 import com.mkstr.chat.model.User;
 import com.mkstr.chat.service.ChatService;
 import com.mkstr.chat.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -26,27 +28,42 @@ public class UserController {
     private final CurrentUserProvider currentUserProvider;
 
     @GetMapping("/user.getCurrent")
-    public User getCurrentUser() {
-        return currentUserProvider.getCurrentUser();
+    public ResponseEntity<User> getCurrentUser() {
+        User user = currentUserProvider.getCurrentUser();
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(user);
     }
 
     @PostMapping("/user.addUser")
     @ResponseBody
-    public User addUser(@RequestBody User user) {
-        log.info("User connected: {}", user);
-        userService.save(user);
-        messagingTemplate.convertAndSend("/user/public/", user);
-        return user;
+    public ResponseEntity<User> addUser(@RequestBody(required = false) User clientHints) {
+        User current = currentUserProvider.getCurrentUser();
+        if (current == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        Status status = clientHints != null && clientHints.getStatus() != null
+                ? clientHints.getStatus()
+                : current.getStatus();
+        User toSave = new User(current.getUsername(), current.getFullname(), status);
+        log.info("User connected: {}", toSave.getUsername());
+        userService.save(toSave);
+        messagingTemplate.convertAndSend("/user/public/", toSave);
+        return ResponseEntity.ok(toSave);
     }
 
     @MessageMapping("/user.disconnectUser")
     @SendTo("/user/public/")
-    public User disconnectUser(
-            @Payload User user
-    ) {
-        log.info("disconnected {}", user);
-        userService.disconnect(user.getUsername());
-        return user;
+    public User disconnectUser(Principal principal) {
+        if (principal == null) {
+            log.warn("disconnectUser without principal");
+            return null;
+        }
+        String username = principal.getName();
+        log.info("disconnected {}", username);
+        userService.disconnect(username);
+        return userService.findByUsername(username);
     }
 
     @MessageMapping("/user.findUsers")
@@ -69,7 +86,11 @@ public class UserController {
 
     @GetMapping("/chats")
     public ResponseEntity<List<User>> getChats() {
-        List<User> chats = chatService.findChatsByUsername(currentUserProvider.getCurrentUser().getUsername());
+        User current = currentUserProvider.getCurrentUser();
+        if (current == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        List<User> chats = chatService.findChatsByUsername(current.getUsername());
         return ResponseEntity.ok(chats);
     }
 
