@@ -781,17 +781,12 @@ form#messageForm {
         flex-basis: 320px;
     }
 
-    .chat-text {
-        width: 65%;
-    }
-
     .sidepanel {
         flex: 0 0 60px;
     }
 
     #logout-button,
     #this-profile-button {
-        width: 50px !important;
         min-width: 50px !important;
         font-size: 12px;
     }
@@ -961,11 +956,6 @@ form#messageForm {
     .message-input button {
         padding: 10px 16px;
     }
-
-    /*!* Имя пользователя внизу *!*/
-    /*#connected-user-fullname {*/
-    /*    display: none;*/
-    /*}*/
 }
 
 /* ============================================
