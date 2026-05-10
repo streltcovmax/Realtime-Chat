@@ -4,6 +4,7 @@ import com.mkstr.chat.model.Message;
 import com.mkstr.chat.repositories.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +20,9 @@ public class MessageService {
     }
 
     public Message findTopByChatIdOrderByDateCreatedDesc(Long chatId) {
-        return messageRepository.findTopByChatIdOrderByDateCreatedDesc(chatId);
+        Page<Message> page = messageRepository.findByChatIdOrderByDateCreatedDesc(
+                chatId, PageRequest.of(0, 1));
+        return page.hasContent() ? page.getContent().getFirst() : null;
     }
 
     public List<Message> findAllByChatId(Long chatId) {
