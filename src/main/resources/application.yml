@@ -17,13 +17,13 @@ spring:
         registration:
           keycloak :
             client-id: ${KC_CLIENT_ID:chat-client}
-            client-secret: ${KC_CLIENT_SECRET}
+            client-secret: ${KC_CLIENT_SECRET:vxnZ89TZ8cSBLyDw86S3VqneXQWUdHnU}
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/keycloak"
             scope: openid, profile
         provider:
           keycloak:
-            issuer-uri: ${KC_ISSUER_URI}
+            issuer-uri: ${KC_ISSUER_URI:http://localhost:8080/realms/chat_realm}
             user-name-attribute: preferred_username
 
   web:
