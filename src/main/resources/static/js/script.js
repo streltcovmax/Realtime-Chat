@@ -796,7 +796,7 @@ function prependMessages(messages) {
 function createMessageElement(messageData) {
     const container = document.createElement('div');
     container.classList.add('chat-message-row');
-    container.dataset.dayKey = calendarDayKey(message.dateCreated);
+    container.dataset.dayKey = calendarDayKey(messageData.dateCreated);
 
     const isSender = messageData.senderId === User.username;
     const type = isSender ? 'sender' : 'receiver';
