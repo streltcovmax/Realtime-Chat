@@ -79,13 +79,33 @@ function updateAppHeightVar() {
     document.documentElement.style.setProperty('--app-height', `${Math.round(viewportHeight)}px`);
 }
 
+function readXsrfTokenFromCookie() {
+    const m = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
+    return m ? decodeURIComponent(m[1]) : '';
+}
+
+function jsonFetchHeaders() {
+    const headers = {'Content-Type': 'application/json'};
+    const xsrf = readXsrfTokenFromCookie();
+    if (xsrf) {
+        headers['X-XSRF-TOKEN'] = xsrf;
+    }
+    return headers;
+}
+
+const SAME_ORIGIN_FETCH = {credentials: 'same-origin'};
+
 // ============================================
 // ИНИЦИАЛИЗАЦИЯ
 // ============================================
 
 function initCurrentUser() {
-    fetch("/user.getCurrent")
+    fetch("/user.getCurrent", SAME_ORIGIN_FETCH)
         .then(response => {
+            if (response.status === 401) {
+                window.location.href = '/oauth2/authorization/keycloak';
+                throw new Error("Unauthorized");
+            }
             if (!response.ok) throw new Error("Ошибка загрузки пользователя");
             return response.json();
         })
@@ -119,7 +139,8 @@ function onConnected() {
 function registerUser() {
     fetch('/user.addUser', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        ...SAME_ORIGIN_FETCH,
+        headers: jsonFetchHeaders(),
         body: JSON.stringify({
             username: User.username,
             fullname: User.fullname,
@@ -377,10 +398,16 @@ function createSearchResultElement(user) {
     const element = document.createElement('li');
     element.classList.add('search-result-item');
     element.chatData = user;
-    element.innerHTML = `
-        <span class="chat-avatar r">${user.fullname?.[0] || '?'}</span> 
-        ${user.fullname || user.username} (@${user.username})
-    `;
+
+    const avatar = document.createElement('span');
+    avatar.classList.add('chat-avatar', 'r');
+    avatar.textContent = user.fullname?.[0] || '?';
+
+    const label = document.createElement('span');
+    label.textContent = ` ${user.fullname || user.username} (@${user.username})`;
+
+    element.appendChild(avatar);
+    element.appendChild(label);
     element.addEventListener('click', () => onSearchResultClick(element, user));
     return element;
 }
@@ -402,7 +429,7 @@ function onSearchResultClick(element, user) {
 
 async function fetchAndShowChats() {
     try {
-        const response = await fetch('/chats');
+        const response = await fetch('/chats', SAME_ORIGIN_FETCH);
         const users = await response.json();
 
         DOM.chatsList.innerHTML = '';
@@ -426,21 +453,38 @@ function appendChatToList(chatData, prependToList = false) {
     listItem.id = chatData.username;
     listItem.chatData = {...chatData};
 
-    listItem.innerHTML = `
-          <div class="chat-info">
-            <div class="chat-avatar r">${chatData.fullname[0]}
-                <span class="online-indicator hidden"></span>
-            </div>
-        </div>
-        <div class="chat-text">
-            <span class="chat-name">${chatData.fullname}</span>
-            <span class="chat-message"></span>
-        </div>
-        <div class="chat-nums">
-            <span class="datetime"></span>
-            <span class="notificationMarker r hidden"></span>
-        </div>
-    `;
+    const chatInfo = document.createElement('div');
+    chatInfo.classList.add('chat-info');
+    const avatarWrap = document.createElement('div');
+    avatarWrap.classList.add('chat-avatar', 'r');
+    avatarWrap.appendChild(document.createTextNode(chatData.fullname?.[0] || '?'));
+    const onlineIndicator = document.createElement('span');
+    onlineIndicator.classList.add('online-indicator', 'hidden');
+    avatarWrap.appendChild(onlineIndicator);
+    chatInfo.appendChild(avatarWrap);
+
+    const chatText = document.createElement('div');
+    chatText.classList.add('chat-text');
+    const nameSpan = document.createElement('span');
+    nameSpan.classList.add('chat-name');
+    nameSpan.textContent = chatData.fullname ?? '';
+    const previewSpan = document.createElement('span');
+    previewSpan.classList.add('chat-message');
+    chatText.appendChild(nameSpan);
+    chatText.appendChild(previewSpan);
+
+    const chatNums = document.createElement('div');
+    chatNums.classList.add('chat-nums');
+    const datetimeSpan = document.createElement('span');
+    datetimeSpan.classList.add('datetime');
+    const markerSpan = document.createElement('span');
+    markerSpan.classList.add('notificationMarker', 'r', 'hidden');
+    chatNums.appendChild(datetimeSpan);
+    chatNums.appendChild(markerSpan);
+
+    listItem.appendChild(chatInfo);
+    listItem.appendChild(chatText);
+    listItem.appendChild(chatNums);
 
     updateStatusIndicator(listItem, chatData.status);
     listItem.addEventListener('click', onChatItemClick);
@@ -456,7 +500,7 @@ function appendChatToList(chatData, prependToList = false) {
 
 async function loadLastMessage(chatElement, targetUsername) {
     try {
-        const response = await fetch(`/messages/last/${User.username}/${targetUsername}`);
+        const response = await fetch(`/messages/last/${User.username}/${targetUsername}`, SAME_ORIGIN_FETCH);
         if (!response.ok || response.status === 204) return;
 
         const message = await response.json();
@@ -470,7 +514,7 @@ async function loadLastMessage(chatElement, targetUsername) {
 
 async function loadUnreadMessagesCount(chatElement, targetUsername) {
     try {
-        const response = await fetch(`/messages/${User.username}/${targetUsername}/count-unread`);
+        const response = await fetch(`/messages/${User.username}/${targetUsername}/count-unread`, SAME_ORIGIN_FETCH);
         if (!response.ok || response.status === 204) return;
 
         const count = await response.json();
@@ -496,7 +540,7 @@ async function fetchAndAppendNewUser(targetUsername, message) {
     }
 
     try {
-        const response = await fetch(`/users/${targetUsername}`);
+        const response = await fetch(`/users/${targetUsername}`, SAME_ORIGIN_FETCH);
         const user = await response.json();
         appendChatToList(user, true);
 
@@ -637,7 +681,7 @@ async function loadChatMessagesPage(chatUsername, isReset) {
     try {
         const pageToLoad = isReset ? 0 : pagination.page + 1;
         const url = `/messages/page/${User.username}/${chatUsername}?page=${pageToLoad}&size=${MESSAGES_PAGE_SIZE}`;
-        const response = await fetch(url);
+        const response = await fetch(url, SAME_ORIGIN_FETCH);
 
         if (!response.ok) {
             console.error('Не удалось получить сообщения чата');
@@ -692,14 +736,19 @@ function createMessageElement(messageData) {
     const isSender = messageData.senderId === User.username;
     const type = isSender ? 'sender' : 'receiver';
 
-    container.innerHTML = `
-        <div class="message ${type}">
-            <div class="message-content ${type}">
-                <span>${messageData.content}</span>
-                <span class="time">${formatTime(messageData.dateCreated)}</span>
-            </div>
-        </div>
-    `;
+    const row = document.createElement('div');
+    row.classList.add('message', type);
+    const contentBox = document.createElement('div');
+    contentBox.classList.add('message-content', type);
+    const textSpan = document.createElement('span');
+    textSpan.textContent = messageData.content ?? '';
+    const timeSpan = document.createElement('span');
+    timeSpan.classList.add('time');
+    timeSpan.textContent = formatTime(messageData.dateCreated);
+    contentBox.appendChild(textSpan);
+    contentBox.appendChild(timeSpan);
+    row.appendChild(contentBox);
+    container.appendChild(row);
 
     return container;
 }
