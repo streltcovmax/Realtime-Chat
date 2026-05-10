@@ -612,7 +612,7 @@ a.logout {
 }
 
 /* Только текст сообщения — не трогаем .time; max-width задаётся на самом пузыре (.message-content) */
-#chat-messages .message-content > span:first-of-type {
+#chat-messages .chat-message-row .message-content > span:first-of-type {
     display: block;
     min-width: 0;
     max-width: 100%;
@@ -620,6 +620,28 @@ a.logout {
     overflow-wrap: break-word;
     opacity: 0;
     animation: fadeIn 0.4s forwards;
+}
+
+.message-day-divider {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    margin: 6px 0 4px;
+}
+
+.message-day-divider-label {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: clamp(11px, 2.5vw, 12px);
+    font-weight: normal;
+    color: var(--text-plain);
+    background-color: var(--fields_middle);
+    opacity: 0.95;
+}
+
+.chat-message-row {
+    display: contents;
 }
 
 /* ============================================

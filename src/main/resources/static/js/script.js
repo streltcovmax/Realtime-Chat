@@ -70,8 +70,9 @@ const AppState = {
         isLastPage: false,
         isLoading: false,
     },
-    /** Подтягивается из `data-max-message-length` формы сообщения после setupUI */
+    // Подтягивается из data-max-message-length формы сообщения после setupUI
     maxMessageLength: 2048,
+    chatTailDayKey: null,
 };
 
 function updateAppHeightVar() {
@@ -337,6 +338,7 @@ function hideChatArea() {
 
     DOM.chatArea.classList.add('hidden');
     DOM.chatMessagesArea.innerHTML = '';
+    AppState.chatTailDayKey = null;
     DOM.pickChatInfoMessage.classList.remove('hidden');
     DOM.emptyChatInfoMessage.classList.add('hidden');
 
@@ -697,6 +699,7 @@ async function displayChatMessages(chatData) {
 function resetMessagesState() {
     AppState.pagination.page = 0;
     AppState.pagination.isLastPage = false;
+    AppState.chatTailDayKey = null;
     DOM.chatMessagesArea.innerHTML = '';
 }
 
@@ -748,20 +751,53 @@ async function loadChatMessagesPage(chatUsername, isReset) {
     }
 }
 
+function peerDayKeyStartingFrom(node) {
+    let n = node;
+    while (n) {
+        if (n.nodeType !== Node.ELEMENT_NODE) {
+            n = n.nextSibling;
+            continue;
+        }
+        if (n.classList?.contains('message-day-divider')) {
+            n = n.nextSibling;
+            continue;
+        }
+        if (n.dataset?.dayKey) {
+            return n.dataset.dayKey;
+        }
+        n = n.nextSibling;
+    }
+    return null;
+}
+
 function prependMessages(messages) {
     const oldScrollHeight = DOM.chatMessagesArea.scrollHeight;
-    const fragment = document.createDocumentFragment();
 
-    messages.forEach(message => {
-        fragment.appendChild(createMessageElement(message));
-    });
+    const reversed = messages.slice().reverse();
+    let anchor = DOM.chatMessagesArea.firstChild;
 
-    DOM.chatMessagesArea.insertBefore(fragment, DOM.chatMessagesArea.firstChild);
+    for (const message of reversed) {
+        const msgDay = calendarDayKey(message.dateCreated);
+        const belowDay = peerDayKeyStartingFrom(anchor);
+
+        if (belowDay !== null && msgDay !== belowDay) {
+            const divider = createDayDividerElement(formatDayDividerLabel(message.dateCreated));
+            DOM.chatMessagesArea.insertBefore(divider, anchor);
+        }
+
+        const el = createMessageElement(message);
+        DOM.chatMessagesArea.insertBefore(el, anchor);
+        anchor = el;
+    }
+
     DOM.chatMessagesArea.scrollTop = DOM.chatMessagesArea.scrollHeight - oldScrollHeight;
 }
 
 function createMessageElement(messageData) {
     const container = document.createElement('div');
+    container.classList.add('chat-message-row');
+    container.dataset.dayKey = calendarDayKey(message.dateCreated);
+
     const isSender = messageData.senderId === User.username;
     const type = isSender ? 'sender' : 'receiver';
 
@@ -783,6 +819,11 @@ function createMessageElement(messageData) {
 }
 
 function addMessage(messageData) {
+    const dayKey = calendarDayKey(messageData.dateCreated);
+    if (AppState.chatTailDayKey !== dayKey) {
+        DOM.chatMessagesArea.appendChild(createDayDividerElement(formatDayDividerLabel(messageData.dateCreated)));
+        AppState.chatTailDayKey = dayKey;
+    }
     DOM.chatMessagesArea.appendChild(createMessageElement(messageData));
     scrollToBottom(DOM.chatMessagesArea);
 }
@@ -978,6 +1019,44 @@ function formatTime(dateTimeString) {
     const date = new Date(dateTimeString);
     const pad = num => String(num).padStart(2, '0');
     return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+// Локальный календарный день для группировки (YYYY-MM-DD).
+function calendarDayKey(dateTimeString) {
+    const date = new Date(dateTimeString);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function formatDayDividerLabel(dateTimeString) {
+    const date = new Date(dateTimeString);
+    const pad = num => String(num).padStart(2, '0');
+    const dateStr = `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()}`;
+
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === now.toDateString()) {
+        return 'сегодня';
+    }
+    if (date.toDateString() === yesterday.toDateString()) {
+        return 'вчера';
+    }
+    return dateStr;
+}
+
+function createDayDividerElement(labelText) {
+    const wrap = document.createElement('div');
+    wrap.className = 'message-day-divider';
+    wrap.setAttribute('role', 'presentation');
+    const pill = document.createElement('span');
+    pill.className = 'message-day-divider-label r';
+    pill.textContent = labelText;
+    wrap.appendChild(pill);
+    return wrap;
 }
 
 // ============================================
