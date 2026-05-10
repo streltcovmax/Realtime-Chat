@@ -20,6 +20,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.web.csrf.CsrfToken;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.security.Principal;
 import java.util.List;
@@ -37,8 +40,23 @@ public class ChatController {
     private final CurrentUserProvider currentUserProvider;
 
     @GetMapping("/")
-    public String index(Model model) {
+    public String index(Model model, HttpServletRequest request) {
         model.addAttribute("maxMessageLength", MAX_MESSAGE_LENGTH);
+        CsrfToken csrf = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+        if (csrf == null) {
+            Object attr = request.getAttribute("_csrf");
+            if (attr instanceof CsrfToken ct) {
+                csrf = ct;
+            }
+        }
+        String tokenValue = "";
+        String headerValue = "X-XSRF-TOKEN";
+        if (csrf != null) {
+            tokenValue = csrf.getToken();
+            headerValue = csrf.getHeaderName();
+        }
+        model.addAttribute("csrfToken", tokenValue);
+        model.addAttribute("csrfHeaderName", headerValue);
         return "index";
     }
 

@@ -7,7 +7,7 @@
     <link rel="icon" type="image/x-icon" href="/static/images/icon_colored.ico">
     <title>CHAT</title>
 </head>
-<body>
+<body th:data-csrf-token="${csrfToken}" th:data-csrf-header="${csrfHeaderName}">
 
 <div class="login r hidden" id="login-page">
     <h2>ВОЙТИ</h2>

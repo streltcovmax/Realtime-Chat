@@ -84,11 +84,18 @@ function readXsrfTokenFromCookie() {
     return m ? decodeURIComponent(m[1]) : '';
 }
 
+function resolveCsrfForFetch() {
+    const ds = document.body?.dataset;
+    const token = (ds?.csrfToken && ds.csrfToken.trim()) || readXsrfTokenFromCookie();
+    const headerName = ds?.csrfHeader || 'X-XSRF-TOKEN';
+    return {token, headerName};
+}
+
 function jsonFetchHeaders() {
     const headers = {'Content-Type': 'application/json'};
-    const xsrf = readXsrfTokenFromCookie();
-    if (xsrf) {
-        headers['X-XSRF-TOKEN'] = xsrf;
+    const {token, headerName} = resolveCsrfForFetch();
+    if (token) {
+        headers[headerName] = token;
     }
     return headers;
 }

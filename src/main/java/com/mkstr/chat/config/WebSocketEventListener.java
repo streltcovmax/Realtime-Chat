@@ -1,5 +1,6 @@
 package com.mkstr.chat.config;
 
+import com.mkstr.chat.model.User;
 import com.mkstr.chat.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -71,6 +72,11 @@ public class WebSocketEventListener {
 
         log.info("User disconnected: username={}, sessionId={}", username, sessionId);
         userService.disconnect(username);
-        messagingTemplate.convertAndSend("/user/public/", userService.findByUsername(username));
+        User offlineUser = userService.findByUsername(username);
+        if (offlineUser != null) {
+            messagingTemplate.convertAndSend("/user/public/", offlineUser);
+        } else {
+            log.warn("Disconnected user {} not found in DB; skip status broadcast", username);
+        }
     }
 }
