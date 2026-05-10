@@ -322,11 +322,16 @@
     <div class="chat-area-wrap">
         <div class="chat-area online" id="chat-area">
             <div class="br-b online" id="chat-header-info">
-                <div class="chat-avatar r" id="selected-chat-avatar">М</div>
-                <div>
-                    <p id="chat-header-username">maria_dev</p>
-                    <span id="chat-header-status">online</span>
+                <div id="chat-header-user-info-container">
+                    <div class="chat-avatar r" id="selected-chat-avatar">М</div>
+                    <div>
+                        <p id="chat-header-username">maria_dev</p>
+                        <span id="chat-header-status">online</span>
+                    </div>
                 </div>
+                <button id="search-messages-button">
+                    <img src="/static/images/search.svg" alt="search">
+                </button>
             </div>
             <div id="chat-messages" class="r">
                 <!-- MOCK: как createMessageElement — обёртка div, внутри .message.sender|.receiver -->

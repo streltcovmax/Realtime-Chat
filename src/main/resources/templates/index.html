@@ -30,7 +30,7 @@
                 <span id="connected-user-fullname"></span>
             </button>
             <button id="logout-button">
-              <img src="/static/images/exit.svg" alt="exit">
+                <img src="/static/images/exit.svg" alt="exit">
             </button>
         </div>
     </div>
@@ -38,11 +38,16 @@
     <div class="chat-area-wrap">
         <div class="chat-area hidden" id="chat-area">
             <div class="br-b" id="chat-header-info">
-                <div class="chat-avatar r" id="selected-chat-avatar"></div>
-                <div>
-                    <p id="chat-header-username"></p>
-                    <span id="chat-header-status"></span>
+                <div id="chat-header-user-info-container">
+                    <div class="chat-avatar r" id="selected-chat-avatar"></div>
+                    <div>
+                        <p id="chat-header-username"></p>
+                        <span id="chat-header-status"></span>
+                    </div>
                 </div>
+                <button id="search-messages-button">
+                    <img src="/static/images/search.svg" alt="search">
+                </button>
             </div>
             <div id="chat-messages" class="r">
             </div>

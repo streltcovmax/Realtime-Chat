@@ -573,8 +573,16 @@ a.logout {
     background-color: var(--back_dark);
     color: var(--text-highlight);
     display: flex;
+    justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
+    gap: 10px;
+    /*flex-shrink: 0;*/
+}
+
+#chat-header-user-info-container{
+    display: flex;
+    align-items: center;
     gap: 10px;
     flex-shrink: 0;
 }
@@ -597,6 +605,12 @@ a.logout {
     color: var(--text-plain);
     font-size: 0.9rem;
     margin: 0;
+}
+
+#search-messages-button {
+    background-color: transparent;
+    opacity: 70%;
+    padding: 0;
 }
 
 /* ============================================
