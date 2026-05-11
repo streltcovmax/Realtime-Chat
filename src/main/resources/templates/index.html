@@ -30,7 +30,7 @@
                 <span id="connected-user-fullname"></span>
             </button>
             <button id="logout-button">
-              <img src="/static/images/exit.svg" alt="exit">
+                <img src="/static/images/exit.svg" alt="exit">
             </button>
         </div>
     </div>
@@ -38,11 +38,16 @@
     <div class="chat-area-wrap">
         <div class="chat-area hidden" id="chat-area">
             <div class="br-b" id="chat-header-info">
-                <div class="chat-avatar r" id="selected-chat-avatar"></div>
-                <div>
-                    <p id="chat-header-username"></p>
-                    <span id="chat-header-status"></span>
+                <div id="chat-header-user-info-container">
+                    <div class="chat-avatar r" id="selected-chat-avatar"></div>
+                    <div>
+                        <p id="chat-header-username"></p>
+                        <span id="chat-header-status"></span>
+                    </div>
                 </div>
+                <button id="search-messages-button">
+                    <img src="/static/images/search.svg" alt="search">
+                </button>
             </div>
             <div id="chat-messages" class="r">
             </div>
@@ -68,6 +73,22 @@
     <h2>Найти пользователей</h2>
 </div>
 
+<div id="message-search-modal" class="message-search-modal hidden" aria-hidden="true">
+    <div id="message-search-modal-backdrop" class="message-search-modal-backdrop"></div>
+    <div id="message-search-modal-dialog" class="message-search-modal-dialog r" role="dialog" aria-modal="true"
+         aria-labelledby="message-search-modal-title">
+        <h2 id="message-search-modal-title" class="message-search-modal-title">Поиск в чате</h2>
+        <div class="search-input-wrapper message-search-input-wrap">
+            <input autocomplete="off" type="text" id="message-search-query" class="r"
+                   placeholder="поиск по сообщениям...">
+        </div>
+        <div class="search-results-container message-search-results">
+            <p class="search-results-label">Результаты:</p>
+            <p id="message-search-status" class="search-no-results">Введите минимум 2 символа</p>
+            <ul id="message-search-list"></ul>
+        </div>
+    </div>
+</div>
 
 <script src="/static/js/lib/sockjs.min.js"></script>
 <script src="/static/js/lib/stomp.min.js"></script>

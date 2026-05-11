@@ -10,12 +10,14 @@ import {initNotifications, loadNotificationSettings, notifyNewMessage, resetUnre
 const MESSAGES_PAGE_SIZE = 50;
 const SCROLL_THRESHOLD_PX = 250;
 const MIN_SEARCH_LENGTH = 2;
+const MESSAGE_SEARCH_MIN_LENGTH = 2;
+const MESSAGE_SEARCH_LIMIT = 20;
+const MESSAGE_SEARCH_DEBOUNCE_MS = 250;
 const MOBILE_BREAKPOINT = 600;
-/** Макс. высота поля ввода в строках (локально для UI); лимит символов с бэкенда — data-max-message-length на форме. */
 const MESSAGE_COMPOSER_MAX_LINES = 12;
 
 // ============================================
-// DOM ЭЛЕМЕНТЫ (сгруппированы по назначению)
+// DOM ЭЛЕМЕНТЫ
 // ============================================
 
 const DOM = {
@@ -51,6 +53,14 @@ const DOM = {
     messageForm: document.querySelector('#messageForm'),
     messageLengthError: document.querySelector('#message-length-error'),
     sendMessageButton: document.querySelector('#send-message-button'),
+
+    messageSearchModal: document.querySelector('#message-search-modal'),
+    messageSearchBackdrop: document.querySelector('#message-search-modal-backdrop'),
+    messageSearchDialog: document.querySelector('#message-search-modal-dialog'),
+    searchMessagesButton: document.querySelector('#search-messages-button'),
+    messageSearchQuery: document.querySelector('#message-search-query'),
+    messageSearchList: document.querySelector('#message-search-list'),
+    messageSearchStatus: document.querySelector('#message-search-status'),
 };
 
 // ============================================
@@ -67,12 +77,16 @@ const AppState = {
     },
     pagination: {
         page: 0,
+        newestPage: 0,
+        isFirstPage: true,
         isLastPage: false,
         isLoading: false,
     },
     // Подтягивается из data-max-message-length формы сообщения после setupUI
     maxMessageLength: 2048,
     chatTailDayKey: null,
+    messageSearchTimer: null,
+    messageSearchRequestId: 0,
 };
 
 function updateAppHeightVar() {
@@ -217,9 +231,37 @@ function setEventListeners() {
     // Скролл сообщений (подгрузка истории)
     DOM.chatMessagesArea.addEventListener('scroll', onMessagesScroll);
 
+    if (DOM.searchMessagesButton) {
+        DOM.searchMessagesButton.type = 'button';
+        DOM.searchMessagesButton.addEventListener('click', e => {
+            e.stopPropagation();
+            openMessageSearchModal();
+        });
+    }
+    if (DOM.messageSearchBackdrop) {
+        DOM.messageSearchBackdrop.addEventListener('click', () => closeMessageSearchModal());
+    }
+    if (DOM.messageSearchDialog) {
+        DOM.messageSearchDialog.addEventListener('click', e => e.stopPropagation());
+    }
+    if (DOM.messageSearchQuery) {
+        DOM.messageSearchQuery.addEventListener('input', onMessageSearchInput);
+        DOM.messageSearchQuery.addEventListener('keydown', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                clearTimeout(AppState.messageSearchTimer);
+                searchMessagesInCurrentChat();
+            }
+        });
+    }
+
     // Закрытие по Escape
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
+            if (DOM.messageSearchModal && !DOM.messageSearchModal.classList.contains('hidden')) {
+                closeMessageSearchModal();
+                return;
+            }
             hideChatArea();
             hideSearchArea();
         }
@@ -337,6 +379,7 @@ function hideChatArea() {
     });
 
     DOM.chatArea.classList.add('hidden');
+    closeMessageSearchModal();
     DOM.chatMessagesArea.innerHTML = '';
     AppState.chatTailDayKey = null;
     DOM.pickChatInfoMessage.classList.remove('hidden');
@@ -360,6 +403,164 @@ function showChatArea() {
 
 function showEmptyChatMessage() {
     DOM.emptyChatInfoMessage.classList.remove('hidden');
+}
+
+// ============================================
+// ПОИСК ПО СООБЩЕНИЯМ (модалка)
+// ============================================
+
+function openMessageSearchModal() {
+    if (!DOM.messageSearchModal) return;
+    clearMessageSearchResults('Введите минимум 2 символа');
+    DOM.messageSearchModal.classList.remove('hidden');
+    DOM.messageSearchModal.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => DOM.messageSearchQuery?.focus());
+}
+
+function closeMessageSearchModal() {
+    if (!DOM.messageSearchModal) return;
+    DOM.messageSearchModal.classList.add('hidden');
+    DOM.messageSearchModal.setAttribute('aria-hidden', 'true');
+    DOM.messageSearchQuery?.blur();
+    DOM.messageSearchQuery.value = '';
+}
+
+function onMessageSearchInput() {
+    clearTimeout(AppState.messageSearchTimer);
+    AppState.messageSearchTimer = setTimeout(searchMessagesInCurrentChat, MESSAGE_SEARCH_DEBOUNCE_MS);
+}
+
+async function searchMessagesInCurrentChat() {
+    const peer = AppState.selectedUser.username;
+    const query = DOM.messageSearchQuery?.value.trim() ?? '';
+
+    if (!peer) {
+        clearMessageSearchResults('Сначала выберите чат');
+        return;
+    }
+
+    if (query.length < MESSAGE_SEARCH_MIN_LENGTH) {
+        clearMessageSearchResults('Введите минимум 2 символа');
+        return;
+    }
+
+    const requestId = ++AppState.messageSearchRequestId;
+    clearMessageSearchResults('Ищем...');
+
+    try {
+        const params = new URLSearchParams({
+            peer,
+            q: query,
+            limit: String(MESSAGE_SEARCH_LIMIT)
+        });
+        const response = await fetch(`/messages/search?${params}`, SAME_ORIGIN_FETCH);
+
+        if (requestId !== AppState.messageSearchRequestId) {
+            return;
+        }
+
+        if (response.status === 404) {
+            clearMessageSearchResults('Поиск сообщений отключён');
+            return;
+        }
+
+        if (!response.ok) {
+            clearMessageSearchResults('Не удалось выполнить поиск');
+            return;
+        }
+
+        const hits = await response.json();
+        renderMessageSearchResults(Array.isArray(hits) ? hits : []);
+    } catch (error) {
+        if (requestId === AppState.messageSearchRequestId) {
+            clearMessageSearchResults('Не удалось выполнить поиск');
+        }
+        console.error('Не удалось выполнить поиск сообщений:', error);
+    }
+}
+
+function clearMessageSearchResults(message) {
+    if (DOM.messageSearchList) {
+        DOM.messageSearchList.innerHTML = '';
+    }
+    setMessageSearchStatus(message);
+}
+
+function setMessageSearchStatus(message) {
+    if (!DOM.messageSearchStatus) return;
+    DOM.messageSearchStatus.textContent = message || '';
+    DOM.messageSearchStatus.classList.toggle('hidden', !message);
+}
+
+function renderMessageSearchResults(hits) {
+    DOM.messageSearchList.innerHTML = '';
+
+    if (hits.length === 0) {
+        setMessageSearchStatus('Ничего не найдено');
+        return;
+    }
+
+    setMessageSearchStatus('');
+    hits.forEach(hit => DOM.messageSearchList.appendChild(createMessageSearchResultElement(hit)));
+}
+
+function createMessageSearchResultElement(hit) {
+    const element = document.createElement('li');
+    element.classList.add('search-result-item', 'message-search-result-item');
+
+    const snippet = document.createElement('span');
+    snippet.classList.add('message-search-snippet');
+    snippet.textContent = hit.content ?? '';
+
+    const meta = document.createElement('span');
+    meta.classList.add('message-search-meta');
+    const sender = hit.senderId === User.username ? 'Вы' : AppState.selectedUser.fullname || hit.senderId || '';
+    meta.textContent = `${sender} · ${formatMessageSearchDate(hit.dateCreated)}`;
+
+    element.appendChild(snippet);
+    element.appendChild(meta);
+    element.addEventListener('click', () => focusLoadedMessageFromSearch(hit.messageId));
+    return element;
+}
+
+async function focusLoadedMessageFromSearch(messageId) {
+    if (messageId == null) return;
+    let row = findLoadedMessageRow(messageId);
+    if (!row) {
+        setMessageSearchStatus('Загружаем найденное сообщение...');
+        await loadChatPageAroundMessage(messageId);
+        row = findLoadedMessageRow(messageId);
+        if (!row) {
+            setMessageSearchStatus('Не удалось открыть найденное сообщение');
+            return;
+        }
+    }
+
+    closeMessageSearchModal();
+    focusMessageRow(row);
+}
+
+function findLoadedMessageRow(messageId) {
+    return DOM.chatMessagesArea.querySelector(`.chat-message-row[data-message-id="${messageId}"]`);
+}
+
+function focusMessageRow(row) {
+    const target = row.querySelector('.message-content') || row.querySelector('.message') || row;
+    const containerRect = DOM.chatMessagesArea.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const targetTop = DOM.chatMessagesArea.scrollTop
+        + (targetRect.top - containerRect.top)
+        - (DOM.chatMessagesArea.clientHeight / 2)
+        + (targetRect.height / 2);
+
+    requestAnimationFrame(() => {
+        DOM.chatMessagesArea.scrollTo({
+            top: Math.max(0, targetTop),
+            behavior: 'smooth'
+        });
+    });
+    row.classList.add('message-search-highlight');
+    setTimeout(() => row.classList.remove('message-search-highlight'), 1800);
 }
 
 // ============================================
@@ -698,6 +899,8 @@ async function displayChatMessages(chatData) {
 
 function resetMessagesState() {
     AppState.pagination.page = 0;
+    AppState.pagination.newestPage = 0;
+    AppState.pagination.isFirstPage = true;
     AppState.pagination.isLastPage = false;
     AppState.chatTailDayKey = null;
     DOM.chatMessagesArea.innerHTML = '';
@@ -744,8 +947,84 @@ async function loadChatMessagesPage(chatUsername, isReset) {
         }
 
         pagination.page = pageToLoad;
+        if (isReset) {
+            pagination.newestPage = pageToLoad;
+            pagination.isFirstPage = pageJson.first ?? pageToLoad === 0;
+        }
         pagination.isLastPage = pageJson.last ?? messages.length < MESSAGES_PAGE_SIZE;
 
+    } finally {
+        pagination.isLoading = false;
+    }
+}
+
+async function loadNewerChatMessagesPage(chatUsername) {
+    const {pagination} = AppState;
+
+    if (pagination.isLoading || pagination.isFirstPage || !chatUsername) return;
+
+    pagination.isLoading = true;
+
+    try {
+        const pageToLoad = pagination.newestPage - 1;
+        const url = `/messages/page/${User.username}/${chatUsername}?page=${pageToLoad}&size=${MESSAGES_PAGE_SIZE}`;
+        const response = await fetch(url, SAME_ORIGIN_FETCH);
+
+        if (!response.ok) {
+            console.error('Не удалось получить новые сообщения чата');
+            return;
+        }
+
+        const pageJson = await response.json();
+        const messages = Array.isArray(pageJson) ? pageJson : (pageJson.content || []);
+
+        if (messages.length === 0) {
+            pagination.isFirstPage = true;
+            return;
+        }
+
+        DOM.emptyChatInfoMessage.classList.add('hidden');
+        appendMessages(messages.slice().reverse());
+        pagination.newestPage = pageToLoad;
+        pagination.isFirstPage = pageJson.first ?? pageToLoad === 0;
+    } finally {
+        pagination.isLoading = false;
+    }
+}
+
+async function loadChatPageAroundMessage(messageId) {
+    const {pagination, selectedUser} = AppState;
+
+    if (pagination.isLoading || !selectedUser.username) return;
+
+    pagination.isLoading = true;
+
+    try {
+        const url = `/messages/page-around/${User.username}/${selectedUser.username}/${messageId}?size=${MESSAGES_PAGE_SIZE}`;
+        const response = await fetch(url, SAME_ORIGIN_FETCH);
+
+        if (!response.ok) {
+            console.error('Не удалось получить страницу с найденным сообщением');
+            return;
+        }
+
+        const pageJson = await response.json();
+        const messages = Array.isArray(pageJson) ? pageJson : (pageJson.content || []);
+
+        resetMessagesState();
+        if (messages.length === 0) {
+            showEmptyChatMessage();
+            return;
+        }
+
+        DOM.emptyChatInfoMessage.classList.add('hidden');
+        messages.slice().reverse().forEach(addMessage);
+
+        const pageNumber = pageJson.number ?? 0;
+        pagination.page = pageNumber;
+        pagination.newestPage = pageNumber;
+        pagination.isFirstPage = pageJson.first ?? pageNumber === 0;
+        pagination.isLastPage = pageJson.last ?? messages.length < MESSAGES_PAGE_SIZE;
     } finally {
         pagination.isLoading = false;
     }
@@ -793,10 +1072,18 @@ function prependMessages(messages) {
     DOM.chatMessagesArea.scrollTop = DOM.chatMessagesArea.scrollHeight - oldScrollHeight;
 }
 
+function appendMessages(messages) {
+    messages.forEach(appendMessageElement);
+}
+
 function createMessageElement(messageData) {
     const container = document.createElement('div');
     container.classList.add('chat-message-row');
     container.dataset.dayKey = calendarDayKey(messageData.dateCreated);
+    const messageId = messageData.message_id ?? messageData.messageId;
+    if (messageId != null) {
+        container.dataset.messageId = String(messageId);
+    }
 
     const isSender = messageData.senderId === User.username;
     const type = isSender ? 'sender' : 'receiver';
@@ -819,13 +1106,17 @@ function createMessageElement(messageData) {
 }
 
 function addMessage(messageData) {
+    appendMessageElement(messageData);
+    scrollToBottom(DOM.chatMessagesArea);
+}
+
+function appendMessageElement(messageData) {
     const dayKey = calendarDayKey(messageData.dateCreated);
     if (AppState.chatTailDayKey !== dayKey) {
         DOM.chatMessagesArea.appendChild(createDayDividerElement(formatDayDividerLabel(messageData.dateCreated)));
         AppState.chatTailDayKey = dayKey;
     }
     DOM.chatMessagesArea.appendChild(createMessageElement(messageData));
-    scrollToBottom(DOM.chatMessagesArea);
 }
 
 async function sendMessage(event) {
@@ -919,12 +1210,19 @@ async function onMessageReceived(payload) {
 }
 
 function onMessagesScroll() {
-    const {scrollTop} = DOM.chatMessagesArea;
-    const {isLoading, isLastPage} = AppState.pagination;
+    const {scrollTop, scrollHeight, clientHeight} = DOM.chatMessagesArea;
+    const {isLoading, isLastPage, isFirstPage} = AppState.pagination;
     const {username} = AppState.selectedUser;
+    const isNearTop = scrollTop <= SCROLL_THRESHOLD_PX;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight <= SCROLL_THRESHOLD_PX;
 
-    if (scrollTop <= SCROLL_THRESHOLD_PX && !isLoading && !isLastPage && username) {
+    if (isNearTop && !isLoading && !isLastPage && username) {
         loadChatMessagesPage(username, false);
+        return;
+    }
+
+    if (isNearBottom && !isLoading && !isFirstPage && username) {
+        loadNewerChatMessagesPage(username);
     }
 }
 
@@ -1021,7 +1319,11 @@ function formatTime(dateTimeString) {
     return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-// Локальный календарный день для группировки (YYYY-MM-DD).
+function formatMessageSearchDate(dateTimeString) {
+    return `${formatDayDividerLabel(dateTimeString)} ${formatTime(dateTimeString)}`;
+}
+
+// Локальный календарный день для группировки YYYY-MM-DD
 function calendarDayKey(dateTimeString) {
     const date = new Date(dateTimeString);
     const y = date.getFullYear();

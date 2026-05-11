@@ -4,6 +4,9 @@
 /build/
 /out/
 
+/.idea/
 .idea/
+.idea
+HELP.md
 *.iml
 *.env

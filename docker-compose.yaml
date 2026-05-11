@@ -48,11 +48,21 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       KC_ISSUER_URI: ${KC_ISSUER_URI}
       KC_CLIENT_SECRET: ${KC_CLIENT_SECRET}
+      OPENSEARCH_ENABLED: ${OPENSEARCH_ENABLED:-true}
+      OPENSEARCH_BASE_URL: ${OPENSEARCH_BASE_URL:-https://opensearch:9200}
+      OPENSEARCH_INDEX_MESSAGES: ${OPENSEARCH_INDEX_MESSAGES:-chat-messages}
+      OPENSEARCH_INSECURE_SSL: ${OPENSEARCH_INSECURE_SSL:-false}
+      OPENSEARCH_USERNAME: ${OPENSEARCH_USERNAME:-admin}
+      OPENSEARCH_PASSWORD: ${OPENSEARCH_PASSWORD}
     ports:
       - "8081:8081"
     depends_on:
       - db
       - keycloak
+      - opensearch
+    networks:
+      - default
+      - opensearch-net
     restart: always
 
   nginx:
@@ -69,5 +79,47 @@ services:
       - keycloak
     restart: always
 
+  opensearch:
+    image: opensearchproject/opensearch:${OPENSEARCH_IMAGE_TAG:-2}
+    container_name: opensearch
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - OPENSEARCH_JAVA_OPTS=${OPENSEARCH_JAVA_OPTS:--Xms512m -Xmx512m}
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - opensearch-net
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:${OPENSEARCH_DASHBOARDS_IMAGE_TAG:-2}
+    container_name: opensearch-dashboards
+    ports:
+      - "127.0.0.1:5601:5601"
+    expose:
+      - '5601'
+    environment:
+      OPENSEARCH_HOSTS: '["https://opensearch:9200"]'
+    networks:
+      - opensearch-net
+    depends_on:
+      - opensearch
+    restart: always
+
+
 volumes:
   postgres_production_data:
+  opensearch-data:
+
+networks:
+  opensearch-net:

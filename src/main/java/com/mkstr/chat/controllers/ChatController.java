@@ -2,6 +2,7 @@ package com.mkstr.chat.controllers;
 
 import com.mkstr.chat.model.Chat;
 import com.mkstr.chat.model.Message;
+import com.mkstr.chat.opensearch.MessageOpenSearchService;
 import com.mkstr.chat.service.ChatService;
 import com.mkstr.chat.service.MessageService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +36,7 @@ public class ChatController {
     private final SimpMessagingTemplate messagingTemplate;
     private final MessageService messageService;
     private final CurrentUserProvider currentUserProvider;
+    private final MessageOpenSearchService messageOpenSearchService;
 
     @GetMapping("/")
     public String index(Model model, HttpServletRequest request) {
@@ -89,6 +91,7 @@ public class ChatController {
         Long chatId = chat.getChatId();
         message.setChatId(chatId);
         messageService.save(message);
+        messageOpenSearchService.indexMessage(message);
         messagingTemplate.convertAndSend("/user/" + recipientId + "/messages", message);
     }
 
@@ -118,6 +121,24 @@ public class ChatController {
         Long chatId = chat.getChatId();
         Pageable pageable = PageRequest.of(page, size);
         Page<Message> messagePage = messageService.findByChatId(chatId, pageable);
+        messageService.readPage(messagePage);
+        return ResponseEntity.ok(messagePage);
+    }
+
+    @GetMapping("/messages/page-around/{username}/{selectedChat}/{messageId}")
+    public ResponseEntity<Page<Message>> findAndReadChatMessagesPageAround(
+            @PathVariable String username,
+            @PathVariable String selectedChat,
+            @PathVariable long messageId,
+            @RequestParam(defaultValue = "50") int size
+    ) {
+        assertPathUsernameMatchesSession(username);
+        Chat chat = chatService.findExistingChat(username, selectedChat);
+        if (chat == null) {
+            Pageable emptyPageable = PageRequest.of(0, size);
+            return ResponseEntity.ok(Page.empty(emptyPageable));
+        }
+        Page<Message> messagePage = messageService.findPageContainingMessage(chat.getChatId(), messageId, size);
         messageService.readPage(messagePage);
         return ResponseEntity.ok(messagePage);
     }
