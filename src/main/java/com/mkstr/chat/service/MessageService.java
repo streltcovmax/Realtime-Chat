@@ -36,6 +36,22 @@ public class MessageService {
         return messageRepository.findByChatIdOrderByDateCreatedDesc(chatId, pageable);
     }
 
+    public Page<Message> findPageContainingMessage(Long chatId, long messageId, int size) {
+        Message target = messageRepository.findById(messageId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!chatId.equals(target.getChatId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        long newerCount = messageRepository.countNewerMessagesInChat(
+                chatId,
+                target.getDateCreated(),
+                target.getMessage_id()
+        );
+        int safeSize = Math.max(size, 1);
+        int page = Math.toIntExact(newerCount / safeSize);
+        return messageRepository.findByChatIdOrderByDateCreatedDesc(chatId, PageRequest.of(page, safeSize));
+    }
+
     public Integer countByChatIdAndRecipientIdAndReadIsFalse(Long chatId, String recipientId) {
         return messageRepository.countByChatIdAndRecipientIdAndReadIsFalse(chatId, recipientId);
     }

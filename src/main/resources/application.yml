@@ -7,6 +7,14 @@ app:
   security:
     websocket-allowed-origins: ${APP_WEBSOCKET_ALLOWED_ORIGINS:http://localhost:8081}
 
+opensearch:
+  enabled: ${OPENSEARCH_ENABLED:true}
+  base-url: ${OPENSEARCH_BASE_URL:https://127.0.0.1:9200}
+  index-messages: ${OPENSEARCH_INDEX_MESSAGES:chat-messages}
+  insecure-ssl: ${OPENSEARCH_INSECURE_SSL:true}
+  username: ${OPENSEARCH_USERNAME:admin}
+  password: ${OPENSEARCH_PASSWORD:KWL9quAzK68R}
+
 spring:
   application:
     name: chat
