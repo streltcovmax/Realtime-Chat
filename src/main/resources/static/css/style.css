@@ -295,7 +295,8 @@ a.logout {
     margin: 0 auto 18px auto;
 }
 
-#searchUsername {
+#searchUsername,
+#message-search-query {
     width: 100%;
     box-sizing: border-box;
     padding-right: 32px;
@@ -386,6 +387,91 @@ a.logout {
 
 .search-result-item.active {
     background-color: var(--highlight_dark) !important;
+}
+
+#message-search-mock-list .search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    color: var(--text-highlight);
+    border-radius: 4px;
+}
+
+#message-search-mock-list .search-result-item:hover {
+    background-color: var(--highlight_darkest);
+}
+
+#message-search-mock-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.message-search-result-item {
+    cursor: default;
+}
+
+.message-search-snippet {
+    font-size: 14px;
+    color: var(--text-highlight);
+    line-height: 1.35;
+}
+
+/* ============================================
+   МОДАЛКА ПОИСКА ПО СООБЩЕНИЯМ
+   ============================================ */
+.message-search-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(12px, 3vw, 24px);
+}
+
+.message-search-modal.hidden {
+    display: none !important;
+}
+
+.message-search-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.55);
+    cursor: pointer;
+}
+
+.message-search-modal-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(92vw, 440px);
+    max-height: min(82vh, 560px);
+    display: flex;
+    flex-direction: column;
+    background-color: var(--back_plain);
+    padding: clamp(16px, 4vw, 22px);
+    box-shadow: 0 12px 40px var(--shadow_dark);
+    overflow: hidden;
+}
+
+.message-search-modal-title {
+    margin: 0 0 14px 0;
+    font-weight: 100;
+    font-size: clamp(16px, 4vw, 20px);
+    color: var(--text-highlight);
+}
+
+.message-search-input-wrap {
+    width: 100%;
+    margin: 0 0 14px 0;
+}
+
+.message-search-results {
+    flex: 1;
+    min-height: 120px;
+    max-height: min(48vh, 360px);
+    margin: 0;
 }
 
 /* ============================================

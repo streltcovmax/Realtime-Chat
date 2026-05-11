@@ -51,6 +51,12 @@ const DOM = {
     messageForm: document.querySelector('#messageForm'),
     messageLengthError: document.querySelector('#message-length-error'),
     sendMessageButton: document.querySelector('#send-message-button'),
+
+    messageSearchModal: document.querySelector('#message-search-modal'),
+    messageSearchBackdrop: document.querySelector('#message-search-modal-backdrop'),
+    messageSearchDialog: document.querySelector('#message-search-modal-dialog'),
+    searchMessagesButton: document.querySelector('#search-messages-button'),
+    messageSearchQuery: document.querySelector('#message-search-query'),
 };
 
 // ============================================
@@ -217,9 +223,27 @@ function setEventListeners() {
     // Скролл сообщений (подгрузка истории)
     DOM.chatMessagesArea.addEventListener('scroll', onMessagesScroll);
 
+    if (DOM.searchMessagesButton) {
+        DOM.searchMessagesButton.type = 'button';
+        DOM.searchMessagesButton.addEventListener('click', e => {
+            e.stopPropagation();
+            openMessageSearchModal();
+        });
+    }
+    if (DOM.messageSearchBackdrop) {
+        DOM.messageSearchBackdrop.addEventListener('click', () => closeMessageSearchModal());
+    }
+    if (DOM.messageSearchDialog) {
+        DOM.messageSearchDialog.addEventListener('click', e => e.stopPropagation());
+    }
+
     // Закрытие по Escape
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
+            if (DOM.messageSearchModal && !DOM.messageSearchModal.classList.contains('hidden')) {
+                closeMessageSearchModal();
+                return;
+            }
             hideChatArea();
             hideSearchArea();
         }
@@ -337,6 +361,7 @@ function hideChatArea() {
     });
 
     DOM.chatArea.classList.add('hidden');
+    closeMessageSearchModal();
     DOM.chatMessagesArea.innerHTML = '';
     AppState.chatTailDayKey = null;
     DOM.pickChatInfoMessage.classList.remove('hidden');
@@ -360,6 +385,24 @@ function showChatArea() {
 
 function showEmptyChatMessage() {
     DOM.emptyChatInfoMessage.classList.remove('hidden');
+}
+
+// ============================================
+// ПОИСК ПО СООБЩЕНИЯМ (модалка)
+// ============================================
+
+function openMessageSearchModal() {
+    if (!DOM.messageSearchModal) return;
+    DOM.messageSearchModal.classList.remove('hidden');
+    DOM.messageSearchModal.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => DOM.messageSearchQuery?.focus());
+}
+
+function closeMessageSearchModal() {
+    if (!DOM.messageSearchModal) return;
+    DOM.messageSearchModal.classList.add('hidden');
+    DOM.messageSearchModal.setAttribute('aria-hidden', 'true');
+    DOM.messageSearchQuery?.blur();
 }
 
 // ============================================

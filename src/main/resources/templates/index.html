@@ -73,6 +73,31 @@
     <h2>Найти пользователей</h2>
 </div>
 
+<div id="message-search-modal" class="message-search-modal hidden" aria-hidden="true">
+    <div id="message-search-modal-backdrop" class="message-search-modal-backdrop"></div>
+    <div id="message-search-modal-dialog" class="message-search-modal-dialog r" role="dialog" aria-modal="true"
+         aria-labelledby="message-search-modal-title">
+        <h2 id="message-search-modal-title" class="message-search-modal-title">Поиск в чате</h2>
+        <div class="search-input-wrapper message-search-input-wrap">
+            <input autocomplete="off" type="text" id="message-search-query" class="r"
+                   placeholder="поиск по сообщениям...">
+        </div>
+        <div class="search-results-container message-search-results">
+            <p class="search-results-label">Результаты:</p>
+            <ul id="message-search-list">
+                <li class="search-result-item message-search-result-item">
+                    <span class="message-search-snippet">пример совпадения в сообщении</span>
+                </li>
+                <li class="search-result-item message-search-result-item">
+                    <span class="message-search-snippet">ещё одна строка результата</span>
+                </li>
+                <li class="search-result-item message-search-result-item">
+                    <span class="message-search-snippet">третья строка для скролла в блоке</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
 
 <script src="/static/js/lib/sockjs.min.js"></script>
 <script src="/static/js/lib/stomp.min.js"></script>
