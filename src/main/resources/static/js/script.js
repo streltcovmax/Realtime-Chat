@@ -545,7 +545,20 @@ function findLoadedMessageRow(messageId) {
 }
 
 function focusMessageRow(row) {
-    row.scrollIntoView({block: 'center', behavior: 'smooth'});
+    const target = row.querySelector('.message-content') || row.querySelector('.message') || row;
+    const containerRect = DOM.chatMessagesArea.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const targetTop = DOM.chatMessagesArea.scrollTop
+        + (targetRect.top - containerRect.top)
+        - (DOM.chatMessagesArea.clientHeight / 2)
+        + (targetRect.height / 2);
+
+    requestAnimationFrame(() => {
+        DOM.chatMessagesArea.scrollTo({
+            top: Math.max(0, targetTop),
+            behavior: 'smooth'
+        });
+    });
     row.classList.add('message-search-highlight');
     setTimeout(() => row.classList.remove('message-search-highlight'), 1800);
 }
