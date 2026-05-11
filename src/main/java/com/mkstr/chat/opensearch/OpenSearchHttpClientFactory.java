@@ -1,6 +1,7 @@
 package com.mkstr.chat.opensearch;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.net.http.HttpClient;
@@ -14,12 +15,17 @@ final class OpenSearchHttpClientFactory {
     }
 
     static HttpClient create(OpenSearchProperties props) {
+        String url = props.getBaseUrl() != null ? props.getBaseUrl().toLowerCase() : "";
+        if (url.startsWith("https://") && props.isInsecureSsl()) {
+            System.setProperty("jdk.internal.httpclient.disableHostnameVerification", "true");
+        }
         HttpClient.Builder b = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5));
-        String url = props.getBaseUrl() != null ? props.getBaseUrl().toLowerCase() : "";
         if (url.startsWith("https://") && props.isInsecureSsl()) {
             try {
                 SSLContext ctx = SSLContext.getInstance("TLS");
+                SSLParameters sslParameters = new SSLParameters();
+                sslParameters.setEndpointIdentificationAlgorithm("");
                 TrustManager[] trust = new TrustManager[]{
                         new X509TrustManager() {
                             @Override
@@ -38,6 +44,7 @@ final class OpenSearchHttpClientFactory {
                 };
                 ctx.init(null, trust, new SecureRandom());
                 b.sslContext(ctx);
+                b.sslParameters(sslParameters);
             } catch (Exception e) {
                 throw new IllegalStateException("OpenSearch insecure SSL init failed", e);
             }
