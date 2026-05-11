@@ -9,11 +9,11 @@ public class OpenSearchProperties {
 
     private boolean enabled = false;
 
-    private String baseUrl = "https://127.0.0.1:9200";
+    private String baseUrl = "https://opensearch:9200";
 
     private String indexMessages = "chat-messages";
 
-    private boolean insecureSsl = true;
+    private boolean insecureSsl = false;
 
     private String username = "admin";
 

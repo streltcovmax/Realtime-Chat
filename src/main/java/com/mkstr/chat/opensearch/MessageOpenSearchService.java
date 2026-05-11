@@ -187,6 +187,9 @@ public class MessageOpenSearchService {
             }
 
             ObjectNode mappings = objectMapper.createObjectNode();
+            ObjectNode settings = mappings.putObject("settings").putObject("index");
+            settings.put("number_of_shards", 1);
+            settings.put("number_of_replicas", 0);
             ObjectNode propsNode = mappings.putObject("mappings").putObject("properties");
             propsNode.putObject("message_id").put("type", "long");
             propsNode.putObject("chat_id").put("type", "long");

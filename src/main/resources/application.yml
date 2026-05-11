@@ -9,9 +9,9 @@ app:
 
 opensearch:
   enabled: ${OPENSEARCH_ENABLED:true}
-  base-url: ${OPENSEARCH_BASE_URL:https://127.0.0.1:9200}
+  base-url: ${OPENSEARCH_BASE_URL:https://opensearch:9200}
   index-messages: ${OPENSEARCH_INDEX_MESSAGES:chat-messages}
-  insecure-ssl: ${OPENSEARCH_INSECURE_SSL:true}
+  insecure-ssl: ${OPENSEARCH_INSECURE_SSL:false}
   username: ${OPENSEARCH_USERNAME:admin}
   password: ${OPENSEARCH_PASSWORD:KWL9quAzK68R}
 
