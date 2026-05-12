@@ -1,0 +1,181 @@
+{
+  "uid": "chat-analytics",
+  "title": "Chat Analytics",
+  "schemaVersion": 39,
+  "version": 5,
+  "refresh": "30s",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Messages sent",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "queryType": "sql",
+          "rawSql": "SELECT toStartOfInterval(event_time, INTERVAL 1 minute) AS time, count() AS messages FROM chat_analytics.events WHERE $__timeFilter(event_time) AND event_type = 'message_sent' GROUP BY time ORDER BY time"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Online users over time",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "queryType": "sql",
+          "rawSql": "WITH toStartOfInterval($__fromTime, INTERVAL 30 seconds) AS from_time, toStartOfInterval($__toTime, INTERVAL 30 seconds) AS to_time SELECT time, ifNull(online_users, 0) AS online_users FROM (SELECT toStartOfInterval(event_time, INTERVAL 30 seconds) AS time, argMax(result_count, event_time) AS online_users FROM chat_analytics.events WHERE event_type = 'user_status_changed' AND event_time <= to_time GROUP BY time ORDER BY time WITH FILL FROM from_time TO to_time STEP INTERVAL 30 seconds INTERPOLATE (online_users)) WHERE time >= from_time AND time <= to_time ORDER BY time ASC"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Online users",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 4,
+        "h": 6
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "queryType": "sql",
+          "rawSql": "SELECT countIf(last_status = 'ONLINE') AS online_users FROM (SELECT user_id, argMax(status, event_time) AS last_status FROM chat_analytics.events WHERE event_type = 'user_status_changed' AND user_id != '' GROUP BY user_id)"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Registered users",
+      "gridPos": {
+        "x": 4,
+        "y": 8,
+        "w": 5,
+        "h": 6
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "queryType": "sql",
+          "rawSql": "SELECT greatest(ifNull(argMaxIf(result_count, event_time, event_type = 'user_registered'), 0), uniqExactIf(user_id, user_id != '')) AS registered_users FROM chat_analytics.events"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Avg message length",
+      "gridPos": {
+        "x": 9,
+        "y": 8,
+        "w": 5,
+        "h": 6
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "queryType": "sql",
+          "rawSql": "SELECT avg(message_length) AS avg_message_length FROM chat_analytics.events WHERE $__timeFilter(event_time) AND event_type = 'message_sent'"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Total messages",
+      "gridPos": {
+        "x": 14,
+        "y": 8,
+        "w": 5,
+        "h": 6
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "queryType": "sql",
+          "rawSql": "SELECT count() AS total_messages FROM chat_analytics.events WHERE event_type = 'message_sent'"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Avg search results",
+      "gridPos": {
+        "x": 19,
+        "y": 8,
+        "w": 5,
+        "h": 6
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "queryType": "sql",
+          "rawSql": "SELECT avg(result_count) AS avg_results FROM chat_analytics.events WHERE $__timeFilter(event_time) AND event_type = 'message_search'"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Errors and rejections",
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "queryType": "sql",
+          "rawSql": "SELECT toStartOfInterval(event_time, INTERVAL 1 minute) AS time, event_type, count() AS events FROM chat_analytics.events WHERE $__timeFilter(event_time) AND event_type IN ('opensearch_index_failed', 'opensearch_search_failed', 'message_rejected', 'websocket_rejected', 'backend_error') GROUP BY time, event_type ORDER BY time ASC, event_type ASC"
+        }
+      ]
+    }
+  ]
+}

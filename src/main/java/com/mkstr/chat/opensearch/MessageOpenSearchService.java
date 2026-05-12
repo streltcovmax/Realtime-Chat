@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.mkstr.chat.analytics.AnalyticsService;
 import com.mkstr.chat.dto.MessageSearchHitDto;
 import com.mkstr.chat.model.Message;
 import jakarta.annotation.PostConstruct;
@@ -30,6 +31,7 @@ public class MessageOpenSearchService {
 
     private final OpenSearchProperties props;
     private final ObjectMapper objectMapper;
+    private final AnalyticsService analyticsService;
 
     private HttpClient httpClient;
 
@@ -68,15 +70,17 @@ public class MessageOpenSearchService {
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (resp.statusCode() / 100 != 2) {
                 log.warn("OpenSearch index failed: {} body: {}", resp.statusCode(), truncate(resp.body(), 500));
+                analyticsService.opensearchIndexFailed(message, resp.statusCode(), resp.body());
             }
         } catch (Exception e) {
+            analyticsService.opensearchIndexFailed(message, e);
             log.warn(
-                    "OpenSearch index error for message_id={}, baseUrl={}: {} — при «empty reply» на http:// "
-                            + "сервер обычно ждёт HTTPS: задайте base-url https://127.0.0.1:9200 и insecure-ssl=true. "
-                            + "С security plugin нужен пароль admin (OPENSEARCH_PASSWORD = пароль из контейнера).",
+                    "OpenSearch index error for message_id={}, baseUrl={}: {}: {}",
                     message.getMessage_id(),
                     props.getBaseUrl(),
-                    e.getMessage()
+                    e.getClass().getSimpleName(),
+                    safeMessage(e),
+                    e
             );
         }
     }
@@ -135,6 +139,7 @@ public class MessageOpenSearchService {
         HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (resp.statusCode() / 100 != 2) {
             log.warn("OpenSearch search failed: {} {}", resp.statusCode(), truncate(resp.body(), 500));
+            analyticsService.opensearchSearchFailed(chatId, query, resp.statusCode(), resp.body());
             return List.of();
         }
         return parseHits(resp.body());
@@ -219,6 +224,11 @@ public class MessageOpenSearchService {
     private static String truncate(String s, int max) {
         if (s == null) return "";
         return s.length() <= max ? s : s.substring(0, max) + "…";
+    }
+
+    private static String safeMessage(Exception e) {
+        String message = e.getMessage();
+        return message != null ? message : "no message";
     }
 
     private void addOpenSearchAuth(HttpRequest.Builder builder) {

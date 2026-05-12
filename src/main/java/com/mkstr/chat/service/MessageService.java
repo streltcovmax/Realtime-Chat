@@ -62,18 +62,18 @@ public class MessageService {
     }
 
     @Transactional
-    public void markReadForRecipient(long messageId, String recipientUsername) {
+    public Message markReadForRecipient(long messageId, String recipientUsername) {
         Message m = messageRepository.findById(messageId).orElse(null);
         if (m == null) {
-            return;
+            return null;
         }
         if (!recipientUsername.equals(m.getRecipientId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         if (Boolean.TRUE.equals(m.getRead())) {
-            return;
+            return m;
         }
         m.setRead(true);
-        messageRepository.save(m);
+        return messageRepository.save(m);
     }
 }

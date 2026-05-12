@@ -1,5 +1,6 @@
 package com.mkstr.chat.controllers;
 
+import com.mkstr.chat.analytics.AnalyticsService;
 import com.mkstr.chat.dto.MessageSearchHitDto;
 import com.mkstr.chat.model.Chat;
 import com.mkstr.chat.opensearch.MessageOpenSearchService;
@@ -25,6 +26,7 @@ public class MessageSearchController {
     private final MessageOpenSearchService messageOpenSearchService;
     private final ChatService chatService;
     private final CurrentUserProvider currentUserProvider;
+    private final AnalyticsService analyticsService;
 
 
 //peer - username собеседника
@@ -53,7 +55,19 @@ public class MessageSearchController {
             return ResponseEntity.ok(List.of());
         }
 
-        List<MessageSearchHitDto> hits = messageOpenSearchService.search(chat.getChatId(), q.trim(), limit);
+        String query = q.trim();
+        List<MessageSearchHitDto> hits;
+        try {
+            hits = messageOpenSearchService.search(chat.getChatId(), query, limit);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            analyticsService.opensearchSearchFailed(chat.getChatId(), query, e);
+            return ResponseEntity.ok(List.of());
+        } catch (Exception e) {
+            analyticsService.opensearchSearchFailed(chat.getChatId(), query, e);
+            return ResponseEntity.ok(List.of());
+        }
+        analyticsService.messageSearch(me, peer, chat.getChatId(), query, hits.size());
         return ResponseEntity.ok(hits);
     }
 }

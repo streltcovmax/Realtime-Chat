@@ -1,5 +1,6 @@
 package com.mkstr.chat.controllers;
 
+import com.mkstr.chat.analytics.AnalyticsService;
 import com.mkstr.chat.model.Chat;
 import com.mkstr.chat.model.Message;
 import com.mkstr.chat.opensearch.MessageOpenSearchService;
@@ -37,6 +38,7 @@ public class ChatController {
     private final MessageService messageService;
     private final CurrentUserProvider currentUserProvider;
     private final MessageOpenSearchService messageOpenSearchService;
+    private final AnalyticsService analyticsService;
 
     @GetMapping("/")
     public String index(Model model, HttpServletRequest request) {
@@ -63,25 +65,34 @@ public class ChatController {
     public void processMessage(@Payload Message message, Principal principal) {
         if (principal == null) {
             log.warn("chat message rejected: no principal");
+            analyticsService.messageRejected("no_principal", "", null, messageLength(message));
             return;
         }
         String senderId = principal.getName();
+        if (message == null) {
+            analyticsService.messageRejected("empty_payload", senderId, null, null);
+            return;
+        }
         String recipientId = message.getRecipientId();
         String content = message.getContent();
 
         if (recipientId == null || recipientId.isBlank()) {
             log.warn("chat message rejected: empty recipient");
+            analyticsService.messageRejected("empty_recipient", senderId, recipientId, messageLength(message));
             return;
         }
         if (recipientId.equals(senderId)) {
             log.warn("chat message rejected: self-recipient");
+            analyticsService.messageRejected("self_recipient", senderId, recipientId, messageLength(message));
             return;
         }
         if (content == null || content.isBlank()) {
+            analyticsService.messageRejected("blank_content", senderId, recipientId, messageLength(message));
             return;
         }
         if (content.length() > MAX_MESSAGE_LENGTH) {
             log.warn("chat message rejected: content too long from {}", senderId);
+            analyticsService.messageRejected("content_too_long", senderId, recipientId, content.length());
             return;
         }
 
@@ -91,6 +102,7 @@ public class ChatController {
         Long chatId = chat.getChatId();
         message.setChatId(chatId);
         messageService.save(message);
+        analyticsService.messageSent(message);
         messageOpenSearchService.indexMessage(message);
         messagingTemplate.convertAndSend("/user/" + recipientId + "/messages", message);
     }
@@ -172,7 +184,9 @@ public class ChatController {
     @PutMapping("/messages/read/{messageId}")
     @ResponseBody
     public ResponseEntity<Void> markOneMessageRead(@PathVariable long messageId) {
-        messageService.markReadForRecipient(messageId, currentUserProvider.requireCurrentUsername());
+        String currentUsername = currentUserProvider.requireCurrentUsername();
+        Message message = messageService.markReadForRecipient(messageId, currentUsername);
+        analyticsService.messageRead(message, currentUsername);
         return ResponseEntity.noContent().build();
     }
 
@@ -181,5 +195,12 @@ public class ChatController {
         if (!sessionUser.equals(pathUsername)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
+    }
+
+    private static Integer messageLength(Message message) {
+        if (message == null || message.getContent() == null) {
+            return null;
+        }
+        return message.getContent().length();
     }
 }

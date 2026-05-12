@@ -17,12 +17,17 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void disconnect(String username) {
+    public boolean existsByUsername(String username) {
+        return userRepository.existsById(username);
+    }
+
+    public User disconnect(String username) {
         var storedUser = userRepository.findById(username).orElse(null);
         if (storedUser != null) {
             storedUser.setStatus(Status.OFFLINE);
-            userRepository.save(storedUser);
+            return userRepository.save(storedUser);
         }
+        return null;
     }
 
     public List<User> findAllByUsername(String username) {
@@ -31,5 +36,13 @@ public class UserService {
 
     public User findByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    public long countOnlineUsers() {
+        return userRepository.countByStatus(Status.ONLINE);
+    }
+
+    public long countUsers() {
+        return userRepository.count();
     }
 }

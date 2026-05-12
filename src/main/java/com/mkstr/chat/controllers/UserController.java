@@ -1,5 +1,6 @@
 package com.mkstr.chat.controllers;
 
+import com.mkstr.chat.analytics.AnalyticsService;
 import com.mkstr.chat.model.Status;
 import com.mkstr.chat.model.User;
 import com.mkstr.chat.service.ChatService;
@@ -26,6 +27,7 @@ public class UserController {
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
     private final CurrentUserProvider currentUserProvider;
+    private final AnalyticsService analyticsService;
 
     @GetMapping("/user.getCurrent")
     public ResponseEntity<User> getCurrentUser() {
@@ -48,7 +50,12 @@ public class UserController {
                 : current.getStatus();
         User toSave = new User(current.getUsername(), current.getFullname(), status);
         log.info("User connected: {}", toSave.getUsername());
+        boolean isNewUser = !userService.existsByUsername(toSave.getUsername());
         userService.save(toSave);
+        if (isNewUser) {
+            analyticsService.userRegistered(toSave, userService.countUsers());
+        }
+        analyticsService.userStatusChanged(toSave, userService.countOnlineUsers());
         messagingTemplate.convertAndSend("/user/public/", toSave);
         return ResponseEntity.ok(toSave);
     }
@@ -58,12 +65,14 @@ public class UserController {
     public User disconnectUser(Principal principal) {
         if (principal == null) {
             log.warn("disconnectUser without principal");
+            analyticsService.websocketRejected("disconnect_without_principal", "", null);
             return null;
         }
         String username = principal.getName();
         log.info("disconnected {}", username);
-        userService.disconnect(username);
-        return userService.findByUsername(username);
+        User user = userService.disconnect(username);
+        analyticsService.userStatusChanged(user, userService.countOnlineUsers());
+        return user;
     }
 
     @MessageMapping("/user.findUsers")
@@ -73,6 +82,7 @@ public class UserController {
     ) {
         if (principal == null) {
             log.warn("findUsers called without authenticated principal");
+            analyticsService.websocketRejected("find_users_without_principal", "", null);
             return;
         }
         String currentUsername = principal.getName();

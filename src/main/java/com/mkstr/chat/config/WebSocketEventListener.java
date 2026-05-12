@@ -1,5 +1,6 @@
 package com.mkstr.chat.config;
 
+import com.mkstr.chat.analytics.AnalyticsService;
 import com.mkstr.chat.model.User;
 import com.mkstr.chat.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class WebSocketEventListener {
 
     private final UserService userService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final AnalyticsService analyticsService;
     private final ConcurrentMap<String, String> sessionToUser = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Integer> userSessionsCount = new ConcurrentHashMap<>();
 
@@ -33,6 +35,7 @@ public class WebSocketEventListener {
 
         if (userPrincipal == null || sessionId == null) {
             log.warn("Connect event without principal/sessionId. principal={}, sessionId={}", userPrincipal, sessionId);
+            analyticsService.websocketRejected("connect_without_principal_or_session", null, sessionId);
             return;
         }
 
@@ -55,6 +58,7 @@ public class WebSocketEventListener {
 
         if (username == null) {
             log.info("Ignoring disconnect for unknown session. sessionId={}", sessionId);
+            analyticsService.websocketRejected("disconnect_unknown_session", null, sessionId);
             return;
         }
 
@@ -71,8 +75,8 @@ public class WebSocketEventListener {
         }
 
         log.info("User disconnected: username={}, sessionId={}", username, sessionId);
-        userService.disconnect(username);
-        User offlineUser = userService.findByUsername(username);
+        User offlineUser = userService.disconnect(username);
+        analyticsService.userStatusChanged(offlineUser, userService.countOnlineUsers());
         if (offlineUser != null) {
             messagingTemplate.convertAndSend("/user/public/", offlineUser);
         } else {

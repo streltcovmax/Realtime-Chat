@@ -1,5 +1,6 @@
 package com.mkstr.chat.repositories;
 
+import com.mkstr.chat.model.Status;
 import com.mkstr.chat.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -9,4 +10,6 @@ public interface UserRepository extends JpaRepository<User, String> {
     List<User> findAllByUsernameContains(String username);
 
     User findByUsername(String username);
+
+    long countByStatus(Status status);
 }

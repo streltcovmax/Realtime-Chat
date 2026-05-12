@@ -9,11 +9,20 @@ app:
 
 opensearch:
   enabled: ${OPENSEARCH_ENABLED:true}
-  base-url: ${OPENSEARCH_BASE_URL:https://opensearch:9200}
+  base-url: ${OPENSEARCH_BASE_URL:https://127.0.0.1:9200}
   index-messages: ${OPENSEARCH_INDEX_MESSAGES:chat-messages}
-  insecure-ssl: ${OPENSEARCH_INSECURE_SSL:false}
+  insecure-ssl: ${OPENSEARCH_INSECURE_SSL:true}
   username: ${OPENSEARCH_USERNAME:admin}
   password: ${OPENSEARCH_PASSWORD:KWL9quAzK68R}
+
+analytics:
+  clickhouse:
+    enabled: ${ANALYTICS_CLICKHOUSE_ENABLED:true}
+    base-url: ${ANALYTICS_CLICKHOUSE_BASE_URL:http://127.0.0.1:8123}
+    database: ${ANALYTICS_CLICKHOUSE_DATABASE:chat_analytics}
+    table: ${ANALYTICS_CLICKHOUSE_TABLE:events}
+    username: ${ANALYTICS_CLICKHOUSE_USERNAME:${CLICKHOUSE_USER:default}}
+    password: ${ANALYTICS_CLICKHOUSE_PASSWORD:${CLICKHOUSE_PASSWORD:password}}
 
 spring:
   application:
