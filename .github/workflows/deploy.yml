@@ -39,7 +39,7 @@ jobs:
           docker push ${{ secrets.DOCKER_USER }}/messenger_app:${{ github.sha }}
           docker push ${{ secrets.DOCKER_USER }}/messenger_app:latest
 
-      - name: Deploy via SSH
+      - name: Update server repository
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -50,9 +50,30 @@ jobs:
             if [ -d .git ]; then
               git pull --ff-only
             fi
+
+      - name: Upload server config files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yaml,nginx.conf,grafana/**,clickhouse/**"
+          target: "/root/app"
+          overwrite: true
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /root/app
+            docker compose up -d clickhouse
             docker compose pull keycloak
             docker compose up -d --force-recreate keycloak
             export APP_IMAGE_TAG=${{ github.sha }}
             docker compose pull app
             docker compose up -d --force-recreate app
+            docker compose up -d --force-recreate grafana
             docker image prune -f
