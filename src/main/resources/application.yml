@@ -40,10 +40,7 @@ spring:
             scope: openid, profile
         provider:
           keycloak:
-            authorization-uri: ${KC_AUTHORIZATION_URI:http://localhost:8080/realms/chat_realm/protocol/openid-connect/auth}
-            token-uri: ${KC_TOKEN_URI:http://localhost:8080/realms/chat_realm/protocol/openid-connect/token}
-            jwk-set-uri: ${KC_JWK_SET_URI:http://localhost:8080/realms/chat_realm/protocol/openid-connect/certs}
-            user-info-uri: ${KC_USER_INFO_URI:http://localhost:8080/realms/chat_realm/protocol/openid-connect/userinfo}
+            issuer-uri: ${KC_ISSUER_URI:http://localhost:8080/realms/chat_realm}
             user-name-attribute: preferred_username
 
   web:
