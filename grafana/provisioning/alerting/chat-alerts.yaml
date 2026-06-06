@@ -7,8 +7,8 @@ contactPoints:
       - uid: chat-telegram-alerts
         type: telegram
         settings:
-          bottoken: '${GRAFANA_TELEGRAM_BOT_TOKEN}'
-          chatid: '${GRAFANA_TELEGRAM_CHAT_ID}'
+          bottoken: !!str ${GRAFANA_TELEGRAM_BOT_TOKEN}
+          chatid: !!str ${GRAFANA_TELEGRAM_CHAT_ID}
         disableResolveMessage: false
 
 policies:
