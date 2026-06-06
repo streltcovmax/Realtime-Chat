@@ -10,3 +10,4 @@
 HELP.md
 *.iml
 *.env
+grafana/provisioning/alerting/chat-contact-points.yaml

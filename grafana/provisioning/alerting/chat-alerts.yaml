@@ -1,16 +1,5 @@
 apiVersion: 1
 
-contactPoints:
-  - orgId: 1
-    name: chat-telegram-alerts
-    receivers:
-      - uid: chat-telegram-alerts
-        type: telegram
-        settings:
-          bottoken: !!str ${GRAFANA_TELEGRAM_BOT_TOKEN}
-          chatid: !!str ${GRAFANA_TELEGRAM_CHAT_ID}
-        disableResolveMessage: false
-
 policies:
   - orgId: 1
     receiver: chat-telegram-alerts
