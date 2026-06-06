@@ -1,8 +1,19 @@
 apiVersion: 1
 
+contactPoints:
+  - orgId: 1
+    name: chat-email-alerts
+    receivers:
+      - uid: chat-email-alerts
+        type: email
+        settings:
+          addresses: "${GRAFANA_ALERT_EMAIL_TO}"
+          singleEmail: true
+        disableResolveMessage: false
+
 policies:
   - orgId: 1
-    receiver: chat-telegram-alerts
+    receiver: chat-email-alerts
     group_by:
       - grafana_folder
       - alertname
