@@ -90,6 +90,27 @@
     </div>
 </div>
 
+<div id="user-profile-modal" class="user-profile-modal hidden" aria-hidden="true">
+    <div id="user-profile-modal-backdrop" class="user-profile-modal-backdrop"></div>
+    <div id="user-profile-modal-dialog" class="user-profile-modal-dialog r" role="dialog" aria-modal="true"
+         aria-labelledby="user-profile-modal-title">
+        <div id="user-profile-modal-avatar" class="chat-avatar r user-profile-modal-avatar"></div>
+        <div class="user-profile-modal-content">
+            <h2 id="user-profile-modal-title" class="user-profile-modal-title"></h2>
+            <dl class="user-profile-modal-list">
+                <div>
+                    <dt>Никнейм</dt>
+                    <dd id="user-profile-modal-username"></dd>
+                </div>
+                <div>
+                    <dt>Статус</dt>
+                    <dd id="user-profile-modal-status"></dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+</div>
+
 <script src="/static/js/lib/sockjs.min.js"></script>
 <script src="/static/js/lib/stomp.min.js"></script>
 <script type="module" src="/static/js/user.js"></script>

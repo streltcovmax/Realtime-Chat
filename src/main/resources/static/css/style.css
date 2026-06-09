@@ -587,6 +587,15 @@ h2 {
     min-width: 0;
     flex: 1 1 auto;
     justify-content: flex-start;
+    padding: 6px;
+    margin: -6px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+#chat-header-user-info-container:hover {
+    background: rgba(255, 255, 255, 0.05);
 }
 
 #chat-header-user-info-container > div:last-child {
@@ -832,6 +841,88 @@ form#messageForm {
     min-height: 130px;
     max-height: min(48vh, 380px);
     margin: 0;
+}
+
+.user-profile-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(14px, 3vw, 28px);
+}
+
+.user-profile-modal.hidden {
+    display: none !important;
+}
+
+.user-profile-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 8, 13, 0.68);
+    backdrop-filter: blur(6px);
+    cursor: pointer;
+}
+
+.user-profile-modal-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(92vw, 420px);
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 22px;
+    background: var(--panel);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.user-profile-modal-avatar {
+    width: 76px;
+    height: 76px;
+    min-width: 76px;
+    font-size: 30px;
+}
+
+.user-profile-modal-content {
+    min-width: 0;
+    flex: 1;
+}
+
+.user-profile-modal-title {
+    margin: 0 0 14px;
+    color: var(--text-highlight);
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.user-profile-modal-list {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+}
+
+.user-profile-modal-list div {
+    display: grid;
+    gap: 3px;
+}
+
+.user-profile-modal-list dt {
+    color: var(--text-dark);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.user-profile-modal-list dd {
+    margin: 0;
+    color: var(--text-plain);
+    font-size: 15px;
+    overflow-wrap: anywhere;
 }
 
 @media (max-width: 1100px) {

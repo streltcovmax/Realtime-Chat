@@ -38,6 +38,7 @@ const DOM = {
 
     // Шапка чата
     chatHeaderInfo: document.querySelector('#chat-header-info'),
+    chatHeaderUserInfoContainer: document.querySelector('#chat-header-user-info-container'),
 
     // Поиск
     searchResultsContainer: document.querySelector('#search-results-container'),
@@ -61,6 +62,14 @@ const DOM = {
     messageSearchQuery: document.querySelector('#message-search-query'),
     messageSearchList: document.querySelector('#message-search-list'),
     messageSearchStatus: document.querySelector('#message-search-status'),
+
+    userProfileModal: document.querySelector('#user-profile-modal'),
+    userProfileBackdrop: document.querySelector('#user-profile-modal-backdrop'),
+    userProfileDialog: document.querySelector('#user-profile-modal-dialog'),
+    userProfileAvatar: document.querySelector('#user-profile-modal-avatar'),
+    userProfileTitle: document.querySelector('#user-profile-modal-title'),
+    userProfileUsername: document.querySelector('#user-profile-modal-username'),
+    userProfileStatus: document.querySelector('#user-profile-modal-status'),
 };
 
 // ============================================
@@ -73,7 +82,8 @@ const AppState = {
     isConnected: false,
     selectedUser: {
         username: null,
-        fullname: null
+        fullname: null,
+        status: null
     },
     pagination: {
         page: 0,
@@ -223,6 +233,15 @@ function setEventListeners() {
     document.querySelector('#this-profile-button').addEventListener('click', showCurrentUserProfile);
     document.querySelector('#logout-button').addEventListener('click', onLogout);
     document.querySelector('#send-message-button').addEventListener('click', sendMessage);
+    if (DOM.chatHeaderUserInfoContainer) {
+        DOM.chatHeaderUserInfoContainer.addEventListener('click', showSelectedUserProfile);
+    }
+    if (DOM.userProfileBackdrop) {
+        DOM.userProfileBackdrop.addEventListener('click', closeUserProfileModal);
+    }
+    if (DOM.userProfileDialog) {
+        DOM.userProfileDialog.addEventListener('click', e => e.stopPropagation());
+    }
 
     // Поиск
     DOM.searchInput.addEventListener('input', onSearchInput);
@@ -258,6 +277,10 @@ function setEventListeners() {
     // Закрытие по Escape
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
+            if (DOM.userProfileModal && !DOM.userProfileModal.classList.contains('hidden')) {
+                closeUserProfileModal();
+                return;
+            }
             if (DOM.messageSearchModal && !DOM.messageSearchModal.classList.contains('hidden')) {
                 closeMessageSearchModal();
                 return;
@@ -895,9 +918,9 @@ function fillChatHeader(chatData) {
     }
     // === КОНЕЦ БЛОКА ===
 
-    header.querySelector('#chat-header-username').textContent = chatData.username;
+    header.querySelector('#chat-header-username').textContent = chatData.fullname || chatData.username;
     header.querySelector('#chat-header-status').textContent = chatData.status.toLowerCase();
-    header.querySelector('.chat-avatar').textContent = chatData.fullname[0];
+    header.querySelector('.chat-avatar').textContent = chatData.fullname?.[0] || chatData.username?.[0] || '?';
     header.classList.toggle('online', chatData.status === 'ONLINE');
 }
 
@@ -1256,6 +1279,7 @@ function onUserStatusUpdate(payload) {
 
     // Обновляем в шапке, если это выбранный пользователь
     if (AppState.selectedUser.username === user.username) {
+        AppState.selectedUser.status = user.status;
         DOM.chatHeaderInfo.classList.toggle('online', user.status === 'ONLINE');
         DOM.chatHeaderInfo.querySelector('#chat-header-status').textContent = user.status.toLowerCase();
     }
@@ -1273,10 +1297,11 @@ function updateStatusIndicator(element, status) {
 function setSelectedUser(chatData) {
     AppState.selectedUser.username = chatData.username;
     AppState.selectedUser.fullname = chatData.fullname;
+    AppState.selectedUser.status = chatData.status;
 }
 
 function resetSelectedUser() {
-    AppState.selectedUser = {username: null, fullname: null};
+    AppState.selectedUser = {username: null, fullname: null, status: null};
 }
 
 // ============================================
@@ -1379,9 +1404,51 @@ function createDayDividerElement(labelText) {
 // ДРУГИЕ ДЕЙСТВИЯ
 // ============================================
 
-function showCurrentUserProfile() {
+function showCurrentUserProfileLegacy() {
     // TODO: Реализовать просмотр профиля
     console.log("Просмотр профиля пользователя");
+}
+
+function showCurrentUserProfile() {
+    openUserProfileModal({
+        username: User.username,
+        fullname: User.fullname,
+        status: User.status
+    });
+}
+
+function showSelectedUserProfile() {
+    if (!AppState.selectedUser.username) return;
+    openUserProfileModal(AppState.selectedUser);
+}
+
+function openUserProfileModal(user) {
+    if (!DOM.userProfileModal) return;
+
+    const fullname = user.fullname || user.username || '';
+    const username = user.username || '';
+    const status = user.status || 'UNKNOWN';
+
+    DOM.userProfileAvatar.textContent = fullname?.[0] || username?.[0] || '?';
+    DOM.userProfileTitle.textContent = fullname;
+    DOM.userProfileUsername.textContent = username ? `@${username}` : '';
+    DOM.userProfileStatus.textContent = formatUserStatus(status);
+
+    DOM.userProfileModal.classList.remove('hidden');
+    DOM.userProfileModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeUserProfileModal() {
+    if (!DOM.userProfileModal) return;
+    DOM.userProfileModal.classList.add('hidden');
+    DOM.userProfileModal.setAttribute('aria-hidden', 'true');
+}
+
+function formatUserStatus(status) {
+    const normalized = String(status || '').toUpperCase();
+    if (normalized === 'ONLINE') return 'online';
+    if (normalized === 'OFFLINE') return 'offline';
+    return normalized.toLowerCase() || 'unknown';
 }
 
 function onLogout() {
