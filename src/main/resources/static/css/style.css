@@ -250,11 +250,17 @@ h2 {
     line-height: 1;
     transform: translateY(-50%);
     box-shadow: none !important;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .search-clear-btn:hover {
     color: var(--text-highlight);
     background: rgba(255, 255, 255, 0.08) !important;
+    transform: translateY(-50%);
+}
+
+.search-clear-btn:active {
+    transform: translateY(-50%);
 }
 
 .search-results-container {
@@ -548,6 +554,9 @@ h2 {
 }
 
 .info-message {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     max-width: min(88vw, 360px);
     padding: 12px 18px;
     color: var(--text-plain);
@@ -574,6 +583,8 @@ h2 {
     align-items: center;
     gap: 12px;
     min-width: 0;
+    flex: 1 1 auto;
+    justify-content: flex-start;
 }
 
 #chat-header-user-info-container > div:last-child {
@@ -751,7 +762,7 @@ form#messageForm {
     border-top: 7px solid transparent;
     border-bottom: 7px solid transparent;
     border-left: 12px solid white;
-    transform: translateX(1px);
+    transform: translateX(2px);
 }
 
 .message-input button:disabled {
@@ -952,6 +963,12 @@ form#messageForm {
         min-height: 62px;
         padding: 10px 12px;
         gap: 10px;
+        justify-content: flex-start;
+    }
+
+    #chat-header-user-info-container {
+        flex: 1 1 auto;
+        justify-content: flex-start;
     }
 
     #chat-header-info p {

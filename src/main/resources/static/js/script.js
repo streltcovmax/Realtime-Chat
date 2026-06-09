@@ -583,10 +583,20 @@ function onSearchInput() {
     DOM.foundUsersList.innerHTML = '';
     DOM.searchNoResults.classList.add('hidden');
 
-    if (query.length <= MIN_SEARCH_LENGTH) {
+    if (query.length === 0) {
         hideSearchResults();
         return;
     }
+
+    showSearchResults();
+
+    if (query.length <= MIN_SEARCH_LENGTH) {
+        DOM.searchNoResults.textContent = 'Введите минимум 3 символа';
+        DOM.searchNoResults.classList.remove('hidden');
+        return;
+    }
+
+    DOM.searchNoResults.textContent = 'Ничего не найдено';
 
     if (AppState.stompClient) {
         AppState.stompClient.send("/app/user.findUsers", {}, query);
@@ -608,6 +618,7 @@ function hideSearchResults() {
     DOM.searchResultsContainer.classList.add('hidden');
     DOM.chatsListContainer.classList.remove('hidden');
     DOM.foundUsersList.innerHTML = '';
+    DOM.searchNoResults.textContent = 'Ничего не найдено';
     DOM.searchNoResults.classList.add('hidden');
 }
 
@@ -618,6 +629,7 @@ function onSearchResults(payload) {
     DOM.foundUsersList.innerHTML = '';
     showSearchResults();
 
+    DOM.searchNoResults.textContent = 'Ничего не найдено';
     DOM.searchNoResults.classList.toggle('hidden', foundUsers.length > 0);
 
     foundUsers.forEach(user => {
