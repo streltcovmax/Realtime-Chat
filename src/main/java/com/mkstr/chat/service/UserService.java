@@ -30,8 +30,8 @@ public class UserService {
         return null;
     }
 
-    public List<User> findAllByUsername(String username) {
-        return userRepository.findAllByUsernameContains(username);
+    public List<User> searchUsers(String query) {
+        return userRepository.findAllByUsernameContainingIgnoreCaseOrFullnameContainingIgnoreCase(query, query);
     }
 
     public User findByUsername(String username) {

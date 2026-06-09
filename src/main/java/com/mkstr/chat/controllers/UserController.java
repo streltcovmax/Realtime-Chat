@@ -77,7 +77,7 @@ public class UserController {
 
     @MessageMapping("/user.findUsers")
     public void findUsers(
-            @Payload String targetUsername,
+            @Payload String query,
             Principal principal
     ) {
         if (principal == null) {
@@ -86,7 +86,7 @@ public class UserController {
             return;
         }
         String currentUsername = principal.getName();
-        List<User> foundUsers = userService.findAllByUsername(targetUsername);
+        List<User> foundUsers = userService.searchUsers(query);
 
         log.info("Found users {}", foundUsers);
         log.info("Request came from {}", currentUsername);
@@ -109,5 +109,3 @@ public class UserController {
         return ResponseEntity.ok(userService.findByUsername(targetUsername));
     }
 }
-
-//TODO: профили юзеров

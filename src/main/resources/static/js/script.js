@@ -668,10 +668,18 @@ function createSearchResultElement(user) {
 
     const avatar = document.createElement('span');
     avatar.classList.add('chat-avatar', 'r');
-    avatar.textContent = user.fullname?.[0] || '?';
+    avatar.textContent = user.fullname?.[0] || user.username?.[0] || '?';
 
     const label = document.createElement('span');
-    label.textContent = ` ${user.fullname || user.username} (@${user.username})`;
+    label.classList.add('search-result-text');
+    const fullname = document.createElement('span');
+    fullname.classList.add('search-result-name');
+    fullname.textContent = user.fullname || user.username;
+    const username = document.createElement('span');
+    username.classList.add('search-result-username');
+    username.textContent = `@${user.username}`;
+    label.appendChild(fullname);
+    label.appendChild(username);
 
     element.appendChild(avatar);
     element.appendChild(label);
@@ -1403,11 +1411,6 @@ function createDayDividerElement(labelText) {
 // ============================================
 // ДРУГИЕ ДЕЙСТВИЯ
 // ============================================
-
-function showCurrentUserProfileLegacy() {
-    // TODO: Реализовать просмотр профиля
-    console.log("Просмотр профиля пользователя");
-}
 
 function showCurrentUserProfile() {
     openUserProfileModal({

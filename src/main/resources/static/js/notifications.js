@@ -144,7 +144,7 @@ function createAvatarDataUrl(letter) {
     const ctx = canvas.getContext('2d');
 
     // Фон
-    ctx.fillStyle = '#6a5acd'; // slateblue
+    ctx.fillStyle = '#4f8cff';
     ctx.fillRect(0, 0, 64, 64);
 
     // Буква

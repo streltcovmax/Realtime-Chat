@@ -315,6 +315,34 @@ h2 {
     align-items: center;
 }
 
+#foundUsers .search-result-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+#foundUsers .search-result-name,
+#foundUsers .search-result-username {
+    display: block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#foundUsers .search-result-name {
+    color: var(--text-highlight);
+    font-size: 14px;
+    font-weight: 800;
+}
+
+#foundUsers .search-result-username {
+    color: var(--text-dark);
+    font-size: 13px;
+    font-weight: 600;
+}
+
 #message-search-list .search-result-item {
     flex-direction: column;
     align-items: flex-start;
