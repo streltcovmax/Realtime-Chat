@@ -872,7 +872,9 @@ function fillChatHeader(chatData) {
     if (isMobile()) {
         const backBtn = document.createElement('button');
         backBtn.className = 'mobile-back-btn';
-        backBtn.innerHTML = '←';
+        backBtn.type = 'button';
+        backBtn.setAttribute('aria-label', 'Назад к списку чатов');
+        backBtn.textContent = '←';
         backBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             hideChatArea();
@@ -1394,7 +1396,9 @@ function onWindowResize() {
             if (!DOM.chatHeaderInfo.querySelector('.mobile-back-btn')) {
                 const backBtn = document.createElement('button');
                 backBtn.className = 'mobile-back-btn';
-                backBtn.innerHTML = '←';
+                backBtn.type = 'button';
+                backBtn.setAttribute('aria-label', 'Назад к списку чатов');
+                backBtn.textContent = '←';
                 backBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     hideChatArea();
