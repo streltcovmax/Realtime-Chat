@@ -339,7 +339,9 @@ h2 {
 }
 
 .chat-message-row.message-search-highlight .message-content {
-    box-shadow: 0 0 0 3px rgba(138, 180, 255, 0.55);
+    background: #f5b84b;
+    color: #141922;
+    box-shadow: 0 0 0 3px rgba(245, 184, 75, 0.9), 0 0 32px rgba(245, 184, 75, 0.38);
 }
 
 .chats-list-container {

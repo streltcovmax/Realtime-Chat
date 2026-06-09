@@ -1,239 +1,290 @@
 /* ============================================
-   1. БАЗОВЫЕ ПЕРЕМЕННЫЕ
+   CHAT THEME TOKENS
    ============================================ */
 :root {
-    --back_plain: #222;
-    --text-highlight: #fff;
-    --text-plain: #bbb;
-    --fields_middle: #555;
-    --highlight_dark: darkslateblue;
-    --highlight_plain: slateblue;
-    --highlight_light: rgb(157, 145, 234);
-    --scale_modifier: 1.03;
-    --scale_modifier_button: 1.03;
+    --bg: #0f1117;
+    --panel: #151923;
+    --panel-soft: #1b2130;
+    --panel-raised: #20283a;
+    --surface: #111722;
+    --field: #242c3d;
+    --field-focus: #2b3448;
+    --text-highlight: #f7f8fb;
+    --text-plain: #c4cad7;
+    --text-dark: #7f8798;
+    --border-color: #293244;
+    --border-soft: rgba(255, 255, 255, 0.08);
+    --accent: #4f8cff;
+    --accent-strong: #3276f6;
+    --accent-soft: rgba(79, 140, 255, 0.16);
+    --danger: #ff6b6b;
+    --warning: #f5b84b;
+    --shadow-dark: rgba(0, 0, 0, 0.42);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
 
-    --radius-pill: 1.3cap;
+    /* Legacy variables used by older templates */
+    --back_plain: var(--bg);
+    --fields_middle: var(--field);
+    --highlight_dark: var(--accent-strong);
+    --highlight_plain: var(--accent);
+    --highlight_light: #8ab4ff;
+    --radius-pill: 999px;
 }
 
-/* Центрирование */
-.pf-v5-c-login {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    min-height: 100%;
+}
+
+body#keycloak-bg,
+.login-pf body {
     min-height: 100vh !important;
+    margin: 0 !important;
+    color: var(--text-highlight) !important;
+    background:
+        radial-gradient(circle at top left, rgba(79, 140, 255, 0.14), transparent 28rem),
+        linear-gradient(135deg, #0f1117 0%, #121722 55%, #17151e 100%) !important;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    overflow-y: auto !important;
+}
+
+.pf-v5-c-login {
     width: 100% !important;
-    background-color: var(--back_plain) !important;
+    min-height: 100vh !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 24px 16px !important;
+    background: transparent !important;
 }
 
 .pf-v5-c-login__container {
+    width: min(100%, 430px) !important;
+    display: grid !important;
+    grid-template-areas:
+        "header"
+        "main"
+        "footer" !important;
+    grid-template-columns: 1fr !important;
+    justify-content: center !important;
+    justify-items: stretch !important;
     margin: 0 auto !important;
-    justify-self: center !important;
-    align-self: center !important;
-}
-
-@media (min-width: 1200px) {
-    .pf-v5-c-login__container {
-        display: grid !important;
-        grid-template-areas:
-            "header"
-            "main"
-            "footer" !important;
-        grid-template-columns: minmax(320px, 420px) !important;
-        grid-column-gap: 0 !important;
-        justify-content: center !important;
-        justify-items: center !important;
-        padding-inline-start: 0 !important;
-        padding-inline-end: 0 !important;
-        margin-inline: auto !important;
-    }
+    padding: 0 !important;
 }
 
 .pf-v5-c-login__main {
-    background-color: transparent !important;
-    width: 420px !important;
-    max-width: 95vw !important;
-    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    color: var(--text-highlight) !important;
+    background: rgba(21, 25, 35, 0.96) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: 0 24px 80px var(--shadow-dark) !important;
 }
 
 .pf-v5-c-login__main-header {
-    padding-top: 10px !important;
-}
-
-/* ============================================
-   2. ИНПУТЫ (Максимальное скругление и очистка)
-   ============================================ */
-
-/* Группа ввода (контейнер для инпута и кнопки глаза) */
-.pf-v5-c-input-group {
-    background-color: var(--fields_middle) !important;
-    border-radius: var(--radius-pill) !important; /* Скругляем весь контейнер */
-    border: none !important;
-    box-shadow: none !important;
-    /*transition: transform 0.1s ease-in !important;*/
-}
-
-.pf-v5-c-form-control {
-    background-color: var(--fields_middle) !important;
-    color: var(--text-highlight) !important;
-    border: none !important;
-    border-radius: var(--radius-pill) !important;
-    height: 45px !important;
-    padding: 0 16px !important;
-    display: flex !important;
-    align-items: center !important;
-    box-shadow: none !important;
-    /*transition: transform 0.1s ease-in !important;*/
-}
-
-/* УБИРАЕМ СИНЮЮ ПОЛОСКУ */
-.pf-v5-c-form-control::after,
-.pf-v5-c-form-control:focus::after,
-.pf-v5-c-input-group::after,
-.pf-v5-c-input-group:focus-within::after {
-    display: none !important;
-    content: none !important;
-    border: none !important;
-}
-
-/* СОСТОЯНИЕ ФОКУСА (без квадратов и обводок) */
-.pf-v5-c-form-control:focus,
-.pf-v5-c-form-control:focus-within,
-.pf-v5-c-input-group:focus-within {
-    outline: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    /*transform: scale(var(--scale_modifier));*/
-}
-
-.pf-v5-c-form-control input,
-.pf-v5-c-form-control input:focus,
-.pf-v5-c-form-control input:focus-visible,
-.pf-v5-c-input-group input,
-.pf-v5-c-input-group input:focus,
-.pf-v5-c-input-group input:focus-visible,
-.pf-v5-c-button.pf-m-control:focus,
-.pf-v5-c-button.pf-m-control:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-    border: none !important;
-}
-
-.pf-v5-c-form-control input {
-    width: 100% !important;
-    height: 100% !important;
-    line-height: 31px !important;
-    padding: 0 !important;
-    margin: 0 !important;
+    padding: 24px 24px 8px !important;
+    border-top: 0 !important;
     background: transparent !important;
-    color: var(--text-highlight) !important;
-    text-align: left !important;
-    vertical-align: middle !important;
 }
 
-.pf-v5-c-form-control input::placeholder,
-.pf-v5-c-input-group input::placeholder {
-    color: var(--text-plain) !important;
-    opacity: 1 !important;
+.pf-v5-c-login__main-body {
+    padding: 16px 24px 24px !important;
+}
+
+.pf-v5-c-login__main-footer {
+    background: transparent !important;
+}
+
+.pf-v5-c-login__main-footer-band {
+    padding: 0 24px 22px !important;
+    border: 0 !important;
+    background: transparent !important;
+}
+
+#kc-header,
+#kc-header-wrapper,
+div.kc-logo-text,
+div.kc-logo-text span {
+    display: none !important;
+}
+
+.pf-v5-c-title {
+    margin: 0 0 22px !important;
+    color: var(--text-highlight) !important;
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
     text-align: left !important;
+}
+
+.pf-v5-c-form,
+.pf-v5-c-form__group {
+    width: 100% !important;
+}
+
+.pf-v5-c-form__group {
+    margin-bottom: 14px !important;
 }
 
 .pf-v5-c-form__group-label {
     display: none !important;
 }
 
-/* Кнопка скрытия пароля (Глаз) */
-.pf-v5-c-button.pf-m-control {
-    background-color: transparent !important;
+.pf-v5-c-input-group,
+.pf-v5-c-form-control {
+    min-height: 46px !important;
     color: var(--text-highlight) !important;
-    border: none !important;
-    border-radius: var(--radius-pill) !important;
-    padding-right: 15px !important;
+    background: var(--field) !important;
+    border: 1px solid transparent !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: none !important;
+    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.pf-v5-c-input-group:focus-within,
+.pf-v5-c-form-control:focus,
+.pf-v5-c-form-control:focus-within {
+    background: var(--field-focus) !important;
+    border-color: rgba(79, 140, 255, 0.72) !important;
+    box-shadow: 0 0 0 4px var(--accent-soft) !important;
+    outline: none !important;
+}
+
+.pf-v5-c-form-control::after,
+.pf-v5-c-form-control:focus::after,
+.pf-v5-c-input-group::after,
+.pf-v5-c-input-group:focus-within::after,
+.pf-v5-c-button::after {
+    display: none !important;
+    content: none !important;
+}
+
+.pf-v5-c-form-control input,
+.pf-v5-c-input-group input {
+    width: 100% !important;
+    min-height: 44px !important;
+    margin: 0 !important;
+    padding: 0 15px !important;
+    color: var(--text-highlight) !important;
+    background: transparent !important;
+    border: 0 !important;
+    outline: 0 !important;
     box-shadow: none !important;
 }
 
-.pf-v5-c-button.pf-m-control::after {
-    display: none !important; /* Убираем полоску под кнопкой */
+.pf-v5-c-form-control input::placeholder,
+.pf-v5-c-input-group input::placeholder {
+    color: var(--text-dark) !important;
+    opacity: 1 !important;
+}
+
+.pf-v5-c-button.pf-m-control {
+    min-width: 44px !important;
+    color: var(--text-plain) !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: none !important;
 }
 
 .pf-v5-c-button.pf-m-control:hover {
-    color: var(--highlight_light) !important;
+    color: var(--text-highlight) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
 }
 
-/* ============================================
-   3. КНОПКА ВХОДА
-   ============================================ */
 .pf-v5-c-button.pf-m-primary {
-    background-color: var(--highlight_dark) !important;
-    color: var(--text-highlight) !important;
-    border: none !important;
-    border-radius: var(--radius-pill) !important;
-    padding: 12px !important;
-    font-weight: bold !important;
-    transition: all 0.1s ease-in !important;
-    margin-top: 15px !important;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+    min-height: 46px !important;
+    margin-top: 2px !important;
+    padding: 12px 16px !important;
+    color: white !important;
+    background: var(--accent) !important;
+    border: 0 !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: 0 10px 24px rgba(50, 118, 246, 0.22) !important;
+    font-weight: 800 !important;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease !important;
 }
 
 .pf-v5-c-button.pf-m-primary:hover {
-    background-color: var(--highlight_plain) !important;
-    transform: scale(var(--scale_modifier_button)) !important;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3) !important;
+    background: var(--accent-strong) !important;
+    box-shadow: 0 14px 30px rgba(50, 118, 246, 0.28) !important;
 }
 
-.pf-v5-c-button.pf-m-primary::after {
-    display: none !important;
+.pf-v5-c-button.pf-m-primary:active {
+    transform: translateY(1px) !important;
+}
+
+.pf-v5-c-button.pf-m-secondary {
+    min-height: 44px !important;
+    color: var(--text-highlight) !important;
+    background: var(--panel-raised) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: none !important;
+}
+
+.pf-v5-c-button.pf-m-secondary:hover {
+    background: var(--field-focus) !important;
+}
+
+.pf-v5-c-form__actions {
+    padding-top: 6px !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
 }
 
 #kc-login,
 #kc-login::before,
-#kc-login::after,
-.pf-v5-c-form__actions,
-.pf-v5-c-form__actions::before,
-.pf-v5-c-form__actions::after {
-    border: none !important;
+#kc-login::after {
+    border: 0 !important;
     box-shadow: none !important;
     background-image: none !important;
 }
 
-/* ============================================
-   4. ЧЕКБОКС (Запомнить меня)
-   ============================================ */
 .pf-v5-c-check {
     display: flex !important;
     align-items: center !important;
     gap: 10px !important;
-    padding-left: 0 !important;
     margin: 0 !important;
+    padding-left: 0 !important;
 }
 
 .pf-v5-c-check__input {
     width: 18px !important;
     height: 18px !important;
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    background: transparent !important;
-    border: 2px solid var(--highlight_plain) !important;
-    cursor: pointer;
-    border-radius: var(--radius-pill) !important;
-    outline: none !important;
-    box-shadow: none !important;
+    flex: 0 0 18px !important;
     display: inline-grid !important;
     place-content: center !important;
     margin: 0 !important;
-    flex: 0 0 18px !important;
-    overflow: hidden !important;
-    vertical-align: middle !important;
-    transform: none !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background: var(--field) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    outline: 0 !important;
+    box-shadow: none !important;
 }
 
 .pf-v5-c-check__input::before {
     content: "";
     width: 8px;
     height: 8px;
-    border-radius: var(--radius-pill);
+    border-radius: 3px;
+    background: var(--accent);
     transform: scale(0);
     transition: transform 0.12s ease-in-out;
-    background-color: var(--highlight_plain);
 }
 
 .pf-v5-c-check__input:checked::before {
@@ -242,40 +293,17 @@
 
 .pf-v5-c-check__input:focus,
 .pf-v5-c-check__input:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-    border-color: var(--highlight_light) !important;
+    border-color: rgba(79, 140, 255, 0.72) !important;
+    box-shadow: 0 0 0 4px var(--accent-soft) !important;
 }
 
 .pf-v5-c-check__label {
-    display: inline-flex !important;
-    align-items: center !important;
+    margin: 0 !important;
     color: var(--text-plain) !important;
-    line-height: 1 !important;
-    cursor: pointer;
-    margin: 0 !important;
+    line-height: 1.3 !important;
+    cursor: pointer !important;
 }
 
-.pf-v5-c-form__helper-text {
-    margin-top: 8px !important;
-    margin-bottom: 0 !important;
-    margin-block-start: 8px !important;
-    margin-block-end: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-}
-
-.pf-v5-c-form__helper-text .pf-v5-c-helper-text {
-    width: 100% !important;
-    margin: 0 !important;
-    align-items: center !important;
-}
-
-.pf-v5-c-form__helper-text .pf-v5-c-helper-text__item {
-    margin: 0 !important;
-}
-
-.pf-v5-c-form__group,
 .pf-v5-c-form__helper-text,
 .pf-v5-c-helper-text,
 .pf-v5-c-helper-text__item,
@@ -283,85 +311,141 @@
 #input-error-container-username,
 #input-error-container-password {
     max-width: 100% !important;
+    margin-top: 8px !important;
+    color: var(--text-dark) !important;
     overflow-wrap: anywhere !important;
     word-break: break-word !important;
 }
 
-.pf-v5-c-helper-text__item-text {
-    white-space: normal !important;
+.pf-v5-c-helper-text__item.pf-m-error,
+.pf-v5-c-helper-text__item-text.pf-m-error,
+.kc-feedback-text,
+.pf-v5-c-alert.pf-m-danger,
+.pf-v5-c-alert.pf-m-error {
+    color: var(--danger) !important;
 }
 
-/* ============================================
-   5. ОСТАЛЬНЫЕ ТЕКСТЫ И ССЫЛКИ
-   ============================================ */
-.pf-v5-c-title {
-    font-weight: 100 !important;
-    color: var(--text-highlight) !important;
-    font-size: 2rem !important;
-    margin-bottom: 25px !important;
-    text-align: center;
+.pf-v5-c-alert {
+    color: var(--text-plain) !important;
+    background: var(--panel-raised) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: none !important;
 }
 
-/* Ссылки (Забыли пароль, Регистрация) */
+.pf-v5-c-alert.pf-m-warning {
+    color: var(--warning) !important;
+    background: rgba(245, 184, 75, 0.1) !important;
+    border-color: rgba(245, 184, 75, 0.35) !important;
+}
+
 .pf-v5-c-login__main-footer-band a,
-.pf-v5-c-login__main-footer-links a {
-    color: var(--highlight_light) !important;
-    font-size: 0.9rem !important;
+.pf-v5-c-login__main-footer-links a,
+.pf-v5-c-button.pf-m-link {
+    color: #8ab4ff !important;
     text-decoration: none !important;
-    transition: color 0.2s;
+    font-size: 14px !important;
+    transition: color 0.15s ease !important;
 }
 
-.pf-v5-c-login__main-footer-band a:hover {
+.pf-v5-c-login__main-footer-band a:hover,
+.pf-v5-c-login__main-footer-links a:hover,
+.pf-v5-c-button.pf-m-link:hover {
     color: var(--text-highlight) !important;
 }
 
-.pf-v5-c-login__main-footer-band {
-    border-block-start: none !important;
-    border-top: none !important;
-    padding: 0 !important;
+#kc-registration {
+    margin-top: 10px !important;
+    color: var(--text-dark) !important;
 }
 
-#kc-header-wrapper {
-    display: none !important;
+hr {
+    border: 0 !important;
+    border-top: 1px solid var(--border-color) !important;
 }
 
-#kc-header{
-    display: none;
+.kc-login-tooltip {
+    position: relative;
+    display: inline-block;
 }
 
-#keycloak-bg{
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+.kc-login-tooltip .kc-tooltip-text {
+    position: absolute;
+    top: -4px;
+    left: 160%;
+    min-width: 140px;
+    padding: 7px 9px;
+    color: var(--text-highlight);
+    background: var(--panel-raised);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 10px 24px var(--shadow-dark);
+    text-align: center;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.15s ease;
 }
 
-#kc-registration{
-    margin-top: 8px !important;
+.kc-login-tooltip:hover .kc-tooltip-text {
+    visibility: visible;
+    opacity: 1;
 }
 
-.pf-v5-c-login{
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+.kc-login-tooltip .kc-tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 16px;
+    right: 100%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent var(--border-color) transparent transparent;
 }
 
-.pf-v5-c-button.pf-v5-c-button.pf-m-primary.pf-m-block {
-    margin-top: 0 !important;
+#kc-recovery-codes-list {
+    columns: 2;
 }
 
-body#keycloak-bg {
-    min-height: 100vh !important;
-    margin: 0 !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: flex-start !important;
-    overflow-y: auto !important;
-    padding-top: 24px !important;
-    padding-bottom: 24px !important;
-    background: var(--back_plain) !important;
+#certificate_subjectDN {
+    overflow-wrap: break-word;
 }
 
-/* When content grows because of validation errors, allow scrolling instead of clipping top area */
-.pf-v5-c-login {
-    align-items: flex-start !important;
-    min-height: calc(100vh - 48px) !important;
+#kc-verify-email-form {
+    margin-top: 24px;
+    margin-bottom: 24px;
 }
 
+#kc-social-providers svg:not(.google) {
+    filter: invert(59%) sepia(63%) saturate(2501%) hue-rotate(196deg) brightness(102%) contrast(101%);
+}
+
+#kc-social-providers svg {
+    height: var(--pf-v5-global--FontSize--xl);
+}
+
+@media (max-width: 480px) {
+    .pf-v5-c-login {
+        align-items: flex-start !important;
+        padding: 16px 12px !important;
+    }
+
+    .pf-v5-c-login__main {
+        border-radius: var(--radius-md) !important;
+    }
+
+    .pf-v5-c-login__main-header {
+        padding: 20px 18px 6px !important;
+    }
+
+    .pf-v5-c-login__main-body {
+        padding: 14px 18px 20px !important;
+    }
+
+    .pf-v5-c-login__main-footer-band {
+        padding: 0 18px 20px !important;
+    }
+
+    .pf-v5-c-title {
+        font-size: 22px !important;
+    }
+}
