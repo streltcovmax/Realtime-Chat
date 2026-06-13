@@ -70,6 +70,23 @@ const DOM = {
     userProfileTitle: document.querySelector('#user-profile-modal-title'),
     userProfileUsername: document.querySelector('#user-profile-modal-username'),
     userProfileStatus: document.querySelector('#user-profile-modal-status'),
+
+    createGroupButton: document.querySelector('#create-group-button'),
+    groupManageButton: document.querySelector('#group-manage-button'),
+    groupModal: document.querySelector('#group-modal'),
+    groupModalBackdrop: document.querySelector('#group-modal-backdrop'),
+    groupNameInput: document.querySelector('#group-name-input'),
+    groupMembersInput: document.querySelector('#group-members-input'),
+    groupModalStatus: document.querySelector('#group-modal-status'),
+    groupSaveButton: document.querySelector('#group-save-button'),
+    groupCancelButton: document.querySelector('#group-cancel-button'),
+    groupManageModal: document.querySelector('#group-manage-modal'),
+    groupManageBackdrop: document.querySelector('#group-manage-modal-backdrop'),
+    groupManageStatus: document.querySelector('#group-manage-status'),
+    groupAddMemberButton: document.querySelector('#group-add-member-button'),
+    groupRemoveMemberButton: document.querySelector('#group-remove-member-button'),
+    groupLeaveButton: document.querySelector('#group-leave-button'),
+    groupManageCloseButton: document.querySelector('#group-manage-close-button'),
 };
 
 // ============================================
@@ -83,7 +100,11 @@ const AppState = {
     selectedUser: {
         username: null,
         fullname: null,
-        status: null
+        status: null,
+        type: 'DIRECT',
+        selector: null,
+        chatId: null,
+        createdBy: null
     },
     pagination: {
         page: 0,
@@ -138,7 +159,8 @@ const SAME_ORIGIN_FETCH = {credentials: 'same-origin'};
 
 function markMessageReadOnServer(message) {
     const id = message.message_id ?? message.messageId;
-    if (id == null || message.recipientId !== User.username) {
+    const recipientId = String(message.recipientId || '');
+    if (id == null || (recipientId !== User.username && !recipientId.startsWith('chat-'))) {
         return Promise.resolve();
     }
 
@@ -242,6 +264,16 @@ function setEventListeners() {
     if (DOM.userProfileDialog) {
         DOM.userProfileDialog.addEventListener('click', e => e.stopPropagation());
     }
+    DOM.createGroupButton?.addEventListener('click', openCreateGroupModal);
+    DOM.groupModalBackdrop?.addEventListener('click', closeCreateGroupModal);
+    DOM.groupCancelButton?.addEventListener('click', closeCreateGroupModal);
+    DOM.groupSaveButton?.addEventListener('click', createGroup);
+    DOM.groupManageButton?.addEventListener('click', openGroupManageModal);
+    DOM.groupManageBackdrop?.addEventListener('click', closeGroupManageModal);
+    DOM.groupManageCloseButton?.addEventListener('click', closeGroupManageModal);
+    DOM.groupAddMemberButton?.addEventListener('click', addGroupMember);
+    DOM.groupRemoveMemberButton?.addEventListener('click', removeGroupMember);
+    DOM.groupLeaveButton?.addEventListener('click', leaveCurrentGroup);
 
     // Поиск
     DOM.searchInput.addEventListener('input', onSearchInput);
@@ -283,6 +315,14 @@ function setEventListeners() {
             }
             if (DOM.messageSearchModal && !DOM.messageSearchModal.classList.contains('hidden')) {
                 closeMessageSearchModal();
+                return;
+            }
+            if (DOM.groupModal && !DOM.groupModal.classList.contains('hidden')) {
+                closeCreateGroupModal();
+                return;
+            }
+            if (DOM.groupManageModal && !DOM.groupManageModal.classList.contains('hidden')) {
+                closeGroupManageModal();
                 return;
             }
             hideChatArea();
@@ -407,6 +447,7 @@ function hideChatArea() {
     AppState.chatTailDayKey = null;
     DOM.pickChatInfoMessage.classList.remove('hidden');
     DOM.emptyChatInfoMessage.classList.add('hidden');
+    DOM.groupManageButton?.classList.add('hidden');
 
     clearSelection('.chat-item.active');
     clearSelection('.search-result-item.active');
@@ -454,7 +495,7 @@ function onMessageSearchInput() {
 }
 
 async function searchMessagesInCurrentChat() {
-    const peer = AppState.selectedUser.username;
+    const peer = getChatSelector(AppState.selectedUser);
     const query = DOM.messageSearchQuery?.value.trim() ?? '';
 
     if (!peer) {
@@ -690,7 +731,7 @@ function createSearchResultElement(user) {
 function onSearchResultClick(element, user) {
     setItemActive(element, '.search-result-item.active');
 
-    const existingChat = document.querySelector(`#${user.username}`);
+    const existingChat = findChatElement(user.username);
     if (existingChat) {
         existingChat.dispatchEvent(new Event('click', {bubbles: true}));
     } else {
@@ -705,13 +746,14 @@ function onSearchResultClick(element, user) {
 async function fetchAndShowChats() {
     try {
         const response = await fetch('/chats', SAME_ORIGIN_FETCH);
-        const users = await response.json();
+        const chats = await response.json();
 
         DOM.chatsList.innerHTML = '';
 
-        users
-            .filter(user => user.username !== User.username)
-            .forEach(user => appendChatToList(user));
+        chats
+            .map(normalizeChatData)
+            .filter(chat => chat.type === 'GROUP' || chat.username !== User.username)
+            .forEach(chat => appendChatToList(chat));
     } catch (error) {
         console.error('Ошибка загрузки чатов:', error);
     }
@@ -723,16 +765,19 @@ function moveChatToTop(chatElement) {
 }
 
 function appendChatToList(chatData, prependToList = false) {
+    chatData = normalizeChatData(chatData);
+    const selector = getChatSelector(chatData);
     const listItem = document.createElement('li');
     listItem.classList.add('chat-item');
-    listItem.id = chatData.username;
+    listItem.id = getChatDomId(selector);
+    listItem.dataset.chatSelector = selector;
     listItem.chatData = {...chatData};
 
     const chatInfo = document.createElement('div');
     chatInfo.classList.add('chat-info');
     const avatarWrap = document.createElement('div');
     avatarWrap.classList.add('chat-avatar', 'r');
-    avatarWrap.appendChild(document.createTextNode(chatData.fullname?.[0] || '?'));
+    avatarWrap.appendChild(document.createTextNode(chatData.fullname?.[0] || chatData.username?.[0] || '?'));
     const onlineIndicator = document.createElement('span');
     onlineIndicator.classList.add('online-indicator', 'hidden');
     avatarWrap.appendChild(onlineIndicator);
@@ -769,8 +814,15 @@ function appendChatToList(chatData, prependToList = false) {
         DOM.chatsList.appendChild(listItem);
     }
 
-    loadLastMessage(listItem, chatData.username);
-    loadUnreadMessagesCount(listItem, chatData.username)
+    if (chatData.lastMessage) {
+        updateChatPreview(listItem, {
+            content: chatData.lastMessage,
+            dateCreated: chatData.lastMessageAt
+        });
+    } else {
+        loadLastMessage(listItem, selector);
+    }
+    loadUnreadMessagesCount(listItem, selector)
 }
 
 async function loadLastMessage(chatElement, targetUsername) {
@@ -806,7 +858,7 @@ async function loadUnreadMessagesCount(chatElement, targetUsername) {
 
 
 async function fetchAndAppendNewUser(targetUsername, message) {
-    let chatElement = document.querySelector(`#${targetUsername}`);
+    let chatElement = findChatElement(targetUsername);
 
     if (chatElement) {
         if (message) updateChatPreview(chatElement, message);
@@ -819,7 +871,7 @@ async function fetchAndAppendNewUser(targetUsername, message) {
         const user = await response.json();
         appendChatToList(user, true);
 
-        chatElement = document.querySelector(`#${targetUsername}`);
+        chatElement = findChatElement(targetUsername);
         if (!chatElement) {
             console.error('Ошибка добавления нового чата');
             return;
@@ -827,7 +879,7 @@ async function fetchAndAppendNewUser(targetUsername, message) {
 
         if (message) updateChatPreview(chatElement, message);
 
-        if (AppState.selectedUser.username === targetUsername) {
+        if (getChatSelector(AppState.selectedUser) === targetUsername) {
             setItemActive(chatElement, '.chat-item.active');
         }
     } catch (error) {
@@ -837,7 +889,7 @@ async function fetchAndAppendNewUser(targetUsername, message) {
 
 function updateChatPreview(chatElement, message) {
     chatElement.querySelector('.chat-message').textContent = message.content;
-    chatElement.querySelector('.datetime').textContent = formatDateTimeForChat(message.dateCreated);
+    chatElement.querySelector('.datetime').textContent = message.dateCreated ? formatDateTimeForChat(message.dateCreated) : '';
 }
 
 function updateChatNotificationMarker(chatElement, count) {
@@ -851,6 +903,131 @@ function updateChatNotificationMarker(chatElement, count) {
     notificationMarker.textContent = count;
 }
 
+function openCreateGroupModal() {
+    if (!DOM.groupModal) return;
+    DOM.groupNameInput.value = '';
+    DOM.groupMembersInput.value = '';
+    setGroupModalStatus('');
+    DOM.groupModal.classList.remove('hidden');
+    DOM.groupModal.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => DOM.groupNameInput?.focus());
+}
+
+function closeCreateGroupModal() {
+    if (!DOM.groupModal) return;
+    DOM.groupModal.classList.add('hidden');
+    DOM.groupModal.setAttribute('aria-hidden', 'true');
+}
+
+function setGroupModalStatus(message) {
+    if (!DOM.groupModalStatus) return;
+    DOM.groupModalStatus.textContent = message || '';
+    DOM.groupModalStatus.classList.toggle('hidden', !message);
+}
+
+function parseMemberInput(value) {
+    return String(value || '')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+}
+
+async function createGroup() {
+    const name = DOM.groupNameInput?.value.trim();
+    const usernames = parseMemberInput(DOM.groupMembersInput?.value);
+
+    if (!name) {
+        setGroupModalStatus('Введите название группы');
+        return;
+    }
+
+    try {
+        const response = await fetch('/groups', {
+            method: 'POST',
+            ...SAME_ORIGIN_FETCH,
+            headers: jsonFetchHeaders(),
+            body: JSON.stringify({name, usernames})
+        });
+        if (!response.ok) {
+            setGroupModalStatus('Не удалось создать группу');
+            return;
+        }
+        const chat = normalizeChatData(await response.json());
+        appendChatToList(chat, true);
+        closeCreateGroupModal();
+        const chatElement = findChatElement(getChatSelector(chat));
+        chatElement?.dispatchEvent(new Event('click', {bubbles: true}));
+    } catch (error) {
+        console.error('Не удалось создать группу:', error);
+        setGroupModalStatus('Не удалось создать группу');
+    }
+}
+
+function openGroupManageModal() {
+    if (!DOM.groupManageModal || !isGroupChat()) return;
+    setGroupManageStatus('');
+    DOM.groupManageModal.classList.remove('hidden');
+    DOM.groupManageModal.setAttribute('aria-hidden', 'false');
+    const isCreator = AppState.selectedUser.createdBy === User.username;
+    DOM.groupAddMemberButton.disabled = !isCreator;
+    DOM.groupRemoveMemberButton.disabled = !isCreator;
+}
+
+function closeGroupManageModal() {
+    if (!DOM.groupManageModal) return;
+    DOM.groupManageModal.classList.add('hidden');
+    DOM.groupManageModal.setAttribute('aria-hidden', 'true');
+}
+
+function setGroupManageStatus(message) {
+    if (!DOM.groupManageStatus) return;
+    DOM.groupManageStatus.textContent = message || '';
+    DOM.groupManageStatus.classList.toggle('hidden', !message);
+}
+
+async function addGroupMember() {
+    const username = window.prompt('Username');
+    if (!username) return;
+    await sendGroupMemberRequest('POST', `/groups/${AppState.selectedUser.chatId}/members`, {username});
+}
+
+async function removeGroupMember() {
+    const username = window.prompt('Username');
+    if (!username) return;
+    await sendGroupMemberRequest('DELETE', `/groups/${AppState.selectedUser.chatId}/members/${encodeURIComponent(username)}`);
+}
+
+async function leaveCurrentGroup() {
+    if (!isGroupChat()) return;
+    const ok = await sendGroupMemberRequest('DELETE', `/groups/${AppState.selectedUser.chatId}/leave`);
+    if (!ok) return;
+    findChatElement(getChatSelector(AppState.selectedUser))?.remove();
+    closeGroupManageModal();
+    hideChatArea();
+}
+
+async function sendGroupMemberRequest(method, url, body = null) {
+    try {
+        const response = await fetch(url, {
+            method,
+            ...SAME_ORIGIN_FETCH,
+            headers: body ? jsonFetchHeaders() : jsonFetchHeadersForEmptyBody(),
+            body: body ? JSON.stringify(body) : undefined
+        });
+        if (!response.ok) {
+            setGroupManageStatus('Операция недоступна');
+            return false;
+        }
+        setGroupManageStatus('Готово');
+        fetchAndShowChats();
+        return true;
+    } catch (error) {
+        console.error('Не удалось выполнить операцию с группой:', error);
+        setGroupManageStatus('Операция недоступна');
+        return false;
+    }
+}
+
 // ============================================
 // ВЫБОР ЧАТА
 // ============================================
@@ -858,9 +1035,10 @@ function updateChatNotificationMarker(chatElement, count) {
 function onChatItemClick(event) {
     const chatElement = event.currentTarget;
     const chatData = chatElement.chatData;
+    const selector = getChatSelector(chatData);
 
     // Клик на уже открытый чат — закрываем
-    if (chatData.username === AppState.selectedUser.username && hasChatWith(chatData.username)) {
+    if (selector === getChatSelector(AppState.selectedUser) && hasChatWith(selector)) {
         hideChatArea();
         return;
     }
@@ -875,7 +1053,7 @@ function onChatItemClick(event) {
     displayChatMessages(chatData).then(() => {
             const notificationMarker = chatElement.querySelector('.notificationMarker');
             if (notificationMarker.textContent !== 0 && notificationMarker.textContent !== '')
-                loadUnreadMessagesCount(chatElement, AppState.selectedUser.username);
+                loadUnreadMessagesCount(chatElement, getChatSelector(AppState.selectedUser));
         }
     );
 }
@@ -883,7 +1061,7 @@ function onChatItemClick(event) {
 function openNewChat(chatElement) {
     const chatData = chatElement.chatData;
 
-    if (chatData.username === AppState.selectedUser.username) {
+    if (getChatSelector(chatData) === getChatSelector(AppState.selectedUser)) {
         hideChatArea();
         return;
     }
@@ -896,8 +1074,8 @@ function openNewChat(chatElement) {
     showEmptyChatMessage();
 }
 
-function hasChatWith(username) {
-    return Array.from(DOM.chatsList.children).some(el => el.id === username);
+function hasChatWith(selector) {
+    return Array.from(DOM.chatsList.children).some(el => el.dataset.chatSelector === selector);
 }
 
 // ============================================
@@ -927,9 +1105,12 @@ function fillChatHeader(chatData) {
     // === КОНЕЦ БЛОКА ===
 
     header.querySelector('#chat-header-username').textContent = chatData.fullname || chatData.username;
-    header.querySelector('#chat-header-status').textContent = chatData.status.toLowerCase();
+    header.querySelector('#chat-header-status').textContent = isGroupChat(chatData)
+        ? `${chatData.memberCount || 1} participants`
+        : String(chatData.status || '').toLowerCase();
     header.querySelector('.chat-avatar').textContent = chatData.fullname?.[0] || chatData.username?.[0] || '?';
-    header.classList.toggle('online', chatData.status === 'ONLINE');
+    header.classList.toggle('online', !isGroupChat(chatData) && chatData.status === 'ONLINE');
+    DOM.groupManageButton?.classList.toggle('hidden', !isGroupChat(chatData));
 }
 
 // ============================================
@@ -938,7 +1119,7 @@ function fillChatHeader(chatData) {
 
 async function displayChatMessages(chatData) {
     resetMessagesState();
-    await loadChatMessagesPage(chatData.username, true);
+    await loadChatMessagesPage(getChatSelector(chatData), true);
     scrollToBottom(DOM.chatMessagesArea);
 }
 
@@ -1040,12 +1221,12 @@ async function loadNewerChatMessagesPage(chatUsername) {
 async function loadChatPageAroundMessage(messageId) {
     const {pagination, selectedUser} = AppState;
 
-    if (pagination.isLoading || !selectedUser.username) return;
+    if (pagination.isLoading || !getChatSelector(selectedUser)) return;
 
     pagination.isLoading = true;
 
     try {
-        const url = `/messages/page-around/${User.username}/${selectedUser.username}/${messageId}?size=${MESSAGES_PAGE_SIZE}`;
+        const url = `/messages/page-around/${User.username}/${getChatSelector(selectedUser)}/${messageId}?size=${MESSAGES_PAGE_SIZE}`;
         const response = await fetch(url, SAME_ORIGIN_FETCH);
 
         if (!response.ok) {
@@ -1137,6 +1318,12 @@ function createMessageElement(messageData) {
     row.classList.add('message', type);
     const contentBox = document.createElement('div');
     contentBox.classList.add('message-content', type);
+    if (!isSender && isGroupChat()) {
+        const senderSpan = document.createElement('span');
+        senderSpan.classList.add('message-sender');
+        senderSpan.textContent = messageData.senderId || '';
+        contentBox.appendChild(senderSpan);
+    }
     const textSpan = document.createElement('span');
     textSpan.textContent = messageData.content ?? '';
     const timeSpan = document.createElement('span');
@@ -1172,11 +1359,13 @@ async function sendMessage(event) {
 
     if (content.length > AppState.maxMessageLength) return;
 
-    if (!content || !stompClient || !selectedUser.username) return;
+    const selector = getChatSelector(selectedUser);
+
+    if (!content || !stompClient || !selector) return;
 
     const message = {
         senderId: User.username,
-        recipientId: selectedUser.username,
+        recipientId: selector,
         content,
         dateCreated: new Date(),
         read: false
@@ -1187,13 +1376,13 @@ async function sendMessage(event) {
     syncMessageComposerState();
     DOM.emptyChatInfoMessage.classList.add('hidden');
 
-    let chatElement = document.querySelector(`#${message.recipientId}`);
+    let chatElement = findChatElement(selector);
 
-    if (!chatElement) {
+    if (!chatElement && !isGroupChat(selectedUser)) {
         hideSearchArea();
         await fetchAndAppendNewUser(message.recipientId, message);
-        chatElement = document.querySelector(`#${message.recipientId}`);
-    } else {
+        chatElement = findChatElement(message.recipientId);
+    } else if (chatElement) {
         updateChatPreview(chatElement, message);
         moveChatToTop(chatElement);
     }
@@ -1208,12 +1397,13 @@ async function sendMessage(event) {
 async function onMessageReceived(payload) {
     const message = JSON.parse(payload.body);
     const senderId = message.senderId;
+    const chatSelector = String(message.recipientId || '').startsWith('chat-') ? message.recipientId : senderId;
 
-    let chatElement = document.querySelector(`#${senderId}`);
+    let chatElement = findChatElement(chatSelector);
 
     if (chatElement) {
         // Если это не активный чат — показываем уведомление
-        if (AppState.selectedUser.username !== senderId) {
+        if (getChatSelector(AppState.selectedUser) !== chatSelector) {
             const markerTextContent = chatElement.querySelector('.notificationMarker').textContent;
             const unreadMessagesCount = !markerTextContent ? 0 : parseInt(markerTextContent);
             updateChatNotificationMarker(chatElement, unreadMessagesCount + 1)
@@ -1224,20 +1414,26 @@ async function onMessageReceived(payload) {
             addMessage(message);
             resetUnreadCount();
             markMessageReadOnServer(message)
-                .then(() => loadUnreadMessagesCount(chatElement, senderId))
+                .then(() => loadUnreadMessagesCount(chatElement, chatSelector))
                 .catch(() => {
                 });
         }
         updateChatPreview(chatElement, message);
         moveChatToTop(chatElement);
     } else {
-        await fetchAndAppendNewUser(senderId, message);
+        if (String(chatSelector).startsWith('chat-')) {
+            await fetchAndShowChats();
+            chatElement = findChatElement(chatSelector);
+            if (chatElement) updateChatPreview(chatElement, message);
+        } else {
+            await fetchAndAppendNewUser(senderId, message);
+        }
 
-        const newChat = document.querySelector(`#${senderId}`);
+        const newChat = findChatElement(chatSelector);
         const senderName = newChat?.chatData?.fullname || senderId;
 
         const dialogOpenWithSender =
-            AppState.selectedUser.username === senderId
+            getChatSelector(AppState.selectedUser) === chatSelector
             && !DOM.chatArea.classList.contains('hidden');
 
         if (dialogOpenWithSender) {
@@ -1245,7 +1441,7 @@ async function onMessageReceived(payload) {
             addMessage(message);
             resetUnreadCount();
             markMessageReadOnServer(message)
-                .then(() => newChat && loadUnreadMessagesCount(newChat, senderId))
+                .then(() => newChat && loadUnreadMessagesCount(newChat, chatSelector))
                 .catch(() => {
                 });
         } else {
@@ -1257,17 +1453,17 @@ async function onMessageReceived(payload) {
 function onMessagesScroll() {
     const {scrollTop, scrollHeight, clientHeight} = DOM.chatMessagesArea;
     const {isLoading, isLastPage, isFirstPage} = AppState.pagination;
-    const {username} = AppState.selectedUser;
+    const selector = getChatSelector(AppState.selectedUser);
     const isNearTop = scrollTop <= SCROLL_THRESHOLD_PX;
     const isNearBottom = scrollHeight - scrollTop - clientHeight <= SCROLL_THRESHOLD_PX;
 
-    if (isNearTop && !isLoading && !isLastPage && username) {
-        loadChatMessagesPage(username, false);
+    if (isNearTop && !isLoading && !isLastPage && selector) {
+        loadChatMessagesPage(selector, false);
         return;
     }
 
-    if (isNearBottom && !isLoading && !isFirstPage && username) {
-        loadNewerChatMessagesPage(username);
+    if (isNearBottom && !isLoading && !isFirstPage && selector) {
+        loadNewerChatMessagesPage(selector);
     }
 }
 
@@ -1277,7 +1473,7 @@ function onMessagesScroll() {
 
 function onUserStatusUpdate(payload) {
     const user = JSON.parse(payload.body);
-    const chatElement = document.querySelector(`#${user.username}`);
+    const chatElement = findChatElement(user.username);
 
     // Обновляем в списке чатов
     if (chatElement) {
@@ -1303,13 +1499,19 @@ function updateStatusIndicator(element, status) {
 // ============================================
 
 function setSelectedUser(chatData) {
-    AppState.selectedUser.username = chatData.username;
-    AppState.selectedUser.fullname = chatData.fullname;
-    AppState.selectedUser.status = chatData.status;
+    AppState.selectedUser = normalizeChatData(chatData);
 }
 
 function resetSelectedUser() {
-    AppState.selectedUser = {username: null, fullname: null, status: null};
+    AppState.selectedUser = {
+        username: null,
+        fullname: null,
+        status: null,
+        type: 'DIRECT',
+        selector: null,
+        chatId: null,
+        createdBy: null
+    };
 }
 
 // ============================================
@@ -1333,6 +1535,42 @@ function scrollToBottom(element) {
 
 function isMobile() {
     return window.innerWidth <= MOBILE_BREAKPOINT;
+}
+
+function normalizeChatData(chatData) {
+    const type = chatData.type || 'DIRECT';
+    if (type === 'GROUP') {
+        return {
+            ...chatData,
+            type,
+            selector: chatData.selector || `chat-${chatData.chatId}`,
+            fullname: chatData.name || chatData.fullname || 'Группа',
+            status: null
+        };
+    }
+    return {
+        ...chatData,
+        type,
+        selector: chatData.selector || chatData.username,
+        fullname: chatData.fullname || chatData.name || chatData.username,
+    };
+}
+
+function getChatSelector(chatData) {
+    return chatData?.selector || chatData?.username;
+}
+
+function getChatDomId(selector) {
+    return `chat-item-${String(selector || '').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+}
+
+function findChatElement(selector) {
+    return Array.from(DOM.chatsList.children)
+        .find(el => el.dataset.chatSelector === selector) || null;
+}
+
+function isGroupChat(chatData = AppState.selectedUser) {
+    return chatData?.type === 'GROUP';
 }
 
 // ============================================
@@ -1421,7 +1659,7 @@ function showCurrentUserProfile() {
 }
 
 function showSelectedUserProfile() {
-    if (!AppState.selectedUser.username) return;
+    if (!AppState.selectedUser.username || isGroupChat(AppState.selectedUser)) return;
     openUserProfileModal(AppState.selectedUser);
 }
 

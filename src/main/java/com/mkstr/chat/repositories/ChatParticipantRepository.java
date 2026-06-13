@@ -10,4 +10,6 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
     List<ChatParticipant> findAllByUserUsername(String username);
 
     List<ChatParticipant> findAllByChatChatId(Long chatId);
+
+    boolean existsByUserUsernameAndChatChatId(String username, Long chatId);
 }

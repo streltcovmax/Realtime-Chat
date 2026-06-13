@@ -11,6 +11,9 @@
 
 <div class="chats" id="chat-page">
     <div class="chats-panel br-r">
+        <div class="chat-panel-actions">
+            <button type="button" id="create-group-button" class="group-action-button" title="Создать группу">+</button>
+        </div>
         <div class="search-input-wrapper">
             <input autocomplete="off" type="text" id="searchUsername" name="search" placeholder="поиск" class="r">
             <button type="button" id="search-clear-btn" class="search-clear-btn hidden" title="Очистить">×</button>
@@ -48,6 +51,7 @@
                 <button id="search-messages-button">
                     <img src="/static/images/search.svg" alt="search">
                 </button>
+                <button type="button" id="group-manage-button" class="group-action-button hidden" title="Управление группой">...</button>
             </div>
             <div id="chat-messages" class="r">
             </div>
@@ -61,7 +65,7 @@
                 </div>
             </form>
         </div>
-        <div class="info-message r overlay" id="pick-chat-message"> выберите чат!</div>
+        <div class="info-message r overlay" id="pick-chat-message"> выберите чат, или воспользуйтесь поиском</div>
         <div class="info-message r overlay hidden" id="empty-chat-message"> здесь пока пусто...</div>
     </div>
 
@@ -71,6 +75,45 @@
 
 <div class="user-form hidden" id="search-page">
     <h2>Найти пользователей</h2>
+</div>
+
+<div id="group-modal" class="message-search-modal hidden" aria-hidden="true">
+    <div id="group-modal-backdrop" class="message-search-modal-backdrop"></div>
+    <div id="group-modal-dialog" class="message-search-modal-dialog r" role="dialog" aria-modal="true"
+         aria-labelledby="group-modal-title">
+        <h2 id="group-modal-title" class="message-search-modal-title">Группа</h2>
+        <div class="group-form">
+            <label>
+                <span>Название</span>
+                <input autocomplete="off" type="text" id="group-name-input" class="r">
+            </label>
+            <label>
+                <span>Участники</span>
+                <input autocomplete="off" type="text" id="group-members-input" class="r"
+                       placeholder="username1, username2">
+            </label>
+            <p id="group-modal-status" class="search-no-results hidden"></p>
+            <div class="group-modal-actions">
+                <button type="button" id="group-save-button">Создать</button>
+                <button type="button" id="group-cancel-button" class="secondary-button">Отмена</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="group-manage-modal" class="message-search-modal hidden" aria-hidden="true">
+    <div id="group-manage-modal-backdrop" class="message-search-modal-backdrop"></div>
+    <div id="group-manage-modal-dialog" class="message-search-modal-dialog r" role="dialog" aria-modal="true"
+         aria-labelledby="group-manage-modal-title">
+        <h2 id="group-manage-modal-title" class="message-search-modal-title">Управление группой</h2>
+        <div class="group-modal-actions vertical">
+            <button type="button" id="group-add-member-button">Добавить пользователя</button>
+            <button type="button" id="group-remove-member-button">Удалить пользователя</button>
+            <button type="button" id="group-leave-button" class="secondary-button">Выйти из группы</button>
+            <button type="button" id="group-manage-close-button" class="secondary-button">Закрыть</button>
+        </div>
+        <p id="group-manage-status" class="search-no-results hidden"></p>
+    </div>
 </div>
 
 <div id="message-search-modal" class="message-search-modal hidden" aria-hidden="true">

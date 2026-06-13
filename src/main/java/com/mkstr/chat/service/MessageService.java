@@ -13,6 +13,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+import static com.mkstr.chat.service.ChatService.GROUP_SELECTOR_PREFIX;
+
 @Service
 @RequiredArgsConstructor
 public class MessageService {
@@ -56,6 +58,10 @@ public class MessageService {
         return messageRepository.countByChatIdAndRecipientIdAndReadIsFalse(chatId, recipientId);
     }
 
+    public Integer countGroupUnread(Long chatId, String username) {
+        return messageRepository.countByChatIdAndSenderIdNotAndReadIsFalse(chatId, username);
+    }
+
     public void readPage(Page<Message> messages) {
         messages.forEach(message -> message.setRead(true));
         messageRepository.saveAll(messages);
@@ -67,7 +73,7 @@ public class MessageService {
         if (m == null) {
             return null;
         }
-        if (!recipientUsername.equals(m.getRecipientId())) {
+        if (!recipientUsername.equals(m.getRecipientId()) && !String.valueOf(m.getRecipientId()).startsWith(GROUP_SELECTOR_PREFIX)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         if (Boolean.TRUE.equals(m.getRead())) {

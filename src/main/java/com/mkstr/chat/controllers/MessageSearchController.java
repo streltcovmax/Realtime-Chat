@@ -46,11 +46,13 @@ public class MessageSearchController {
         if (peer == null || peer.isBlank() || q == null || q.isBlank()) {
             throw new ResponseStatusException(BAD_REQUEST, "peer and q required");
         }
-        if (peer.equals(me)) {
+        if (!chatService.isGroupSelector(peer) && peer.equals(me)) {
             throw new ResponseStatusException(BAD_REQUEST, "invalid peer");
         }
 
-        Chat chat = chatService.findExistingChat(me, peer);
+        Chat chat = chatService.isGroupSelector(peer)
+                ? chatService.resolveChatForUser(me, peer)
+                : chatService.findExistingChat(me, peer);
         if (chat == null) {
             return ResponseEntity.ok(List.of());
         }

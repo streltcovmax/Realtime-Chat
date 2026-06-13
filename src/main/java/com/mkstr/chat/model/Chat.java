@@ -19,4 +19,6 @@ public class Chat {
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastMessageAt;
     private String name;
+    private Boolean groupChat = false;
+    private String createdBy;
 }

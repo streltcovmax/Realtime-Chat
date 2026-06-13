@@ -30,4 +30,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     );
 
     Integer countByChatIdAndRecipientIdAndReadIsFalse(Long chatId, String recipientId);
+
+    Integer countByChatIdAndSenderIdNotAndReadIsFalse(Long chatId, String senderId);
 }

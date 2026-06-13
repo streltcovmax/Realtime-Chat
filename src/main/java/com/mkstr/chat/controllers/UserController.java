@@ -1,6 +1,7 @@
 package com.mkstr.chat.controllers;
 
 import com.mkstr.chat.analytics.AnalyticsService;
+import com.mkstr.chat.dto.ChatSummaryDto;
 import com.mkstr.chat.model.Status;
 import com.mkstr.chat.model.User;
 import com.mkstr.chat.service.ChatService;
@@ -95,12 +96,12 @@ public class UserController {
     }
 
     @GetMapping("/chats")
-    public ResponseEntity<List<User>> getChats() {
+    public ResponseEntity<List<ChatSummaryDto>> getChats() {
         User current = currentUserProvider.getCurrentUser();
         if (current == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        List<User> chats = chatService.findChatsByUsername(current.getUsername());
+        List<ChatSummaryDto> chats = chatService.findChatSummariesByUsername(current.getUsername());
         return ResponseEntity.ok(chats);
     }
 

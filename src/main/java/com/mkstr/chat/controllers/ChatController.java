@@ -1,7 +1,10 @@
 package com.mkstr.chat.controllers;
 
 import com.mkstr.chat.analytics.AnalyticsService;
+import com.mkstr.chat.dto.GroupCreateRequest;
+import com.mkstr.chat.dto.GroupMemberRequest;
 import com.mkstr.chat.model.Chat;
+import com.mkstr.chat.model.ChatParticipant;
 import com.mkstr.chat.model.Message;
 import com.mkstr.chat.opensearch.MessageOpenSearchService;
 import com.mkstr.chat.service.ChatService;
@@ -25,6 +28,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Objects;
 
 import static com.mkstr.chat.utlis.Constant.MAX_MESSAGE_LENGTH;
 
@@ -81,7 +85,8 @@ public class ChatController {
             analyticsService.messageRejected("empty_recipient", senderId, recipientId, messageLength(message));
             return;
         }
-        if (recipientId.equals(senderId)) {
+        boolean groupMessage = chatService.isGroupSelector(recipientId);
+        if (!groupMessage && recipientId.equals(senderId)) {
             log.warn("chat message rejected: self-recipient");
             analyticsService.messageRejected("self_recipient", senderId, recipientId, messageLength(message));
             return;
@@ -97,21 +102,35 @@ public class ChatController {
         }
 
         message.setSenderId(senderId);
-        Chat chat = chatService.getOrCreateChat(senderId, recipientId);
+        Chat chat = groupMessage
+                ? chatService.resolveChatForUser(senderId, recipientId)
+                : chatService.getOrCreateChat(senderId, recipientId);
         chatService.saveLastMessage(chat, content, message.getDateCreated());
         Long chatId = chat.getChatId();
         message.setChatId(chatId);
+        if (groupMessage) {
+            message.setRecipientId(ChatService.groupSelector(chatId));
+        }
         messageService.save(message);
         analyticsService.messageSent(message);
         messageOpenSearchService.indexMessage(message);
-        messagingTemplate.convertAndSend("/user/" + recipientId + "/messages", message);
+        if (groupMessage) {
+            for (ChatParticipant participant : chatService.findParticipants(chatId)) {
+                String username = participant.getUser().getUsername();
+                if (!Objects.equals(username, senderId)) {
+                    messagingTemplate.convertAndSend("/user/" + username + "/messages", message);
+                }
+            }
+        } else {
+            messagingTemplate.convertAndSend("/user/" + recipientId + "/messages", message);
+        }
     }
 
     @GetMapping("/messages/all/{username}/{selectedChat}")
     public ResponseEntity<List<Message>> findChatMessages(@PathVariable String username,
                                                           @PathVariable String selectedChat) {
         assertPathUsernameMatchesSession(username);
-        Chat chat = chatService.findExistingChat(username, selectedChat);
+        Chat chat = findExistingChatForSelector(username, selectedChat);
         if (chat == null) {
             return ResponseEntity.ok(List.of());
         }
@@ -125,7 +144,7 @@ public class ChatController {
                                                                      @RequestParam(defaultValue = "0") int page,
                                                                      @RequestParam(defaultValue = "5") int size) {
         assertPathUsernameMatchesSession(username);
-        Chat chat = chatService.findExistingChat(username, selectedChat);
+        Chat chat = findExistingChatForSelector(username, selectedChat);
         if (chat == null) {
             Pageable emptyPageable = PageRequest.of(page, size);
             return ResponseEntity.ok(Page.empty(emptyPageable));
@@ -145,7 +164,7 @@ public class ChatController {
             @RequestParam(defaultValue = "50") int size
     ) {
         assertPathUsernameMatchesSession(username);
-        Chat chat = chatService.findExistingChat(username, selectedChat);
+        Chat chat = findExistingChatForSelector(username, selectedChat);
         if (chat == null) {
             Pageable emptyPageable = PageRequest.of(0, size);
             return ResponseEntity.ok(Page.empty(emptyPageable));
@@ -159,7 +178,7 @@ public class ChatController {
     public ResponseEntity<Message> findLastMessageByChat(@PathVariable String username,
                                                          @PathVariable String selectedChat) {
         assertPathUsernameMatchesSession(username);
-        Chat chat = chatService.findExistingChat(username, selectedChat);
+        Chat chat = findExistingChatForSelector(username, selectedChat);
         if (chat == null) {
             return ResponseEntity.noContent().build();
         }
@@ -172,13 +191,54 @@ public class ChatController {
     public ResponseEntity<Integer> getUnreadMessagesCount(@PathVariable String username,
                                                           @PathVariable String selectedChat) {
         assertPathUsernameMatchesSession(username);
-        Chat chat = chatService.findExistingChat(username, selectedChat);
+        Chat chat = findExistingChatForSelector(username, selectedChat);
         if (chat == null) {
             return ResponseEntity.noContent().build();
         }
         Long chatId = chat.getChatId();
-        Integer count = messageService.countByChatIdAndRecipientIdAndReadIsFalse(chatId, username);
+        Integer count = Boolean.TRUE.equals(chat.getGroupChat())
+                ? messageService.countGroupUnread(chatId, username)
+                : messageService.countByChatIdAndRecipientIdAndReadIsFalse(chatId, username);
         return ResponseEntity.ok(count);
+    }
+
+    @PostMapping("/groups")
+    @ResponseBody
+    public ResponseEntity<?> createGroup(@RequestBody GroupCreateRequest request) {
+        String currentUsername = currentUserProvider.requireCurrentUsername();
+        Chat chat = chatService.createGroup(
+                currentUsername,
+                request == null ? null : request.name(),
+                request == null ? List.<String>of() : request.usernames()
+        );
+        return ResponseEntity.ok(chatService.findChatSummariesByUsername(currentUsername).stream()
+                .filter(summary -> Objects.equals(summary.chatId(), chat.getChatId()))
+                .findFirst()
+                .orElse(null));
+    }
+
+    @PostMapping("/groups/{chatId}/members")
+    @ResponseBody
+    public ResponseEntity<Void> addGroupMember(@PathVariable Long chatId, @RequestBody GroupMemberRequest request) {
+        String currentUsername = currentUserProvider.requireCurrentUsername();
+        chatService.addUserToGroup(chatId, currentUsername, request == null ? null : request.username());
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/groups/{chatId}/members/{username}")
+    @ResponseBody
+    public ResponseEntity<Void> removeGroupMember(@PathVariable Long chatId, @PathVariable String username) {
+        String currentUsername = currentUserProvider.requireCurrentUsername();
+        chatService.removeUserFromGroup(chatId, currentUsername, username);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/groups/{chatId}/leave")
+    @ResponseBody
+    public ResponseEntity<Void> leaveGroup(@PathVariable Long chatId) {
+        String currentUsername = currentUserProvider.requireCurrentUsername();
+        chatService.leaveGroup(chatId, currentUsername);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/messages/read/{messageId}")
@@ -195,6 +255,13 @@ public class ChatController {
         if (!sessionUser.equals(pathUsername)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
+    }
+
+    private Chat findExistingChatForSelector(String username, String selectedChat) {
+        if (chatService.isGroupSelector(selectedChat)) {
+            return chatService.resolveChatForUser(username, selectedChat);
+        }
+        return chatService.findExistingChat(username, selectedChat);
     }
 
     private static Integer messageLength(Message message) {
