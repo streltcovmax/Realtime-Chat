@@ -7,6 +7,7 @@ import com.mkstr.chat.dto.GroupMemberRequest;
 import com.mkstr.chat.model.Chat;
 import com.mkstr.chat.model.ChatParticipant;
 import com.mkstr.chat.model.Message;
+import com.mkstr.chat.model.User;
 import com.mkstr.chat.opensearch.MessageOpenSearchService;
 import com.mkstr.chat.service.ChatService;
 import com.mkstr.chat.service.MessageService;
@@ -246,10 +247,22 @@ public class ChatController {
     @ResponseBody
     public ResponseEntity<Void> leaveGroup(@PathVariable Long chatId) {
         String currentUsername = currentUserProvider.requireCurrentUsername();
+        if (chatService.isGroupCreator(chatId, currentUsername)) {
+            List<String> participants = chatService.deleteGroupAsCreator(chatId, currentUsername);
+            participants.forEach(username -> notifyGroupRemoved(username, chatId));
+            return ResponseEntity.noContent().build();
+        }
         chatService.leaveGroup(chatId, currentUsername);
         notifyGroupRemoved(currentUsername, chatId);
         notifyGroupParticipants(chatId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/groups/{chatId}/members")
+    @ResponseBody
+    public ResponseEntity<List<User>> getGroupMembers(@PathVariable Long chatId) {
+        String currentUsername = currentUserProvider.requireCurrentUsername();
+        return ResponseEntity.ok(chatService.findGroupUsers(chatId, currentUsername));
     }
 
     @PutMapping("/messages/read/{messageId}")

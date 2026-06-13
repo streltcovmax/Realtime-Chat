@@ -7,6 +7,7 @@ import com.mkstr.chat.model.ChatParticipant;
 import com.mkstr.chat.model.User;
 import com.mkstr.chat.repositories.ChatParticipantRepository;
 import com.mkstr.chat.repositories.ChatRepository;
+import com.mkstr.chat.repositories.MessageRepository;
 import com.mkstr.chat.repositories.UserRepository;
 import com.mkstr.chat.utlis.Constant;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class ChatService {
     private final ChatParticipantRepository participantRepository;
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
+    private final MessageRepository messageRepository;
 
     private static Object getLockForPair(String user1, String user2) {
         String key = user1.compareTo(user2) < 0 ? user1 + "|" + user2 : user2 + "|" + user1;
@@ -250,6 +252,31 @@ public class ChatService {
             throw new ResponseStatusException(BAD_REQUEST, "creator cannot leave own group");
         }
         participantRepository.deleteById(new ChatParticipantId(username, chatId));
+    }
+
+    @Transactional
+    public List<String> deleteGroupAsCreator(Long chatId, String creatorUsername) {
+        requireGroupCreator(chatId, creatorUsername);
+        List<String> participantUsernames = participantRepository.findAllByChatChatId(chatId).stream()
+                .map(participant -> participant.getUser().getUsername())
+                .toList();
+        messageRepository.deleteByChatId(chatId);
+        participantRepository.deleteAll(participantRepository.findAllByChatChatId(chatId));
+        chatRepository.deleteById(chatId);
+        return participantUsernames;
+    }
+
+    public boolean isGroupCreator(Long chatId, String username) {
+        Chat chat = requireGroupForUser(chatId, username);
+        return Objects.equals(username, chat.getCreatedBy());
+    }
+
+    public List<User> findGroupUsers(Long chatId, String requesterUsername) {
+        requireGroupForUser(chatId, requesterUsername);
+        return participantRepository.findAllByChatChatId(chatId).stream()
+                .map(ChatParticipant::getUser)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     public Chat resolveChatForUser(String username, String selector) {

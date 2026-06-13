@@ -183,6 +183,13 @@ button:active {
     transform: translateY(1px);
 }
 
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    pointer-events: none;
+}
+
 button:focus-visible,
 .chat-item:focus-visible,
 .search-result-item:focus-visible {
@@ -324,6 +331,7 @@ h2 {
 }
 
 #foundUsers,
+#group-member-search-list,
 #message-search-list,
 .chats-list-container ul {
     list-style: none;
@@ -332,6 +340,7 @@ h2 {
 }
 
 #foundUsers .search-result-item,
+#group-member-search-list .search-result-item,
 #message-search-list .search-result-item {
     display: flex;
     gap: 12px;
@@ -342,11 +351,13 @@ h2 {
     transition: background-color 0.15s ease;
 }
 
-#foundUsers .search-result-item {
+#foundUsers .search-result-item,
+#group-member-search-list .search-result-item {
     align-items: center;
 }
 
-#foundUsers .search-result-text {
+#foundUsers .search-result-text,
+#group-member-search-list .search-result-text {
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -354,7 +365,9 @@ h2 {
 }
 
 #foundUsers .search-result-name,
-#foundUsers .search-result-username {
+#foundUsers .search-result-username,
+#group-member-search-list .search-result-name,
+#group-member-search-list .search-result-username {
     display: block;
     max-width: 100%;
     white-space: nowrap;
@@ -362,13 +375,15 @@ h2 {
     text-overflow: ellipsis;
 }
 
-#foundUsers .search-result-name {
+#foundUsers .search-result-name,
+#group-member-search-list .search-result-name {
     color: var(--text-highlight);
     font-size: 14px;
     font-weight: 800;
 }
 
-#foundUsers .search-result-username {
+#foundUsers .search-result-username,
+#group-member-search-list .search-result-username {
     color: var(--text-dark);
     font-size: 13px;
     font-weight: 600;
@@ -381,6 +396,7 @@ h2 {
 }
 
 #foundUsers .search-result-item:hover,
+#group-member-search-list .search-result-item:hover,
 #message-search-list .search-result-item:hover,
 .search-result-item.active {
     background: var(--panel-raised) !important;
@@ -893,6 +909,17 @@ form#messageForm {
 .group-modal-actions.vertical {
     display: grid;
     justify-content: stretch;
+}
+
+.group-member-search {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+#group-member-search-list {
+    max-height: 220px;
+    overflow-y: auto;
 }
 
 .secondary-button {

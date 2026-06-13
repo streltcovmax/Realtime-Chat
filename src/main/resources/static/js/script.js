@@ -87,6 +87,9 @@ const DOM = {
     groupRemoveMemberButton: document.querySelector('#group-remove-member-button'),
     groupLeaveButton: document.querySelector('#group-leave-button'),
     groupManageCloseButton: document.querySelector('#group-manage-close-button'),
+    groupMemberSearch: document.querySelector('#group-member-search'),
+    groupMemberSearchQuery: document.querySelector('#group-member-search-query'),
+    groupMemberSearchList: document.querySelector('#group-member-search-list'),
 };
 
 // ============================================
@@ -118,6 +121,9 @@ const AppState = {
     chatTailDayKey: null,
     messageSearchTimer: null,
     messageSearchRequestId: 0,
+    groupMemberMode: null,
+    groupMemberSearchTimer: null,
+    groupMemberSearchRequestId: 0,
 };
 
 function updateAppHeightVar() {
@@ -275,6 +281,7 @@ function setEventListeners() {
     DOM.groupAddMemberButton?.addEventListener('click', addGroupMember);
     DOM.groupRemoveMemberButton?.addEventListener('click', removeGroupMember);
     DOM.groupLeaveButton?.addEventListener('click', leaveCurrentGroup);
+    DOM.groupMemberSearchQuery?.addEventListener('input', onGroupMemberSearchInput);
 
     // Поиск
     DOM.searchInput.addEventListener('input', onSearchInput);
@@ -1023,10 +1030,13 @@ function openGroupManageModal() {
     const isCreator = AppState.selectedUser.createdBy === User.username;
     DOM.groupAddMemberButton.disabled = !isCreator;
     DOM.groupRemoveMemberButton.disabled = !isCreator;
+    DOM.groupLeaveButton.textContent = isCreator ? 'Выйти и удалить' : 'Выйти из группы';
+    closeGroupMemberSearch();
 }
 
 function closeGroupManageModal() {
     if (!DOM.groupManageModal) return;
+    closeGroupMemberSearch();
     DOM.groupManageModal.classList.add('hidden');
     DOM.groupManageModal.setAttribute('aria-hidden', 'true');
 }
@@ -1037,18 +1047,135 @@ function setGroupManageStatus(message) {
     DOM.groupManageStatus.classList.toggle('hidden', !message);
 }
 
+function openGroupMemberSearch(mode) {
+    AppState.groupMemberMode = mode;
+    setGroupManageStatus(mode === 'add' ? 'Выберите пользователя для добавления' : 'Выберите участника для удаления');
+    DOM.groupMemberSearch?.classList.remove('hidden');
+    if (DOM.groupMemberSearchQuery) {
+        DOM.groupMemberSearchQuery.value = '';
+        DOM.groupMemberSearchQuery.placeholder = mode === 'add' ? 'поиск пользователя' : 'поиск участника';
+    }
+    renderGroupMemberSearchResults([]);
+    searchGroupMembers();
+    requestAnimationFrame(() => DOM.groupMemberSearchQuery?.focus());
+}
+
+function closeGroupMemberSearch() {
+    AppState.groupMemberMode = null;
+    clearTimeout(AppState.groupMemberSearchTimer);
+    DOM.groupMemberSearch?.classList.add('hidden');
+    if (DOM.groupMemberSearchQuery) {
+        DOM.groupMemberSearchQuery.value = '';
+    }
+    renderGroupMemberSearchResults([]);
+}
+
+function onGroupMemberSearchInput() {
+    clearTimeout(AppState.groupMemberSearchTimer);
+    AppState.groupMemberSearchTimer = setTimeout(searchGroupMembers, MESSAGE_SEARCH_DEBOUNCE_MS);
+}
+
+async function searchGroupMembers() {
+    if (!AppState.groupMemberMode || !isGroupChat()) return;
+    const query = DOM.groupMemberSearchQuery?.value.trim() || '';
+    const requestId = ++AppState.groupMemberSearchRequestId;
+
+    try {
+        const users = AppState.groupMemberMode === 'add'
+            ? await fetchUsersForGroupAdd(query)
+            : await fetchUsersForGroupRemove(query);
+        if (requestId !== AppState.groupMemberSearchRequestId) return;
+        renderGroupMemberSearchResults(users);
+    } catch (error) {
+        console.error('Не удалось выполнить поиск пользователей группы:', error);
+        if (requestId === AppState.groupMemberSearchRequestId) {
+            renderGroupMemberSearchResults([]);
+            setGroupManageStatus('Не удалось выполнить поиск');
+        }
+    }
+}
+
+async function fetchUsersForGroupAdd(query) {
+    if (query.length <= MIN_SEARCH_LENGTH) {
+        return [];
+    }
+    const [usersResponse, membersResponse] = await Promise.all([
+        fetch(`/users/search?q=${encodeURIComponent(query)}`, SAME_ORIGIN_FETCH),
+        fetch(`/groups/${AppState.selectedUser.chatId}/members`, SAME_ORIGIN_FETCH)
+    ]);
+    if (!usersResponse.ok || !membersResponse.ok) return [];
+    const users = await usersResponse.json();
+    const members = await membersResponse.json();
+    const memberNames = new Set(members.map(user => user.username));
+    return users.filter(user => !memberNames.has(user.username));
+}
+
+async function fetchUsersForGroupRemove(query) {
+    const response = await fetch(`/groups/${AppState.selectedUser.chatId}/members`, SAME_ORIGIN_FETCH);
+    if (!response.ok) return [];
+    const users = await response.json();
+    const normalizedQuery = query.toLowerCase();
+    return users
+        .filter(user => user.username !== User.username)
+        .filter(user => {
+            if (!normalizedQuery) return true;
+            return String(user.username || '').toLowerCase().includes(normalizedQuery)
+                || String(user.fullname || '').toLowerCase().includes(normalizedQuery);
+        });
+}
+
+function renderGroupMemberSearchResults(users) {
+    if (!DOM.groupMemberSearchList) return;
+    DOM.groupMemberSearchList.innerHTML = '';
+    users.forEach(user => {
+        const item = createGroupMemberSearchResultElement(user);
+        DOM.groupMemberSearchList.appendChild(item);
+    });
+}
+
+function createGroupMemberSearchResultElement(user) {
+    const element = document.createElement('li');
+    element.classList.add('search-result-item');
+
+    const avatar = document.createElement('span');
+    avatar.classList.add('chat-avatar', 'r');
+    avatar.textContent = user.fullname?.[0] || user.username?.[0] || '?';
+
+    const label = document.createElement('span');
+    label.classList.add('search-result-text');
+
+    const fullname = document.createElement('span');
+    fullname.classList.add('search-result-name');
+    fullname.textContent = user.fullname || user.username;
+
+    const username = document.createElement('span');
+    username.classList.add('search-result-username');
+    username.textContent = `@${user.username}`;
+
+    label.appendChild(fullname);
+    label.appendChild(username);
+    element.appendChild(avatar);
+    element.appendChild(label);
+    element.addEventListener('click', () => selectGroupMember(user));
+    return element;
+}
+
+async function selectGroupMember(user) {
+    if (!AppState.groupMemberMode || !user?.username) return;
+    const ok = AppState.groupMemberMode === 'add'
+        ? await sendGroupMemberRequest('POST', `/groups/${AppState.selectedUser.chatId}/members`, {username: user.username})
+        : await sendGroupMemberRequest('DELETE', `/groups/${AppState.selectedUser.chatId}/members/${encodeURIComponent(user.username)}`);
+    if (ok) {
+        closeGroupMemberSearch();
+    }
+}
+
 async function addGroupMember() {
-    const username = window.prompt('Username');
-    if (!username) return;
-    const ok = await sendGroupMemberRequest('POST', `/groups/${AppState.selectedUser.chatId}/members`, {username});
-    if (ok) updateSelectedGroupMemberCount(1);
+    openGroupMemberSearch('add');
 }
 
 async function removeGroupMember() {
-    const username = window.prompt('Username');
-    if (!username) return;
-    const ok = await sendGroupMemberRequest('DELETE', `/groups/${AppState.selectedUser.chatId}/members/${encodeURIComponent(username)}`);
-    if (ok) updateSelectedGroupMemberCount(-1);
+    openGroupMemberSearch('remove');
 }
 
 async function leaveCurrentGroup() {
@@ -1082,16 +1209,6 @@ async function sendGroupMemberRequest(method, url, body = null) {
     }
 }
 
-function updateSelectedGroupMemberCount(delta) {
-    if (!isGroupChat()) return;
-    const nextCount = Math.max(1, (AppState.selectedUser.memberCount || 1) + delta);
-    AppState.selectedUser.memberCount = nextCount;
-    const chatElement = findChatElement(getChatSelector(AppState.selectedUser));
-    if (chatElement?.chatData) {
-        chatElement.chatData.memberCount = nextCount;
-    }
-    DOM.chatHeaderInfo.querySelector('#chat-header-status').textContent = formatGroupMembersCount(nextCount);
-}
 
 // ============================================
 // ВЫБОР ЧАТА
@@ -1407,6 +1524,7 @@ function createMessageElement(messageData) {
 }
 
 function addMessage(messageData) {
+    DOM.emptyChatInfoMessage.classList.add('hidden');
     appendMessageElement(messageData);
     scrollToBottom(DOM.chatMessagesArea);
 }
@@ -1806,3 +1924,4 @@ function onWindowResize() {
 
 updateAppHeightVar();
 initCurrentUser();
+

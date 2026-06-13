@@ -109,4 +109,15 @@ public class UserController {
     public ResponseEntity<User> getUser(@PathVariable String targetUsername) {
         return ResponseEntity.ok(userService.findByUsername(targetUsername));
     }
+
+    @GetMapping("/users/search")
+    public ResponseEntity<List<User>> searchUsers(@RequestParam String q) {
+        User current = currentUserProvider.getCurrentUser();
+        if (current == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(userService.searchUsers(q).stream()
+                .filter(user -> !current.getUsername().equals(user.getUsername()))
+                .toList());
+    }
 }

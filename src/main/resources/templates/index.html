@@ -115,6 +115,13 @@
             <button type="button" id="group-leave-button" class="secondary-button">Выйти из группы</button>
             <button type="button" id="group-manage-close-button" class="secondary-button">Закрыть</button>
         </div>
+        <div id="group-member-search" class="group-member-search hidden">
+            <div class="search-input-wrapper message-search-input-wrap">
+                <input autocomplete="off" type="text" id="group-member-search-query" class="r"
+                       placeholder="username ��� ���">
+            </div>
+            <ul id="group-member-search-list"></ul>
+        </div>
         <p id="group-manage-status" class="search-no-results hidden"></p>
     </div>
 </div>
@@ -163,4 +170,6 @@
 <script type="module" src="/static/js/script.js"></script>
 </body>
 </html>
+
+
 
