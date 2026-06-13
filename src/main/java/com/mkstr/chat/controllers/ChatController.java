@@ -120,11 +120,11 @@ public class ChatController {
             for (ChatParticipant participant : chatService.findParticipants(chatId)) {
                 String username = participant.getUser().getUsername();
                 if (!Objects.equals(username, senderId)) {
-                    messagingTemplate.convertAndSend("/user/" + username + "/messages", message);
+                    messagingTemplate.convertAndSendToUser(username, "/queue/messages", message);
                 }
             }
         } else {
-            messagingTemplate.convertAndSend("/user/" + recipientId + "/messages", message);
+            messagingTemplate.convertAndSendToUser(recipientId, "/queue/messages", message);
         }
     }
 
@@ -292,18 +292,16 @@ public class ChatController {
         for (ChatParticipant participant : chatService.findParticipants(chatId)) {
             String username = participant.getUser().getUsername();
             chatService.findChatSummaryByUsernameAndChatId(username, chatId)
-                    .ifPresent(summary -> messagingTemplate.convertAndSend(
-                            "/user/" + username + "/groupUpdates",
+                    .ifPresent(summary -> messagingTemplate.convertAndSendToUser(
+                            username,
+                            "/queue/groupUpdates",
                             new GroupChatEventDto("UPSERT", chatId, summary)
                     ));
         }
     }
 
     private void notifyGroupRemoved(String username, Long chatId) {
-        messagingTemplate.convertAndSend(
-                "/user/" + username + "/groupUpdates",
-                new GroupChatEventDto("REMOVE", chatId, null)
-        );
+        messagingTemplate.convertAndSendToUser(username, "/queue/groupUpdates", new GroupChatEventDto("REMOVE", chatId, null));
     }
 
     private static Integer messageLength(Message message) {
