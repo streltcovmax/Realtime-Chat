@@ -331,6 +331,7 @@ h2 {
 }
 
 #foundUsers,
+#group-member-add-search-list,
 #group-members-list,
 #group-member-search-list,
 #message-search-list,
@@ -341,6 +342,7 @@ h2 {
 }
 
 #foundUsers .search-result-item,
+#group-member-add-search-list .search-result-item,
 #group-members-list .search-result-item,
 #group-member-search-list .search-result-item,
 #message-search-list .search-result-item {
@@ -354,12 +356,14 @@ h2 {
 }
 
 #foundUsers .search-result-item,
+#group-member-add-search-list .search-result-item,
 #group-members-list .search-result-item,
 #group-member-search-list .search-result-item {
     align-items: center;
 }
 
 #foundUsers .search-result-text,
+#group-member-add-search-list .search-result-text,
 #group-members-list .search-result-text,
 #group-member-search-list .search-result-text {
     min-width: 0;
@@ -370,6 +374,8 @@ h2 {
 
 #foundUsers .search-result-name,
 #foundUsers .search-result-username,
+#group-member-add-search-list .search-result-name,
+#group-member-add-search-list .search-result-username,
 #group-members-list .search-result-name,
 #group-members-list .search-result-username,
 #group-member-search-list .search-result-name,
@@ -382,6 +388,7 @@ h2 {
 }
 
 #foundUsers .search-result-name,
+#group-member-add-search-list .search-result-name,
 #group-members-list .search-result-name,
 #group-member-search-list .search-result-name {
     color: var(--text-highlight);
@@ -390,6 +397,7 @@ h2 {
 }
 
 #foundUsers .search-result-username,
+#group-member-add-search-list .search-result-username,
 #group-members-list .search-result-username,
 #group-member-search-list .search-result-username {
     color: var(--text-dark);
@@ -404,6 +412,7 @@ h2 {
 }
 
 #foundUsers .search-result-item:hover,
+#group-member-add-search-list .search-result-item:hover,
 #group-members-list .search-result-item:hover,
 #group-member-search-list .search-result-item:hover,
 #message-search-list .search-result-item:hover,
@@ -922,6 +931,10 @@ form#messageForm {
 
 #group-manage-close-button {
     display: none !important;
+}
+
+#group-member-search-modal {
+    z-index: 2050;
 }
 
 .group-member-search {

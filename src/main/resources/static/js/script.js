@@ -332,6 +332,10 @@ function setEventListeners() {
                 return;
             }
             if (DOM.groupManageModal && !DOM.groupManageModal.classList.contains('hidden')) {
+                if (DOM.groupMemberSearchModal && !DOM.groupMemberSearchModal.classList.contains('hidden')) {
+                    closeGroupMemberSearch();
+                    return;
+                }
                 closeGroupManageModal();
                 return;
             }
@@ -1214,13 +1218,81 @@ function syncSelectedGroupMemberCount() {
     }
 }
 
+function ensureGroupMemberSearchModal() {
+    if (DOM.groupMemberSearchModal) return;
+
+    const modal = document.createElement('div');
+    modal.id = 'group-member-search-modal';
+    modal.classList.add('message-search-modal', 'hidden');
+    modal.setAttribute('aria-hidden', 'true');
+
+    const backdrop = document.createElement('div');
+    backdrop.classList.add('message-search-modal-backdrop');
+    backdrop.addEventListener('click', closeGroupMemberSearch);
+
+    const dialog = document.createElement('div');
+    dialog.classList.add('message-search-modal-dialog', 'r');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.addEventListener('click', event => event.stopPropagation());
+
+    const title = document.createElement('h2');
+    title.classList.add('message-search-modal-title');
+    title.textContent = '\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0443\u0447\u0430\u0441\u0442\u043d\u0438\u043a\u0430';
+
+    const inputWrap = document.createElement('div');
+    inputWrap.classList.add('search-input-wrapper', 'message-search-input-wrap');
+
+    const input = document.createElement('input');
+    input.autocomplete = 'off';
+    input.type = 'text';
+    input.id = 'group-member-add-search-query';
+    input.classList.add('r');
+    input.placeholder = '\u043f\u043e\u0438\u0441\u043a \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f';
+    input.addEventListener('input', onGroupMemberSearchInput);
+
+    const results = document.createElement('div');
+    results.classList.add('search-results-container', 'message-search-results');
+
+    const status = document.createElement('p');
+    status.id = 'group-member-add-search-status';
+    status.classList.add('search-no-results');
+
+    const list = document.createElement('ul');
+    list.id = 'group-member-add-search-list';
+
+    inputWrap.appendChild(input);
+    results.appendChild(status);
+    results.appendChild(list);
+    dialog.appendChild(title);
+    dialog.appendChild(inputWrap);
+    dialog.appendChild(results);
+    modal.appendChild(backdrop);
+    modal.appendChild(dialog);
+    document.body.appendChild(modal);
+
+    DOM.groupMemberSearchModal = modal;
+    DOM.groupMemberSearchStatus = status;
+    DOM.groupMemberSearch = modal;
+    DOM.groupMemberSearchQuery = input;
+    DOM.groupMemberSearchList = list;
+}
+
+function setGroupMemberSearchStatus(message) {
+    if (!DOM.groupMemberSearchStatus) return;
+    DOM.groupMemberSearchStatus.textContent = message || '';
+    DOM.groupMemberSearchStatus.classList.toggle('hidden', !message);
+}
+
 function openGroupMemberSearch(mode) {
+    ensureGroupMemberSearchModal();
     AppState.groupMemberMode = mode;
-    setGroupManageStatus('введите не менее 3 символов');
-    DOM.groupMemberSearch?.classList.remove('hidden');
+    setGroupMemberSearchStatus('\u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u043d\u0435 \u043c\u0435\u043d\u0435\u0435 3 \u0441\u0438\u043c\u0432\u043e\u043b\u043e\u0432');
+    DOM.groupMemberSearchModal.classList.remove('hidden');
+    DOM.groupMemberSearchModal.setAttribute('aria-hidden', 'false');
     if (DOM.groupMemberSearchQuery) {
         DOM.groupMemberSearchQuery.value = '';
-        DOM.groupMemberSearchQuery.placeholder = mode === 'add' ? 'поиск пользователя' : 'поиск участника';
+        DOM.groupMemberSearchQuery.placeholder = '\u043f\u043e\u0438\u0441\u043a \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f';
     }
     renderGroupMemberSearchResults([]);
     requestAnimationFrame(() => DOM.groupMemberSearchQuery?.focus());
@@ -1229,11 +1301,13 @@ function openGroupMemberSearch(mode) {
 function closeGroupMemberSearch() {
     AppState.groupMemberMode = null;
     clearTimeout(AppState.groupMemberSearchTimer);
-    DOM.groupMemberSearch?.classList.add('hidden');
+    DOM.groupMemberSearchModal?.classList.add('hidden');
+    DOM.groupMemberSearchModal?.setAttribute('aria-hidden', 'true');
     if (DOM.groupMemberSearchQuery) {
         DOM.groupMemberSearchQuery.value = '';
     }
     renderGroupMemberSearchResults([]);
+    setGroupMemberSearchStatus('');
 }
 
 function onGroupMemberSearchInput() {
@@ -1248,26 +1322,23 @@ async function searchGroupMembers() {
 
     if (query.length <= MIN_SEARCH_LENGTH) {
         renderGroupMemberSearchResults([]);
-        setGroupManageStatus('введите не менее 3 символов');
+        setGroupMemberSearchStatus('\u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u043d\u0435 \u043c\u0435\u043d\u0435\u0435 3 \u0441\u0438\u043c\u0432\u043e\u043b\u043e\u0432');
         return;
     }
 
     try {
-        const users = AppState.groupMemberMode === 'add'
-            ? await fetchUsersForGroupAdd(query)
-            : await fetchUsersForGroupRemove(query);
+        const users = await fetchUsersForGroupAdd(query);
         if (requestId !== AppState.groupMemberSearchRequestId) return;
         renderGroupMemberSearchResults(users);
-        setGroupManageStatus(users.length === 0 ? 'ничего не найдено' : '');
+        setGroupMemberSearchStatus(users.length === 0 ? '\u043d\u0438\u0447\u0435\u0433\u043e \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e' : '');
     } catch (error) {
-        console.error('Не удалось выполнить поиск пользователей группы:', error);
+        console.error('Group user search failed:', error);
         if (requestId === AppState.groupMemberSearchRequestId) {
             renderGroupMemberSearchResults([]);
-            setGroupManageStatus('Не удалось выполнить поиск');
+            setGroupMemberSearchStatus('\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0432\u044b\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u043f\u043e\u0438\u0441\u043a');
         }
     }
 }
-
 async function fetchUsersForGroupAdd(query) {
     if (query.length <= MIN_SEARCH_LENGTH) {
         return [];
