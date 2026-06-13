@@ -1028,8 +1028,8 @@ function openGroupManageModal() {
     DOM.groupManageModal.classList.remove('hidden');
     DOM.groupManageModal.setAttribute('aria-hidden', 'false');
     const isCreator = AppState.selectedUser.createdBy === User.username;
-    DOM.groupAddMemberButton.disabled = !isCreator;
-    DOM.groupRemoveMemberButton.disabled = !isCreator;
+    DOM.groupAddMemberButton.classList.toggle('hidden', !isCreator);
+    DOM.groupRemoveMemberButton.classList.toggle('hidden', !isCreator);
     DOM.groupLeaveButton.textContent = isCreator ? 'Выйти и удалить' : 'Выйти из группы';
     closeGroupMemberSearch();
 }
@@ -1049,14 +1049,13 @@ function setGroupManageStatus(message) {
 
 function openGroupMemberSearch(mode) {
     AppState.groupMemberMode = mode;
-    setGroupManageStatus(mode === 'add' ? 'Выберите пользователя для добавления' : 'Выберите участника для удаления');
+    setGroupManageStatus('введите не менее 3 символов');
     DOM.groupMemberSearch?.classList.remove('hidden');
     if (DOM.groupMemberSearchQuery) {
         DOM.groupMemberSearchQuery.value = '';
         DOM.groupMemberSearchQuery.placeholder = mode === 'add' ? 'поиск пользователя' : 'поиск участника';
     }
     renderGroupMemberSearchResults([]);
-    searchGroupMembers();
     requestAnimationFrame(() => DOM.groupMemberSearchQuery?.focus());
 }
 
@@ -1080,12 +1079,19 @@ async function searchGroupMembers() {
     const query = DOM.groupMemberSearchQuery?.value.trim() || '';
     const requestId = ++AppState.groupMemberSearchRequestId;
 
+    if (query.length <= MIN_SEARCH_LENGTH) {
+        renderGroupMemberSearchResults([]);
+        setGroupManageStatus('введите не менее 3 символов');
+        return;
+    }
+
     try {
         const users = AppState.groupMemberMode === 'add'
             ? await fetchUsersForGroupAdd(query)
             : await fetchUsersForGroupRemove(query);
         if (requestId !== AppState.groupMemberSearchRequestId) return;
         renderGroupMemberSearchResults(users);
+        setGroupManageStatus(users.length === 0 ? 'ничего не найдено' : '');
     } catch (error) {
         console.error('Не удалось выполнить поиск пользователей группы:', error);
         if (requestId === AppState.groupMemberSearchRequestId) {
