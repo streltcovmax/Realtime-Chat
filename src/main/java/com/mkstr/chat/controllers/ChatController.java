@@ -1,6 +1,7 @@
 package com.mkstr.chat.controllers;
 
 import com.mkstr.chat.analytics.AnalyticsService;
+import com.mkstr.chat.dto.GroupChatEventDto;
 import com.mkstr.chat.dto.GroupCreateRequest;
 import com.mkstr.chat.dto.GroupMemberRequest;
 import com.mkstr.chat.model.Chat;
@@ -211,6 +212,7 @@ public class ChatController {
                 request == null ? null : request.name(),
                 request == null ? List.<String>of() : request.usernames()
         );
+        notifyGroupParticipants(chat.getChatId());
         return ResponseEntity.ok(chatService.findChatSummariesByUsername(currentUsername).stream()
                 .filter(summary -> Objects.equals(summary.chatId(), chat.getChatId()))
                 .findFirst()
@@ -219,18 +221,25 @@ public class ChatController {
 
     @PostMapping("/groups/{chatId}/members")
     @ResponseBody
-    public ResponseEntity<Void> addGroupMember(@PathVariable Long chatId, @RequestBody GroupMemberRequest request) {
+    public ResponseEntity<Boolean> addGroupMember(@PathVariable Long chatId, @RequestBody GroupMemberRequest request) {
         String currentUsername = currentUserProvider.requireCurrentUsername();
-        chatService.addUserToGroup(chatId, currentUsername, request == null ? null : request.username());
-        return ResponseEntity.noContent().build();
+        boolean changed = chatService.addUserToGroup(chatId, currentUsername, request == null ? null : request.username());
+        if (changed) {
+            notifyGroupParticipants(chatId);
+        }
+        return ResponseEntity.ok(changed);
     }
 
     @DeleteMapping("/groups/{chatId}/members/{username}")
     @ResponseBody
-    public ResponseEntity<Void> removeGroupMember(@PathVariable Long chatId, @PathVariable String username) {
+    public ResponseEntity<Boolean> removeGroupMember(@PathVariable Long chatId, @PathVariable String username) {
         String currentUsername = currentUserProvider.requireCurrentUsername();
-        chatService.removeUserFromGroup(chatId, currentUsername, username);
-        return ResponseEntity.noContent().build();
+        boolean changed = chatService.removeUserFromGroup(chatId, currentUsername, username);
+        if (changed) {
+            notifyGroupRemoved(username, chatId);
+            notifyGroupParticipants(chatId);
+        }
+        return ResponseEntity.ok(changed);
     }
 
     @DeleteMapping("/groups/{chatId}/leave")
@@ -238,6 +247,8 @@ public class ChatController {
     public ResponseEntity<Void> leaveGroup(@PathVariable Long chatId) {
         String currentUsername = currentUserProvider.requireCurrentUsername();
         chatService.leaveGroup(chatId, currentUsername);
+        notifyGroupRemoved(currentUsername, chatId);
+        notifyGroupParticipants(chatId);
         return ResponseEntity.noContent().build();
     }
 
@@ -262,6 +273,24 @@ public class ChatController {
             return chatService.resolveChatForUser(username, selectedChat);
         }
         return chatService.findExistingChat(username, selectedChat);
+    }
+
+    private void notifyGroupParticipants(Long chatId) {
+        for (ChatParticipant participant : chatService.findParticipants(chatId)) {
+            String username = participant.getUser().getUsername();
+            chatService.findChatSummaryByUsernameAndChatId(username, chatId)
+                    .ifPresent(summary -> messagingTemplate.convertAndSend(
+                            "/user/" + username + "/groupUpdates",
+                            new GroupChatEventDto("UPSERT", chatId, summary)
+                    ));
+        }
+    }
+
+    private void notifyGroupRemoved(String username, Long chatId) {
+        messagingTemplate.convertAndSend(
+                "/user/" + username + "/groupUpdates",
+                new GroupChatEventDto("REMOVE", chatId, null)
+        );
     }
 
     private static Integer messageLength(Message message) {

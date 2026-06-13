@@ -185,6 +185,12 @@ public class ChatService {
         return summaries;
     }
 
+    public Optional<ChatSummaryDto> findChatSummaryByUsernameAndChatId(String username, Long chatId) {
+        return findChatSummariesByUsername(username).stream()
+                .filter(summary -> Objects.equals(summary.chatId(), chatId))
+                .findFirst();
+    }
+
     @Transactional
     public Chat createGroup(String creatorUsername, String name, Collection<String> usernames) {
         String normalizedName = name == null ? "" : name.trim();
@@ -213,23 +219,28 @@ public class ChatService {
     }
 
     @Transactional
-    public void addUserToGroup(Long chatId, String actorUsername, String usernameToAdd) {
+    public boolean addUserToGroup(Long chatId, String actorUsername, String usernameToAdd) {
         Chat chat = requireGroupCreator(chatId, actorUsername);
         String target = requireUsername(usernameToAdd);
         if (participantRepository.existsByUserUsernameAndChatChatId(target, chatId)) {
-            return;
+            return false;
         }
         saveParticipant(chat, target);
+        return true;
     }
 
     @Transactional
-    public void removeUserFromGroup(Long chatId, String actorUsername, String usernameToRemove) {
+    public boolean removeUserFromGroup(Long chatId, String actorUsername, String usernameToRemove) {
         Chat chat = requireGroupCreator(chatId, actorUsername);
         String target = requireUsername(usernameToRemove);
         if (Objects.equals(target, chat.getCreatedBy())) {
             throw new ResponseStatusException(BAD_REQUEST, "creator cannot be removed");
         }
+        if (!participantRepository.existsByUserUsernameAndChatChatId(target, chatId)) {
+            return false;
+        }
         participantRepository.deleteById(new ChatParticipantId(target, chatId));
+        return true;
     }
 
     @Transactional

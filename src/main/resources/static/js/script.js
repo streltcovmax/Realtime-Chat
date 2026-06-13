@@ -207,6 +207,7 @@ function onConnected() {
     AppState.stompClient.subscribe(`/user/${User.username}/messages`, onMessageReceived);
     AppState.stompClient.subscribe(`/user/public/`, onUserStatusUpdate);
     AppState.stompClient.subscribe(`/user/${User.username}/usersSearch`, onSearchResults);
+    AppState.stompClient.subscribe(`/user/${User.username}/groupUpdates`, onGroupChatUpdate);
 
     // Регистрация пользователя
     registerUser();
@@ -759,6 +760,57 @@ async function fetchAndShowChats() {
     }
 }
 
+function upsertChatInList(chatData, prependToList = true) {
+    const normalized = normalizeChatData(chatData);
+    const selector = getChatSelector(normalized);
+    const existing = findChatElement(selector);
+
+    if (existing) {
+        existing.chatData = {...existing.chatData, ...normalized};
+        existing.querySelector('.chat-name').textContent = normalized.fullname ?? '';
+        const avatar = existing.querySelector('.chat-avatar');
+        if (avatar?.firstChild) {
+            avatar.firstChild.textContent = normalized.fullname?.[0] || normalized.username?.[0] || '?';
+        }
+        if (normalized.lastMessage) {
+            updateChatPreview(existing, {
+                content: normalized.lastMessage,
+                dateCreated: normalized.lastMessageAt
+            });
+        }
+        if (prependToList) {
+            moveChatToTop(existing);
+        }
+        return existing;
+    }
+
+    appendChatToList(normalized, prependToList);
+    return findChatElement(selector);
+}
+
+function onGroupChatUpdate(payload) {
+    const event = JSON.parse(payload.body);
+    const selector = `chat-${event.chatId}`;
+
+    if (event.action === 'REMOVE') {
+        findChatElement(selector)?.remove();
+        if (getChatSelector(AppState.selectedUser) === selector) {
+            closeGroupManageModal();
+            hideChatArea();
+        }
+        return;
+    }
+
+    if (event.action === 'UPSERT' && event.chat) {
+        const chat = normalizeChatData(event.chat);
+        upsertChatInList(chat, true);
+        if (getChatSelector(AppState.selectedUser) === getChatSelector(chat)) {
+            AppState.selectedUser = {...AppState.selectedUser, ...chat};
+            fillChatHeader(AppState.selectedUser);
+        }
+    }
+}
+
 function moveChatToTop(chatElement) {
     if (!chatElement || chatElement.parentElement !== DOM.chatsList) return;
     DOM.chatsList.prepend(chatElement);
@@ -953,7 +1005,7 @@ async function createGroup() {
             return;
         }
         const chat = normalizeChatData(await response.json());
-        appendChatToList(chat, true);
+        upsertChatInList(chat, true);
         closeCreateGroupModal();
         const chatElement = findChatElement(getChatSelector(chat));
         chatElement?.dispatchEvent(new Event('click', {bubbles: true}));
@@ -988,13 +1040,15 @@ function setGroupManageStatus(message) {
 async function addGroupMember() {
     const username = window.prompt('Username');
     if (!username) return;
-    await sendGroupMemberRequest('POST', `/groups/${AppState.selectedUser.chatId}/members`, {username});
+    const ok = await sendGroupMemberRequest('POST', `/groups/${AppState.selectedUser.chatId}/members`, {username});
+    if (ok) updateSelectedGroupMemberCount(1);
 }
 
 async function removeGroupMember() {
     const username = window.prompt('Username');
     if (!username) return;
-    await sendGroupMemberRequest('DELETE', `/groups/${AppState.selectedUser.chatId}/members/${encodeURIComponent(username)}`);
+    const ok = await sendGroupMemberRequest('DELETE', `/groups/${AppState.selectedUser.chatId}/members/${encodeURIComponent(username)}`);
+    if (ok) updateSelectedGroupMemberCount(-1);
 }
 
 async function leaveCurrentGroup() {
@@ -1018,14 +1072,25 @@ async function sendGroupMemberRequest(method, url, body = null) {
             setGroupManageStatus('Операция недоступна');
             return false;
         }
+        const changed = response.status === 204 ? true : await response.json();
         setGroupManageStatus('Готово');
-        fetchAndShowChats();
-        return true;
+        return changed !== false;
     } catch (error) {
         console.error('Не удалось выполнить операцию с группой:', error);
         setGroupManageStatus('Операция недоступна');
         return false;
     }
+}
+
+function updateSelectedGroupMemberCount(delta) {
+    if (!isGroupChat()) return;
+    const nextCount = Math.max(1, (AppState.selectedUser.memberCount || 1) + delta);
+    AppState.selectedUser.memberCount = nextCount;
+    const chatElement = findChatElement(getChatSelector(AppState.selectedUser));
+    if (chatElement?.chatData) {
+        chatElement.chatData.memberCount = nextCount;
+    }
+    DOM.chatHeaderInfo.querySelector('#chat-header-status').textContent = formatGroupMembersCount(nextCount);
 }
 
 // ============================================
@@ -1106,7 +1171,7 @@ function fillChatHeader(chatData) {
 
     header.querySelector('#chat-header-username').textContent = chatData.fullname || chatData.username;
     header.querySelector('#chat-header-status').textContent = isGroupChat(chatData)
-        ? `${chatData.memberCount || 1} participants`
+        ? formatGroupMembersCount(chatData.memberCount)
         : String(chatData.status || '').toLowerCase();
     header.querySelector('.chat-avatar').textContent = chatData.fullname?.[0] || chatData.username?.[0] || '?';
     header.classList.toggle('online', !isGroupChat(chatData) && chatData.status === 'ONLINE');
@@ -1130,6 +1195,10 @@ function resetMessagesState() {
     AppState.pagination.isLastPage = false;
     AppState.chatTailDayKey = null;
     DOM.chatMessagesArea.innerHTML = '';
+}
+
+function formatGroupMembersCount(memberCount) {
+    return `число участников: ${memberCount || 1}`;
 }
 
 async function loadChatMessagesPage(chatUsername, isReset) {
