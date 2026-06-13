@@ -124,6 +124,7 @@ const AppState = {
     groupMemberMode: null,
     groupMemberSearchTimer: null,
     groupMemberSearchRequestId: 0,
+    groupMembers: [],
 };
 
 function updateAppHeightVar() {
@@ -878,7 +879,7 @@ function appendChatToList(chatData, prependToList = false) {
             content: chatData.lastMessage,
             dateCreated: chatData.lastMessageAt
         });
-    } else {
+    } else if (!isGroupChat(chatData)) {
         loadLastMessage(listItem, selector);
     }
     loadUnreadMessagesCount(listItem, selector)
@@ -1025,13 +1026,15 @@ async function createGroup() {
 function openGroupManageModal() {
     if (!DOM.groupManageModal || !isGroupChat()) return;
     setGroupManageStatus('');
+    ensureGroupMembersPanel();
     DOM.groupManageModal.classList.remove('hidden');
     DOM.groupManageModal.setAttribute('aria-hidden', 'false');
     const isCreator = AppState.selectedUser.createdBy === User.username;
     DOM.groupAddMemberButton.classList.toggle('hidden', !isCreator);
-    DOM.groupRemoveMemberButton.classList.toggle('hidden', !isCreator);
+    DOM.groupRemoveMemberButton.classList.add('hidden');
     DOM.groupLeaveButton.textContent = isCreator ? 'Выйти и удалить' : 'Выйти из группы';
     closeGroupMemberSearch();
+    loadGroupMembers();
 }
 
 function closeGroupManageModal() {
@@ -1039,12 +1042,146 @@ function closeGroupManageModal() {
     closeGroupMemberSearch();
     DOM.groupManageModal.classList.add('hidden');
     DOM.groupManageModal.setAttribute('aria-hidden', 'true');
+    if (DOM.groupMembersListSearch) {
+        DOM.groupMembersListSearch.value = '';
+    }
 }
 
 function setGroupManageStatus(message) {
     if (!DOM.groupManageStatus) return;
     DOM.groupManageStatus.textContent = message || '';
     DOM.groupManageStatus.classList.toggle('hidden', !message);
+}
+
+function ensureGroupMembersPanel() {
+    if (DOM.groupMembersList) return;
+    const dialog = DOM.groupManageModal?.querySelector('.message-search-modal-dialog');
+    if (!dialog || !DOM.groupManageStatus) return;
+
+    const panel = document.createElement('div');
+    panel.id = 'group-members-panel';
+    panel.classList.add('group-members-panel');
+
+    const inputWrap = document.createElement('div');
+    inputWrap.classList.add('search-input-wrapper', 'message-search-input-wrap');
+
+    const input = document.createElement('input');
+    input.autocomplete = 'off';
+    input.type = 'text';
+    input.id = 'group-members-list-search';
+    input.classList.add('r');
+    input.placeholder = 'поиск участников';
+    input.addEventListener('input', renderGroupMembersList);
+
+    const list = document.createElement('ul');
+    list.id = 'group-members-list';
+
+    const empty = document.createElement('p');
+    empty.id = 'group-members-empty';
+    empty.classList.add('search-no-results', 'hidden');
+    empty.textContent = 'ничего не найдено';
+
+    inputWrap.appendChild(input);
+    panel.appendChild(inputWrap);
+    panel.appendChild(list);
+    panel.appendChild(empty);
+    DOM.groupManageStatus.before(panel);
+
+    DOM.groupMembersListSearch = input;
+    DOM.groupMembersList = list;
+    DOM.groupMembersEmpty = empty;
+}
+
+async function loadGroupMembers() {
+    if (!isGroupChat() || !AppState.selectedUser.chatId) return;
+    ensureGroupMembersPanel();
+    try {
+        const response = await fetch(`/groups/${AppState.selectedUser.chatId}/members`, SAME_ORIGIN_FETCH);
+        if (!response.ok) {
+            setGroupManageStatus('Не удалось получить участников группы');
+            return;
+        }
+        AppState.groupMembers = await response.json();
+        syncSelectedGroupMemberCount();
+        renderGroupMembersList();
+    } catch (error) {
+        console.error('Не удалось получить участников группы:', error);
+        setGroupManageStatus('Не удалось получить участников группы');
+    }
+}
+
+function renderGroupMembersList() {
+    ensureGroupMembersPanel();
+    if (!DOM.groupMembersList) return;
+    const query = (DOM.groupMembersListSearch?.value || '').trim().toLowerCase();
+    const isCreator = AppState.selectedUser.createdBy === User.username;
+    const members = AppState.groupMembers.filter(user => {
+        if (!query) return true;
+        return String(user.username || '').toLowerCase().includes(query)
+            || String(user.fullname || '').toLowerCase().includes(query);
+    });
+
+    DOM.groupMembersList.innerHTML = '';
+    DOM.groupMembersEmpty?.classList.toggle('hidden', members.length > 0);
+
+    members.forEach(user => {
+        DOM.groupMembersList.appendChild(createGroupMemberListElement(user, isCreator));
+    });
+}
+
+function createGroupMemberListElement(user, isCreator) {
+    const item = document.createElement('li');
+    item.classList.add('search-result-item', 'group-member-list-item');
+
+    const avatar = document.createElement('span');
+    avatar.classList.add('chat-avatar', 'r');
+    avatar.textContent = user.fullname?.[0] || user.username?.[0] || '?';
+
+    const label = document.createElement('span');
+    label.classList.add('search-result-text');
+
+    const fullname = document.createElement('span');
+    fullname.classList.add('search-result-name');
+    fullname.textContent = user.fullname || user.username;
+
+    const username = document.createElement('span');
+    username.classList.add('search-result-username');
+    username.textContent = `@${user.username}`;
+
+    label.appendChild(fullname);
+    label.appendChild(username);
+    item.appendChild(avatar);
+    item.appendChild(label);
+    item.addEventListener('click', () => openUserProfileModal(user));
+
+    if (isCreator && user.username !== User.username) {
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.classList.add('group-member-remove-button');
+        removeButton.textContent = '×';
+        removeButton.title = 'Удалить участника';
+        removeButton.setAttribute('aria-label', `Удалить ${user.username}`);
+        removeButton.addEventListener('click', async event => {
+            event.stopPropagation();
+            const ok = await sendGroupMemberRequest('DELETE', `/groups/${AppState.selectedUser.chatId}/members/${encodeURIComponent(user.username)}`);
+            if (ok) {
+                await loadGroupMembers();
+            }
+        });
+        item.appendChild(removeButton);
+    }
+
+    return item;
+}
+
+function syncSelectedGroupMemberCount() {
+    if (!isGroupChat()) return;
+    AppState.selectedUser.memberCount = AppState.groupMembers.length;
+    fillChatHeader(AppState.selectedUser);
+    const chatElement = findChatElement(getChatSelector(AppState.selectedUser));
+    if (chatElement?.chatData) {
+        chatElement.chatData.memberCount = AppState.groupMembers.length;
+    }
 }
 
 function openGroupMemberSearch(mode) {
@@ -1173,6 +1310,7 @@ async function selectGroupMember(user) {
         : await sendGroupMemberRequest('DELETE', `/groups/${AppState.selectedUser.chatId}/members/${encodeURIComponent(user.username)}`);
     if (ok) {
         closeGroupMemberSearch();
+        await loadGroupMembers();
     }
 }
 
@@ -1852,7 +1990,11 @@ function showCurrentUserProfile() {
 }
 
 function showSelectedUserProfile() {
-    if (!AppState.selectedUser.username || isGroupChat(AppState.selectedUser)) return;
+    if (isGroupChat(AppState.selectedUser)) {
+        openGroupManageModal();
+        return;
+    }
+    if (!AppState.selectedUser.username) return;
     openUserProfileModal(AppState.selectedUser);
 }
 

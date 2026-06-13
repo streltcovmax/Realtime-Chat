@@ -331,6 +331,7 @@ h2 {
 }
 
 #foundUsers,
+#group-members-list,
 #group-member-search-list,
 #message-search-list,
 .chats-list-container ul {
@@ -340,6 +341,7 @@ h2 {
 }
 
 #foundUsers .search-result-item,
+#group-members-list .search-result-item,
 #group-member-search-list .search-result-item,
 #message-search-list .search-result-item {
     display: flex;
@@ -352,11 +354,13 @@ h2 {
 }
 
 #foundUsers .search-result-item,
+#group-members-list .search-result-item,
 #group-member-search-list .search-result-item {
     align-items: center;
 }
 
 #foundUsers .search-result-text,
+#group-members-list .search-result-text,
 #group-member-search-list .search-result-text {
     min-width: 0;
     display: flex;
@@ -366,6 +370,8 @@ h2 {
 
 #foundUsers .search-result-name,
 #foundUsers .search-result-username,
+#group-members-list .search-result-name,
+#group-members-list .search-result-username,
 #group-member-search-list .search-result-name,
 #group-member-search-list .search-result-username {
     display: block;
@@ -376,6 +382,7 @@ h2 {
 }
 
 #foundUsers .search-result-name,
+#group-members-list .search-result-name,
 #group-member-search-list .search-result-name {
     color: var(--text-highlight);
     font-size: 14px;
@@ -383,6 +390,7 @@ h2 {
 }
 
 #foundUsers .search-result-username,
+#group-members-list .search-result-username,
 #group-member-search-list .search-result-username {
     color: var(--text-dark);
     font-size: 13px;
@@ -396,6 +404,7 @@ h2 {
 }
 
 #foundUsers .search-result-item:hover,
+#group-members-list .search-result-item:hover,
 #group-member-search-list .search-result-item:hover,
 #message-search-list .search-result-item:hover,
 .search-result-item.active {
@@ -917,9 +926,42 @@ form#messageForm {
     margin-top: 14px;
 }
 
+.group-members-panel {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+#group-members-list,
 #group-member-search-list {
     max-height: 220px;
     overflow-y: auto;
+}
+
+.group-member-list-item {
+    position: relative;
+}
+
+.group-member-list-item .search-result-text {
+    flex: 1;
+}
+
+.group-member-remove-button {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--panel-raised);
+    color: var(--text-dark);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.group-member-remove-button:hover {
+    background: var(--danger, #d74f4f);
+    color: #fff;
 }
 
 .secondary-button {
