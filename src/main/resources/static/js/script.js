@@ -210,10 +210,10 @@ function onConnected() {
     }
 
     // Подписки на WebSocket каналы
-    AppState.stompClient.subscribe(`/user/queue/messages`, onMessageReceived);
+    AppState.stompClient.subscribe(`/user/${User.username}/messages`, onMessageReceived);
     AppState.stompClient.subscribe(`/user/public/`, onUserStatusUpdate);
-    AppState.stompClient.subscribe(`/user/queue/usersSearch`, onSearchResults);
-    AppState.stompClient.subscribe(`/user/queue/groupUpdates`, onGroupChatUpdate);
+    AppState.stompClient.subscribe(`/user/${User.username}/usersSearch`, onSearchResults);
+    AppState.stompClient.subscribe(`/user/${User.username}/groupUpdates`, onGroupChatUpdate);
 
     // Регистрация пользователя
     registerUser();
@@ -1028,8 +1028,8 @@ function openGroupManageModal() {
     DOM.groupManageModal.classList.remove('hidden');
     DOM.groupManageModal.setAttribute('aria-hidden', 'false');
     const isCreator = AppState.selectedUser.createdBy === User.username;
-    DOM.groupAddMemberButton.classList.toggle('hidden', !isCreator);
-    DOM.groupRemoveMemberButton.classList.toggle('hidden', !isCreator);
+    DOM.groupAddMemberButton.disabled = !isCreator;
+    DOM.groupRemoveMemberButton.disabled = !isCreator;
     DOM.groupLeaveButton.textContent = isCreator ? 'Выйти и удалить' : 'Выйти из группы';
     closeGroupMemberSearch();
 }
@@ -1049,7 +1049,7 @@ function setGroupManageStatus(message) {
 
 function openGroupMemberSearch(mode) {
     AppState.groupMemberMode = mode;
-    setGroupManageStatus('введите не менее 3 символов');
+    setGroupManageStatus(mode === 'add' ? 'Выберите пользователя для добавления' : 'Выберите участника для удаления');
     DOM.groupMemberSearch?.classList.remove('hidden');
     if (DOM.groupMemberSearchQuery) {
         DOM.groupMemberSearchQuery.value = '';
@@ -1080,19 +1080,12 @@ async function searchGroupMembers() {
     const query = DOM.groupMemberSearchQuery?.value.trim() || '';
     const requestId = ++AppState.groupMemberSearchRequestId;
 
-    if (query.length <= MIN_SEARCH_LENGTH) {
-        renderGroupMemberSearchResults([]);
-        setGroupManageStatus('введите не менее 3 символов');
-        return;
-    }
-
     try {
         const users = AppState.groupMemberMode === 'add'
             ? await fetchUsersForGroupAdd(query)
             : await fetchUsersForGroupRemove(query);
         if (requestId !== AppState.groupMemberSearchRequestId) return;
         renderGroupMemberSearchResults(users);
-        setGroupManageStatus(users.length === 0 ? 'ничего не найдено' : '');
     } catch (error) {
         console.error('Не удалось выполнить поиск пользователей группы:', error);
         if (requestId === AppState.groupMemberSearchRequestId) {
@@ -1103,6 +1096,9 @@ async function searchGroupMembers() {
 }
 
 async function fetchUsersForGroupAdd(query) {
+    if (query.length <= MIN_SEARCH_LENGTH) {
+        return [];
+    }
     const [usersResponse, membersResponse] = await Promise.all([
         fetch(`/users/search?q=${encodeURIComponent(query)}`, SAME_ORIGIN_FETCH),
         fetch(`/groups/${AppState.selectedUser.chatId}/members`, SAME_ORIGIN_FETCH)
@@ -1928,7 +1924,4 @@ function onWindowResize() {
 
 updateAppHeightVar();
 initCurrentUser();
-
-
-
 

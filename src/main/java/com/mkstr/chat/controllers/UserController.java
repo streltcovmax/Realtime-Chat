@@ -92,7 +92,7 @@ public class UserController {
         log.info("Found users {}", foundUsers);
         log.info("Request came from {}", currentUsername);
 
-        messagingTemplate.convertAndSendToUser(currentUsername, "/queue/usersSearch", foundUsers);
+        messagingTemplate.convertAndSend("/user/" + currentUsername + "/usersSearch", foundUsers);
     }
 
     @GetMapping("/chats")
