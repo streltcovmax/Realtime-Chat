@@ -82,14 +82,9 @@ const DOM = {
     groupCancelButton: document.querySelector('#group-cancel-button'),
     groupManageModal: document.querySelector('#group-manage-modal'),
     groupManageBackdrop: document.querySelector('#group-manage-modal-backdrop'),
-    groupManageStatus: document.querySelector('#group-manage-status'),
     groupAddMemberButton: document.querySelector('#group-add-member-button'),
-    groupRemoveMemberButton: document.querySelector('#group-remove-member-button'),
     groupLeaveButton: document.querySelector('#group-leave-button'),
     groupManageCloseButton: document.querySelector('#group-manage-close-button'),
-    groupMemberSearch: document.querySelector('#group-member-search'),
-    groupMemberSearchQuery: document.querySelector('#group-member-search-query'),
-    groupMemberSearchList: document.querySelector('#group-member-search-list'),
 };
 
 // ============================================
@@ -242,6 +237,9 @@ function registerUser() {
 
 function setupUI() {
     hideChatArea();
+    document.querySelector('#group-manage-status')?.remove();
+    document.querySelector('#group-remove-member-button')?.remove();
+    document.querySelector('#group-member-search')?.remove();
     DOM.connectedUserFullname.textContent = User.fullname;
     DOM.connectedUserAvatar.textContent = User.fullname[0];
     readMaxMessageLengthFromDom();
@@ -281,9 +279,7 @@ function setEventListeners() {
     DOM.groupManageBackdrop?.addEventListener('click', closeGroupManageModal);
     DOM.groupManageCloseButton?.addEventListener('click', closeGroupManageModal);
     DOM.groupAddMemberButton?.addEventListener('click', addGroupMember);
-    DOM.groupRemoveMemberButton?.addEventListener('click', removeGroupMember);
     DOM.groupLeaveButton?.addEventListener('click', leaveCurrentGroup);
-    DOM.groupMemberSearchQuery?.addEventListener('input', onGroupMemberSearchInput);
 
     // Поиск
     DOM.searchInput.addEventListener('input', onSearchInput);
@@ -997,13 +993,6 @@ function setGroupModalStatus(message) {
     DOM.groupModalStatus.classList.toggle('hidden', !message);
 }
 
-function parseMemberInput(value) {
-    return String(value || '')
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean);
-}
-
 async function createGroup() {
     const name = DOM.groupNameInput?.value.trim();
     const usernames = [];
@@ -1037,13 +1026,11 @@ async function createGroup() {
 
 function openGroupManageModal() {
     if (!DOM.groupManageModal || !isGroupChat()) return;
-    setGroupManageStatus('');
     ensureGroupMembersPanel();
     DOM.groupManageModal.classList.remove('hidden');
     DOM.groupManageModal.setAttribute('aria-hidden', 'false');
     const isCreator = AppState.selectedUser.createdBy === User.username;
     DOM.groupAddMemberButton.classList.toggle('hidden', !isCreator);
-    DOM.groupRemoveMemberButton.classList.add('hidden');
     DOM.groupLeaveButton.textContent = isCreator ? 'Выйти и удалить' : 'Выйти из группы';
     closeGroupMemberSearch();
     loadGroupMembers();
@@ -1077,16 +1064,10 @@ function closeGroupManageModal() {
     }
 }
 
-function setGroupManageStatus(message) {
-    if (!DOM.groupManageStatus) return;
-    DOM.groupManageStatus.textContent = message || '';
-    DOM.groupManageStatus.classList.toggle('hidden', !message);
-}
-
 function ensureGroupMembersPanel() {
     if (DOM.groupMembersList) return;
     const dialog = DOM.groupManageModal?.querySelector('.message-search-modal-dialog');
-    if (!dialog || !DOM.groupManageStatus) return;
+    if (!dialog) return;
 
     const panel = document.createElement('div');
     panel.id = 'group-members-panel';
@@ -1115,7 +1096,7 @@ function ensureGroupMembersPanel() {
     panel.appendChild(inputWrap);
     panel.appendChild(list);
     panel.appendChild(empty);
-    DOM.groupManageStatus.before(panel);
+    dialog.appendChild(panel);
 
     DOM.groupMembersListSearch = input;
     DOM.groupMembersList = list;
@@ -1132,7 +1113,6 @@ async function loadGroupMembers() {
         renderGroupMembersList();
     } catch (error) {
         console.error('Не удалось получить участников группы:', error);
-        setGroupManageStatus('Не удалось получить участников группы');
     }
 }
 
@@ -1273,7 +1253,6 @@ function ensureGroupMemberSearchModal() {
 
     DOM.groupMemberSearchModal = modal;
     DOM.groupMemberSearchStatus = status;
-    DOM.groupMemberSearch = modal;
     DOM.groupMemberSearchQuery = input;
     DOM.groupMemberSearchList = list;
 }
@@ -1354,20 +1333,6 @@ async function fetchUsersForGroupAdd(query) {
     return users.filter(user => !memberNames.has(user.username));
 }
 
-async function fetchUsersForGroupRemove(query) {
-    const response = await fetch(`/groups/${AppState.selectedUser.chatId}/members`, SAME_ORIGIN_FETCH);
-    if (!response.ok) return [];
-    const users = await response.json();
-    const normalizedQuery = query.toLowerCase();
-    return users
-        .filter(user => user.username !== User.username)
-        .filter(user => {
-            if (!normalizedQuery) return true;
-            return String(user.username || '').toLowerCase().includes(normalizedQuery)
-                || String(user.fullname || '').toLowerCase().includes(normalizedQuery);
-        });
-}
-
 function renderGroupMemberSearchResults(users) {
     if (!DOM.groupMemberSearchList) return;
     DOM.groupMemberSearchList.innerHTML = '';
@@ -1406,9 +1371,7 @@ function createGroupMemberSearchResultElement(user) {
 
 async function selectGroupMember(user) {
     if (!AppState.groupMemberMode || !user?.username) return;
-    const ok = AppState.groupMemberMode === 'add'
-        ? await sendGroupMemberRequest('POST', `/groups/${AppState.selectedUser.chatId}/members`, {username: user.username})
-        : await sendGroupMemberRequest('DELETE', `/groups/${AppState.selectedUser.chatId}/members/${encodeURIComponent(user.username)}`);
+    const ok = await sendGroupMemberRequest('POST', `/groups/${AppState.selectedUser.chatId}/members`, {username: user.username});
     if (ok) {
         closeGroupMemberSearch();
         await loadGroupMembers();
@@ -1417,10 +1380,6 @@ async function selectGroupMember(user) {
 
 async function addGroupMember() {
     openGroupMemberSearch('add');
-}
-
-async function removeGroupMember() {
-    openGroupMemberSearch('remove');
 }
 
 async function leaveCurrentGroup() {
@@ -1441,15 +1400,12 @@ async function sendGroupMemberRequest(method, url, body = null) {
             body: body ? JSON.stringify(body) : undefined
         });
         if (!response.ok) {
-            setGroupManageStatus('Операция недоступна');
             return false;
         }
         const changed = response.status === 204 ? true : await response.json();
-        setGroupManageStatus('Готово');
         return changed !== false;
     } catch (error) {
         console.error('Не удалось выполнить операцию с группой:', error);
-        setGroupManageStatus('Операция недоступна');
         return false;
     }
 }
