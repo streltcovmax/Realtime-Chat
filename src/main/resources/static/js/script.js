@@ -125,6 +125,7 @@ const AppState = {
     groupMemberSearchTimer: null,
     groupMemberSearchRequestId: 0,
     groupMembers: [],
+    groupMembersChatId: null,
 };
 
 function updateAppHeightVar() {
@@ -542,6 +543,10 @@ async function searchMessagesInCurrentChat() {
             return;
         }
 
+        if (isGroupChat()) {
+            await ensureGroupMembersLoadedForSearch();
+        }
+
         const hits = await response.json();
         renderMessageSearchResults(Array.isArray(hits) ? hits : []);
     } catch (error) {
@@ -587,7 +592,7 @@ function createMessageSearchResultElement(hit) {
 
     const meta = document.createElement('span');
     meta.classList.add('message-search-meta');
-    const sender = hit.senderId === User.username ? 'Вы' : AppState.selectedUser.fullname || hit.senderId || '';
+    const sender = formatMessageSearchSender(hit);
     meta.textContent = `${sender} · ${formatMessageSearchDate(hit.dateCreated)}`;
 
     element.appendChild(snippet);
@@ -966,7 +971,10 @@ function updateChatNotificationMarker(chatElement, count) {
 function openCreateGroupModal() {
     if (!DOM.groupModal) return;
     DOM.groupNameInput.value = '';
-    DOM.groupMembersInput.value = '';
+    if (DOM.groupMembersInput) {
+        DOM.groupMembersInput.value = '';
+        DOM.groupMembersInput.closest('label')?.classList.add('hidden');
+    }
     setGroupModalStatus('');
     DOM.groupModal.classList.remove('hidden');
     DOM.groupModal.setAttribute('aria-hidden', 'false');
@@ -994,7 +1002,7 @@ function parseMemberInput(value) {
 
 async function createGroup() {
     const name = DOM.groupNameInput?.value.trim();
-    const usernames = parseMemberInput(DOM.groupMembersInput?.value);
+    const usernames = [];
 
     if (!name) {
         setGroupModalStatus('Введите название группы');
@@ -1035,6 +1043,24 @@ function openGroupManageModal() {
     DOM.groupLeaveButton.textContent = isCreator ? 'Выйти и удалить' : 'Выйти из группы';
     closeGroupMemberSearch();
     loadGroupMembers();
+}
+
+async function ensureGroupMembersLoadedForSearch() {
+    if (!isGroupChat() || !AppState.selectedUser.chatId) return;
+    if (AppState.groupMembersChatId === AppState.selectedUser.chatId && AppState.groupMembers.length > 0) return;
+    try {
+        AppState.groupMembers = await fetchGroupMembers();
+        AppState.groupMembersChatId = AppState.selectedUser.chatId;
+    } catch (error) {
+        console.error('Не удалось получить участников группы:', error);
+    }
+}
+
+function formatMessageSearchSender(hit) {
+    if (hit.senderId === User.username) return 'Вы';
+    if (!isGroupChat()) return AppState.selectedUser.fullname || hit.senderId || '';
+    const sender = AppState.groupMembers.find(user => user.username === hit.senderId);
+    return sender?.fullname || sender?.username || hit.senderId || '';
 }
 
 function closeGroupManageModal() {
@@ -1096,18 +1122,22 @@ async function loadGroupMembers() {
     if (!isGroupChat() || !AppState.selectedUser.chatId) return;
     ensureGroupMembersPanel();
     try {
-        const response = await fetch(`/groups/${AppState.selectedUser.chatId}/members`, SAME_ORIGIN_FETCH);
-        if (!response.ok) {
-            setGroupManageStatus('Не удалось получить участников группы');
-            return;
-        }
-        AppState.groupMembers = await response.json();
+        AppState.groupMembers = await fetchGroupMembers();
+        AppState.groupMembersChatId = AppState.selectedUser.chatId;
         syncSelectedGroupMemberCount();
         renderGroupMembersList();
     } catch (error) {
         console.error('Не удалось получить участников группы:', error);
         setGroupManageStatus('Не удалось получить участников группы');
     }
+}
+
+async function fetchGroupMembers() {
+    const response = await fetch(`/groups/${AppState.selectedUser.chatId}/members`, SAME_ORIGIN_FETCH);
+    if (!response.ok) {
+        throw new Error('Не удалось получить участников группы');
+    }
+    return response.json();
 }
 
 function renderGroupMembersList() {
