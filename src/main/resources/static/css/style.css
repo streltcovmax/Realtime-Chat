@@ -423,9 +423,8 @@ h2 {
 }
 
 .chat-message-row.message-search-highlight .message-content {
-    background: #f5b84b;
-    color: #141922;
-    box-shadow: 0 0 0 3px rgba(245, 184, 75, 0.9), 0 0 32px rgba(245, 184, 75, 0.38);
+    background: rgba(245, 184, 75, 0.18);
+    box-shadow: inset 3px 0 0 #f5b84b;
 }
 
 .chats-list-container {
@@ -728,12 +727,12 @@ h2 {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 2px;
     padding: 22px clamp(16px, 3vw, 34px);
     font-size: 14px;
 }
 
-#chat-messages .chat-message-row .message-content > span:first-of-type {
+#chat-messages .chat-message-row .message-text {
     display: block;
     min-width: 0;
     max-width: 100%;
@@ -742,9 +741,9 @@ h2 {
 }
 
 .message-sender {
-    margin-bottom: 4px;
-    color: var(--accent);
-    font-size: 12px;
+    margin: 12px 0 3px;
+    color: var(--text-highlight);
+    font-size: 13px;
     font-weight: 800;
 }
 
@@ -768,47 +767,45 @@ h2 {
 }
 
 .chat-message-row {
-    display: contents;
+    display: block;
+    width: 100%;
 }
 
-.message {
-    display: flex;
-    align-items: flex-end;
+.message-row-continued .message-content {
+    margin-top: 0;
 }
 
-.message.sender {
-    justify-content: flex-end;
+.message-block {
+    width: 100%;
 }
 
 .message-content {
-    display: inline-flex;
-    align-items: flex-end;
+    display: flex;
+    align-items: baseline;
     gap: 8px;
-    max-width: min(64%, 680px);
-    padding: 10px 12px;
+    width: 100%;
+    padding: 2px 10px;
+    color: var(--text-plain);
+    border-radius: var(--radius-sm);
     line-height: 1.42;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+    box-shadow: none;
 }
 
-.message-content.sender {
-    color: white;
-    background: linear-gradient(135deg, var(--accent), #3f6fe5);
-    border-radius: 16px 16px 4px 16px;
+.message-content:hover {
+    background: rgba(255, 255, 255, 0.045);
 }
 
-.message-content.receiver {
-    color: var(--text-highlight);
-    background: var(--panel-raised);
-    border: 1px solid var(--border-soft);
-    border-radius: 16px 16px 16px 4px;
+.message-text {
+    flex: 1;
+    min-width: 0;
 }
 
 .time {
     flex-shrink: 0;
     padding: 0 !important;
     margin: 0 !important;
-    color: currentColor;
-    opacity: 0.58 !important;
+    color: var(--text-dark);
+    opacity: 0.82 !important;
     font-size: 11px !important;
     line-height: 1.2;
 }
@@ -1125,9 +1122,6 @@ form#messageForm {
         min-width: 280px;
     }
 
-    .message-content {
-        max-width: 78%;
-    }
 }
 
 @media (max-width: 600px) {
@@ -1276,8 +1270,7 @@ form#messageForm {
     }
 
     .message-content {
-        max-width: 86%;
-        padding: 9px 11px;
+        padding: 2px 8px;
         font-size: 14px;
     }
 

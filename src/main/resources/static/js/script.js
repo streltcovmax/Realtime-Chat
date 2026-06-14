@@ -1502,6 +1502,9 @@ function fillChatHeader(chatData) {
 
 async function displayChatMessages(chatData) {
     resetMessagesState();
+    if (isGroupChat(chatData)) {
+        await ensureGroupMembersLoadedForSearch();
+    }
     await loadChatMessagesPage(getChatSelector(chatData), true);
     scrollToBottom(DOM.chatMessagesArea);
 }
@@ -1682,46 +1685,74 @@ function prependMessages(messages) {
         anchor = el;
     }
 
+    regroupVisibleMessages();
     DOM.chatMessagesArea.scrollTop = DOM.chatMessagesArea.scrollHeight - oldScrollHeight;
 }
 
 function appendMessages(messages) {
-    messages.forEach(appendMessageElement);
+    messages.forEach(message => appendMessageElement(message, false));
+    regroupVisibleMessages();
 }
 
 function createMessageElement(messageData) {
     const container = document.createElement('div');
     container.classList.add('chat-message-row');
     container.dataset.dayKey = calendarDayKey(messageData.dateCreated);
+    container.dataset.senderId = messageData.senderId || '';
     const messageId = messageData.message_id ?? messageData.messageId;
     if (messageId != null) {
         container.dataset.messageId = String(messageId);
     }
 
-    const isSender = messageData.senderId === User.username;
-    const type = isSender ? 'sender' : 'receiver';
+    const block = document.createElement('div');
+    block.classList.add('message-block');
 
-    const row = document.createElement('div');
-    row.classList.add('message', type);
+    const sender = document.createElement('div');
+    sender.classList.add('message-sender');
+    sender.textContent = formatChatMessageSender(messageData);
+
     const contentBox = document.createElement('div');
-    contentBox.classList.add('message-content', type);
-    if (!isSender && isGroupChat()) {
-        const senderSpan = document.createElement('span');
-        senderSpan.classList.add('message-sender');
-        senderSpan.textContent = messageData.senderId || '';
-        contentBox.appendChild(senderSpan);
-    }
+    contentBox.classList.add('message-content');
+
     const textSpan = document.createElement('span');
+    textSpan.classList.add('message-text');
     textSpan.textContent = messageData.content ?? '';
+
     const timeSpan = document.createElement('span');
     timeSpan.classList.add('time');
     timeSpan.textContent = formatTime(messageData.dateCreated);
+
     contentBox.appendChild(textSpan);
     contentBox.appendChild(timeSpan);
-    row.appendChild(contentBox);
-    container.appendChild(row);
+    block.appendChild(sender);
+    block.appendChild(contentBox);
+    container.appendChild(block);
 
     return container;
+}
+
+function formatChatMessageSender(messageData) {
+    if (messageData.senderId === User.username) {
+        return User.fullname || User.username || '';
+    }
+    if (isGroupChat()) {
+        const member = AppState.groupMembers.find(user => user.username === messageData.senderId);
+        return member?.fullname || member?.username || messageData.senderId || '';
+    }
+    return AppState.selectedUser.fullname || AppState.selectedUser.username || messageData.senderId || '';
+}
+
+function regroupVisibleMessages() {
+    let previousSender = null;
+    let previousDay = null;
+    DOM.chatMessagesArea.querySelectorAll('.chat-message-row').forEach(row => {
+        const sameBlock = row.dataset.senderId === previousSender && row.dataset.dayKey === previousDay;
+        row.classList.toggle('message-row-continued', sameBlock);
+        const sender = row.querySelector('.message-sender');
+        sender?.classList.toggle('hidden', sameBlock);
+        previousSender = row.dataset.senderId;
+        previousDay = row.dataset.dayKey;
+    });
 }
 
 function addMessage(messageData) {
@@ -1730,13 +1761,16 @@ function addMessage(messageData) {
     scrollToBottom(DOM.chatMessagesArea);
 }
 
-function appendMessageElement(messageData) {
+function appendMessageElement(messageData, shouldRegroup = true) {
     const dayKey = calendarDayKey(messageData.dateCreated);
     if (AppState.chatTailDayKey !== dayKey) {
         DOM.chatMessagesArea.appendChild(createDayDividerElement(formatDayDividerLabel(messageData.dateCreated)));
         AppState.chatTailDayKey = dayKey;
     }
     DOM.chatMessagesArea.appendChild(createMessageElement(messageData));
+    if (shouldRegroup) {
+        regroupVisibleMessages();
+    }
 }
 
 async function sendMessage(event) {
