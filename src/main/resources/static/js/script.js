@@ -207,10 +207,10 @@ function onConnected() {
     }
 
     // Подписки на WebSocket каналы
-    AppState.stompClient.subscribe('/user/queue/messages', onMessageReceived);
+    AppState.stompClient.subscribe(`/user/${User.username}/messages`, onMessageReceived);
     AppState.stompClient.subscribe(`/user/public/`, onUserStatusUpdate);
-    AppState.stompClient.subscribe('/user/queue/usersSearch', onSearchResults);
-    AppState.stompClient.subscribe('/user/queue/groupUpdates', onGroupChatUpdate);
+    AppState.stompClient.subscribe(`/user/${User.username}/usersSearch`, onSearchResults);
+    AppState.stompClient.subscribe(`/user/${User.username}/groupUpdates`, onGroupChatUpdate);
 
     // Регистрация пользователя
     registerUser();
