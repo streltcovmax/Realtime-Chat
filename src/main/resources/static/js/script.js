@@ -1707,9 +1707,20 @@ function createMessageElement(messageData) {
     const block = document.createElement('div');
     block.classList.add('message-block');
 
+    const avatar = document.createElement('button');
+    avatar.type = 'button';
+    avatar.classList.add('chat-avatar', 'r', 'message-avatar');
+    const senderProfile = getMessageSenderProfile(messageData);
+    const senderName = senderProfile.fullname || senderProfile.username || messageData.senderId || '';
+    avatar.textContent = senderName?.[0] || '?';
+    avatar.addEventListener('click', () => openUserProfileModal(senderProfile));
+
+    const body = document.createElement('div');
+    body.classList.add('message-body');
+
     const sender = document.createElement('div');
     sender.classList.add('message-sender');
-    sender.textContent = formatChatMessageSender(messageData);
+    sender.textContent = senderName;
 
     const contentBox = document.createElement('div');
     contentBox.classList.add('message-content');
@@ -1724,22 +1735,38 @@ function createMessageElement(messageData) {
 
     contentBox.appendChild(textSpan);
     contentBox.appendChild(timeSpan);
-    block.appendChild(sender);
-    block.appendChild(contentBox);
+    body.appendChild(sender);
+    body.appendChild(contentBox);
+    block.appendChild(avatar);
+    block.appendChild(body);
     container.appendChild(block);
 
     return container;
 }
 
-function formatChatMessageSender(messageData) {
+function getMessageSenderProfile(messageData) {
     if (messageData.senderId === User.username) {
-        return User.fullname || User.username || '';
+        return {
+            username: User.username,
+            fullname: User.fullname,
+            status: User.status
+        };
     }
     if (isGroupChat()) {
         const member = AppState.groupMembers.find(user => user.username === messageData.senderId);
-        return member?.fullname || member?.username || messageData.senderId || '';
+        return member || {
+            username: messageData.senderId,
+            fullname: messageData.senderId,
+            status: 'UNKNOWN'
+        };
     }
-    return AppState.selectedUser.fullname || AppState.selectedUser.username || messageData.senderId || '';
+    return AppState.selectedUser.username === messageData.senderId
+        ? AppState.selectedUser
+        : {
+            username: messageData.senderId,
+            fullname: messageData.senderId,
+            status: 'UNKNOWN'
+        };
 }
 
 function regroupVisibleMessages() {
@@ -1748,8 +1775,6 @@ function regroupVisibleMessages() {
     DOM.chatMessagesArea.querySelectorAll('.chat-message-row').forEach(row => {
         const sameBlock = row.dataset.senderId === previousSender && row.dataset.dayKey === previousDay;
         row.classList.toggle('message-row-continued', sameBlock);
-        const sender = row.querySelector('.message-sender');
-        sender?.classList.toggle('hidden', sameBlock);
         previousSender = row.dataset.senderId;
         previousDay = row.dataset.dayKey;
     });
