@@ -422,9 +422,15 @@ h2 {
     font-size: 12px;
 }
 
-.chat-message-row.message-search-highlight .message-content {
-    background: rgba(245, 184, 75, 0.18);
-    box-shadow: inset 3px 0 0 #f5b84b;
+.chat-message-row.message-search-highlight .message-body::before {
+    content: "";
+    position: absolute;
+    inset: -4px -8px;
+    z-index: 0;
+    border-radius: var(--radius-sm);
+    background: rgba(245, 184, 75, 0.32);
+    box-shadow: inset 4px 0 0 #f5b84b;
+    pointer-events: none;
 }
 
 .chats-list-container {
@@ -741,6 +747,8 @@ h2 {
 }
 
 .message-sender {
+    position: relative;
+    z-index: 1;
     display: inline-block;
     margin: 12px 0 3px;
     color: var(--text-highlight);
@@ -825,10 +833,13 @@ h2 {
 }
 
 .message-body {
+    position: relative;
     min-width: 0;
 }
 
 .message-content {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: baseline;
     gap: 8px;
