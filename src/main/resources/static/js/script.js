@@ -1721,6 +1721,7 @@ function createMessageElement(messageData) {
     const sender = document.createElement('div');
     sender.classList.add('message-sender');
     sender.textContent = senderName;
+    sender.addEventListener('click', () => openUserProfileModal(senderProfile));
 
     const contentBox = document.createElement('div');
     contentBox.classList.add('message-content');

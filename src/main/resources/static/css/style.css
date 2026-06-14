@@ -741,10 +741,12 @@ h2 {
 }
 
 .message-sender {
+    display: inline-block;
     margin: 12px 0 3px;
     color: var(--text-highlight);
     font-size: 13px;
     font-weight: 800;
+    cursor: pointer;
 }
 
 .message-day-divider {
@@ -797,15 +799,29 @@ h2 {
 }
 
 .message-avatar {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    max-width: 38px;
+    min-height: 38px;
+    max-height: 38px;
+    aspect-ratio: 1;
     margin-top: 9px;
     padding: 0;
     border: 0;
+    border-radius: 50%;
     cursor: pointer;
+    background: linear-gradient(135deg, #e9f0ff, #9fc0ff);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+    transform: none;
 }
 
-.message-avatar:hover {
-    filter: brightness(1.08);
+.message-avatar:hover,
+.message-avatar:active {
+    background: linear-gradient(135deg, #e9f0ff, #9fc0ff);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+    filter: none;
+    transform: none;
 }
 
 .message-body {
@@ -817,7 +833,7 @@ h2 {
     align-items: baseline;
     gap: 8px;
     width: 100%;
-    padding: 2px 10px;
+    padding: 2px 0;
     color: var(--text-plain);
     border-radius: var(--radius-sm);
     line-height: 1.42;
@@ -1303,12 +1319,21 @@ form#messageForm {
     }
 
     .message-content {
-        padding: 2px 8px;
+        padding: 2px 0;
         font-size: 14px;
     }
 
     .message-block {
         grid-template-columns: 36px minmax(0, 1fr);
+    }
+
+    .message-avatar {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        max-width: 36px;
+        min-height: 36px;
+        max-height: 36px;
     }
 
     form#messageForm {
@@ -1355,6 +1380,15 @@ form#messageForm {
 
     .message-block {
         grid-template-columns: 32px minmax(0, 1fr);
+    }
+
+    .message-avatar {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        max-width: 32px;
+        min-height: 32px;
+        max-height: 32px;
     }
 
     .chat-name {
