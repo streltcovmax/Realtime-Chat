@@ -1712,6 +1712,7 @@ function createMessageElement(messageData) {
     avatar.classList.add('chat-avatar', 'r', 'message-avatar');
     const senderProfile = getMessageSenderProfile(messageData);
     const senderName = senderProfile.fullname || senderProfile.username || messageData.senderId || '';
+    const senderLabel = messageData.senderId === User.username ? `${senderName} (\u0412\u044b)` : senderName;
     avatar.textContent = senderName?.[0] || '?';
     avatar.addEventListener('click', () => openUserProfileModal(senderProfile));
 
@@ -1720,7 +1721,7 @@ function createMessageElement(messageData) {
 
     const sender = document.createElement('div');
     sender.classList.add('message-sender');
-    sender.textContent = senderName;
+    sender.textContent = senderLabel;
     sender.addEventListener('click', () => openUserProfileModal(senderProfile));
 
     const contentBox = document.createElement('div');
