@@ -13,6 +13,17 @@ const NotificationSettings = {
     soundUrl: '/static/sounds/message.mp3'
 };
 
+const AVATAR_THEMES = [
+    {background: ['#8ab4ff', '#4f8cff'], color: '#071b3d'},
+    {background: ['#7dd3fc', '#3276f6'], color: '#061726'},
+    {background: ['#6ee7b7', '#23c06b'], color: '#062017'},
+    {background: ['#f8d477', '#f5a524'], color: '#281803'},
+    {background: ['#f7a8b8', '#ff6b8a'], color: '#2b0710'},
+    {background: ['#c4b5fd', '#7c6ee6'], color: '#100b2b'},
+    {background: ['#93c5fd', '#2dd4bf'], color: '#061c26'},
+    {background: ['#d9e2f2', '#8ab4ff'], color: '#11305e'}
+];
+
 // ============================================
 // СОСТОЯНИЕ
 // ============================================
@@ -83,14 +94,11 @@ export function notifyNewMessage(senderName, messageText, avatarLetter = null) {
     // Обновляем title
     updatePageTitle();
 
-    // Если страница не видна — показываем уведомления
-    if (!isPageVisible) {
-        // Браузерное уведомление
-        if (NotificationSettings.browserEnabled) {
-            showBrowserNotification(senderName, messageText, avatarLetter);
-        }
+    if (NotificationSettings.browserEnabled) {
+        showBrowserNotification(senderName, messageText, avatarLetter);
+    }
 
-        // Мигаем title
+    if (!isPageVisible) {
         startTitleBlink(senderName);
     }
 
@@ -109,9 +117,11 @@ function showBrowserNotification(senderName, messageText, avatarLetter) {
         return;
     }
 
+    const bodyText = String(messageText || '');
+    const letter = avatarLetter || senderName?.[0] || '?';
     const options = {
-        body: messageText.length > 100 ? messageText.substring(0, 100) + '...' : messageText,
-        icon: createAvatarDataUrl(avatarLetter || senderName[0]),
+        body: bodyText.length > 100 ? bodyText.substring(0, 100) + '...' : bodyText,
+        icon: createAvatarDataUrl(letter, senderName),
         badge: '/static/images/icon_colored.ico',
         tag: 'chat-message', // группирует уведомления
         renotify: true,
@@ -137,24 +147,39 @@ function showBrowserNotification(senderName, messageText, avatarLetter) {
 }
 
 // Создаём простую аватарку как data URL
-function createAvatarDataUrl(letter) {
+function createAvatarDataUrl(letter, colorKey) {
     const canvas = document.createElement('canvas');
     canvas.width = 64;
     canvas.height = 64;
     const ctx = canvas.getContext('2d');
 
     // Фон
-    ctx.fillStyle = '#4f8cff';
+    const theme = getAvatarTheme(colorKey || letter);
+    const gradient = ctx.createLinearGradient(0, 0, 64, 64);
+    gradient.addColorStop(0, theme.background[0]);
+    gradient.addColorStop(1, theme.background[1]);
+    ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 64, 64);
 
     // Буква
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = theme.color;
     ctx.font = 'bold 32px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(letter.toUpperCase(), 32, 32);
 
     return canvas.toDataURL();
+}
+
+function hashAvatarKey(key) {
+    return String(key || '?').split('').reduce((hash, char) => {
+        return ((hash << 5) - hash + char.charCodeAt(0)) | 0;
+    }, 0);
+}
+
+function getAvatarTheme(key) {
+    const index = Math.abs(hashAvatarKey(key)) % AVATAR_THEMES.length;
+    return AVATAR_THEMES[index];
 }
 
 // ============================================

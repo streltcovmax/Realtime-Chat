@@ -15,6 +15,16 @@ const MESSAGE_SEARCH_LIMIT = 20;
 const MESSAGE_SEARCH_DEBOUNCE_MS = 250;
 const MOBILE_BREAKPOINT = 600;
 const MESSAGE_COMPOSER_MAX_LINES = 12;
+const AVATAR_THEMES = [
+    {background: 'linear-gradient(135deg, #8ab4ff, #4f8cff)', color: '#071b3d'},
+    {background: 'linear-gradient(135deg, #7dd3fc, #3276f6)', color: '#061726'},
+    {background: 'linear-gradient(135deg, #6ee7b7, #23c06b)', color: '#062017'},
+    {background: 'linear-gradient(135deg, #f8d477, #f5a524)', color: '#281803'},
+    {background: 'linear-gradient(135deg, #f7a8b8, #ff6b8a)', color: '#2b0710'},
+    {background: 'linear-gradient(135deg, #c4b5fd, #7c6ee6)', color: '#100b2b'},
+    {background: 'linear-gradient(135deg, #93c5fd, #2dd4bf)', color: '#061c26'},
+    {background: 'linear-gradient(135deg, #d9e2f2, #8ab4ff)', color: '#11305e'}
+];
 
 // ============================================
 // DOM ЭЛЕМЕНТЫ
@@ -160,6 +170,40 @@ function jsonFetchHeadersForEmptyBody() {
 
 const SAME_ORIGIN_FETCH = {credentials: 'same-origin'};
 
+function hashAvatarKey(key) {
+    return String(key || '?').split('').reduce((hash, char) => {
+        return ((hash << 5) - hash + char.charCodeAt(0)) | 0;
+    }, 0);
+}
+
+function getAvatarTheme(key) {
+    const index = Math.abs(hashAvatarKey(key)) % AVATAR_THEMES.length;
+    return AVATAR_THEMES[index];
+}
+
+function getAvatarKey(data = {}) {
+    return data.username || data.selector || data.chatId || data.fullname || data.name || '?';
+}
+
+function getAvatarLetter(data = {}) {
+    return data.fullname?.[0] || data.name?.[0] || data.username?.[0] || '?';
+}
+
+function applyAvatarAppearance(avatar, data = {}) {
+    if (!avatar) return;
+
+    const letter = getAvatarLetter(data);
+    if (avatar.firstChild?.nodeType === Node.TEXT_NODE) {
+        avatar.firstChild.textContent = letter;
+    } else {
+        avatar.prepend(document.createTextNode(letter));
+    }
+
+    const theme = getAvatarTheme(getAvatarKey(data));
+    avatar.style.background = theme.background;
+    avatar.style.color = theme.color;
+}
+
 function markMessageReadOnServer(message) {
     const id = message.message_id ?? message.messageId;
     const recipientId = String(message.recipientId || '');
@@ -241,7 +285,7 @@ function setupUI() {
     document.querySelector('#group-remove-member-button')?.remove();
     document.querySelector('#group-member-search')?.remove();
     DOM.connectedUserFullname.textContent = User.fullname;
-    DOM.connectedUserAvatar.textContent = User.fullname[0];
+    applyAvatarAppearance(DOM.connectedUserAvatar, User);
     readMaxMessageLengthFromDom();
     setEventListeners();
     initMessageComposer();
@@ -723,7 +767,7 @@ function createSearchResultElement(user) {
 
     const avatar = document.createElement('span');
     avatar.classList.add('chat-avatar', 'r');
-    avatar.textContent = user.fullname?.[0] || user.username?.[0] || '?';
+    applyAvatarAppearance(avatar, user);
 
     const label = document.createElement('span');
     label.classList.add('search-result-text');
@@ -782,9 +826,7 @@ function upsertChatInList(chatData, prependToList = true) {
         existing.chatData = {...existing.chatData, ...normalized};
         existing.querySelector('.chat-name').textContent = normalized.fullname ?? '';
         const avatar = existing.querySelector('.chat-avatar');
-        if (avatar?.firstChild) {
-            avatar.firstChild.textContent = normalized.fullname?.[0] || normalized.username?.[0] || '?';
-        }
+        applyAvatarAppearance(avatar, normalized);
         if (normalized.lastMessage) {
             updateChatPreview(existing, {
                 content: normalized.lastMessage,
@@ -842,7 +884,7 @@ function appendChatToList(chatData, prependToList = false) {
     chatInfo.classList.add('chat-info');
     const avatarWrap = document.createElement('div');
     avatarWrap.classList.add('chat-avatar', 'r');
-    avatarWrap.appendChild(document.createTextNode(chatData.fullname?.[0] || chatData.username?.[0] || '?'));
+    applyAvatarAppearance(avatarWrap, chatData);
     const onlineIndicator = document.createElement('span');
     onlineIndicator.classList.add('online-indicator', 'hidden');
     avatarWrap.appendChild(onlineIndicator);
@@ -1149,7 +1191,7 @@ function createGroupMemberListElement(user, isCreator) {
 
     const avatar = document.createElement('span');
     avatar.classList.add('chat-avatar', 'r');
-    avatar.textContent = user.fullname?.[0] || user.username?.[0] || '?';
+    applyAvatarAppearance(avatar, user);
 
     const label = document.createElement('span');
     label.classList.add('search-result-text');
@@ -1348,7 +1390,7 @@ function createGroupMemberSearchResultElement(user) {
 
     const avatar = document.createElement('span');
     avatar.classList.add('chat-avatar', 'r');
-    avatar.textContent = user.fullname?.[0] || user.username?.[0] || '?';
+    applyAvatarAppearance(avatar, user);
 
     const label = document.createElement('span');
     label.classList.add('search-result-text');
@@ -1491,7 +1533,7 @@ function fillChatHeader(chatData) {
     header.querySelector('#chat-header-status').textContent = isGroupChat(chatData)
         ? formatGroupMembersCount(chatData.memberCount)
         : String(chatData.status || '').toLowerCase();
-    header.querySelector('.chat-avatar').textContent = chatData.fullname?.[0] || chatData.username?.[0] || '?';
+    applyAvatarAppearance(header.querySelector('.chat-avatar'), chatData);
     header.classList.toggle('online', !isGroupChat(chatData) && chatData.status === 'ONLINE');
     DOM.groupManageButton?.classList.toggle('hidden', !isGroupChat(chatData));
 }
@@ -1713,7 +1755,7 @@ function createMessageElement(messageData) {
     const senderProfile = getMessageSenderProfile(messageData);
     const senderName = senderProfile.fullname || senderProfile.username || messageData.senderId || '';
     const senderLabel = messageData.senderId === User.username ? `${senderName} (\u0412\u044b)` : senderName;
-    avatar.textContent = senderName?.[0] || '?';
+    applyAvatarAppearance(avatar, senderProfile);
     avatar.addEventListener('click', () => openUserProfileModal(senderProfile));
 
     const body = document.createElement('div');
@@ -2123,7 +2165,7 @@ function openUserProfileModal(user) {
     const username = user.username || '';
     const status = user.status || 'UNKNOWN';
 
-    DOM.userProfileAvatar.textContent = fullname?.[0] || username?.[0] || '?';
+    applyAvatarAppearance(DOM.userProfileAvatar, user);
     DOM.userProfileTitle.textContent = fullname;
     DOM.userProfileUsername.textContent = username ? `@${username}` : '';
     DOM.userProfileStatus.textContent = formatUserStatus(status);
