@@ -16,14 +16,14 @@ const MESSAGE_SEARCH_DEBOUNCE_MS = 250;
 const MOBILE_BREAKPOINT = 600;
 const MESSAGE_COMPOSER_MAX_LINES = 12;
 const AVATAR_THEMES = [
-    {background: 'linear-gradient(135deg, #8ab4ff, #4f8cff)', color: '#071b3d'},
-    {background: 'linear-gradient(135deg, #7dd3fc, #3276f6)', color: '#061726'},
-    {background: 'linear-gradient(135deg, #6ee7b7, #23c06b)', color: '#062017'},
-    {background: 'linear-gradient(135deg, #f8d477, #f5a524)', color: '#281803'},
-    {background: 'linear-gradient(135deg, #f7a8b8, #ff6b8a)', color: '#2b0710'},
-    {background: 'linear-gradient(135deg, #c4b5fd, #7c6ee6)', color: '#100b2b'},
-    {background: 'linear-gradient(135deg, #93c5fd, #2dd4bf)', color: '#061c26'},
-    {background: 'linear-gradient(135deg, #d9e2f2, #8ab4ff)', color: '#11305e'}
+    {background: '#4f8cff', color: '#071b3d'},
+    {background: '#3276f6', color: '#061726'},
+    {background: '#23c06b', color: '#062017'},
+    {background: '#f5a524', color: '#281803'},
+    {background: '#ff6b8a', color: '#2b0710'},
+    {background: '#7c6ee6', color: '#100b2b'},
+    {background: '#2dd4bf', color: '#061c26'},
+    {background: '#8ab4ff', color: '#11305e'}
 ];
 
 // ============================================
@@ -1899,8 +1899,9 @@ async function onMessageReceived(payload) {
             const unreadMessagesCount = !markerTextContent ? 0 : parseInt(markerTextContent);
             updateChatNotificationMarker(chatElement, unreadMessagesCount + 1)
 
-            const senderName = chatElement.chatData?.fullname || senderId;
-            notifyNewMessage(senderName, message.content, senderName[0], senderId);
+            const senderProfile = getMessageSenderProfile(message);
+            const senderName = senderProfile.fullname || senderProfile.username || senderId;
+            notifyNewMessage(senderName, message.content, getAvatarLetter(senderProfile), getAvatarKey(senderProfile));
         } else {
             addMessage(message);
             resetUnreadCount();
@@ -1921,7 +1922,8 @@ async function onMessageReceived(payload) {
         }
 
         const newChat = findChatElement(chatSelector);
-        const senderName = newChat?.chatData?.fullname || senderId;
+        const senderProfile = getMessageSenderProfile(message);
+        const senderName = senderProfile.fullname || senderProfile.username || newChat?.chatData?.fullname || senderId;
 
         const dialogOpenWithSender =
             getChatSelector(AppState.selectedUser) === chatSelector
@@ -1936,7 +1938,7 @@ async function onMessageReceived(payload) {
                 .catch(() => {
                 });
         } else {
-            notifyNewMessage(senderName, message.content, senderName[0], senderId);
+            notifyNewMessage(senderName, message.content, getAvatarLetter(senderProfile), getAvatarKey(senderProfile));
         }
     }
 }

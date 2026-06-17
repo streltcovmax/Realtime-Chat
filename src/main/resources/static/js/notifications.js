@@ -14,14 +14,14 @@ const NotificationSettings = {
 };
 
 const AVATAR_THEMES = [
-    {background: ['#8ab4ff', '#4f8cff'], color: '#071b3d'},
-    {background: ['#7dd3fc', '#3276f6'], color: '#061726'},
-    {background: ['#6ee7b7', '#23c06b'], color: '#062017'},
-    {background: ['#f8d477', '#f5a524'], color: '#281803'},
-    {background: ['#f7a8b8', '#ff6b8a'], color: '#2b0710'},
-    {background: ['#c4b5fd', '#7c6ee6'], color: '#100b2b'},
-    {background: ['#93c5fd', '#2dd4bf'], color: '#061c26'},
-    {background: ['#d9e2f2', '#8ab4ff'], color: '#11305e'}
+    {background: '#4f8cff', color: '#071b3d'},
+    {background: '#3276f6', color: '#061726'},
+    {background: '#23c06b', color: '#062017'},
+    {background: '#f5a524', color: '#281803'},
+    {background: '#ff6b8a', color: '#2b0710'},
+    {background: '#7c6ee6', color: '#100b2b'},
+    {background: '#2dd4bf', color: '#061c26'},
+    {background: '#8ab4ff', color: '#11305e'}
 ];
 
 // ============================================
@@ -155,10 +155,7 @@ function createAvatarDataUrl(letter, colorKey) {
 
     // Фон
     const theme = getAvatarTheme(colorKey || letter);
-    const gradient = ctx.createLinearGradient(0, 0, 64, 64);
-    gradient.addColorStop(0, theme.background[0]);
-    gradient.addColorStop(1, theme.background[1]);
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = theme.background;
     ctx.fillRect(0, 0, 64, 64);
 
     // Буква
