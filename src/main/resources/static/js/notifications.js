@@ -87,7 +87,7 @@ function preloadSound() {
 // ОСНОВНАЯ ФУНКЦИЯ УВЕДОМЛЕНИЯ
 // ============================================
 
-export function notifyNewMessage(senderName, messageText, avatarLetter = null) {
+export function notifyNewMessage(senderName, messageText, avatarLetter = null, avatarKey = null) {
     // Увеличиваем счётчик непрочитанных
     unreadCount++;
 
@@ -95,7 +95,7 @@ export function notifyNewMessage(senderName, messageText, avatarLetter = null) {
     updatePageTitle();
 
     if (NotificationSettings.browserEnabled) {
-        showBrowserNotification(senderName, messageText, avatarLetter);
+        showBrowserNotification(senderName, messageText, avatarLetter, avatarKey);
     }
 
     if (!isPageVisible) {
@@ -112,7 +112,7 @@ export function notifyNewMessage(senderName, messageText, avatarLetter = null) {
 // БРАУЗЕРНЫЕ УВЕДОМЛЕНИЯ
 // ============================================
 
-function showBrowserNotification(senderName, messageText, avatarLetter) {
+function showBrowserNotification(senderName, messageText, avatarLetter, avatarKey) {
     if (notificationPermission !== 'granted') {
         return;
     }
@@ -121,7 +121,7 @@ function showBrowserNotification(senderName, messageText, avatarLetter) {
     const letter = avatarLetter || senderName?.[0] || '?';
     const options = {
         body: bodyText.length > 100 ? bodyText.substring(0, 100) + '...' : bodyText,
-        icon: createAvatarDataUrl(letter, senderName),
+        icon: createAvatarDataUrl(letter, avatarKey || senderName),
         badge: '/static/images/icon_colored.ico',
         tag: 'chat-message', // группирует уведомления
         renotify: true,

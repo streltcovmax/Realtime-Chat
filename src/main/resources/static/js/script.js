@@ -1900,7 +1900,7 @@ async function onMessageReceived(payload) {
             updateChatNotificationMarker(chatElement, unreadMessagesCount + 1)
 
             const senderName = chatElement.chatData?.fullname || senderId;
-            notifyNewMessage(senderName, message.content, senderName[0]);
+            notifyNewMessage(senderName, message.content, senderName[0], senderId);
         } else {
             addMessage(message);
             resetUnreadCount();
@@ -1936,7 +1936,7 @@ async function onMessageReceived(payload) {
                 .catch(() => {
                 });
         } else {
-            notifyNewMessage(senderName, message.content, senderName[0]);
+            notifyNewMessage(senderName, message.content, senderName[0], senderId);
         }
     }
 }
