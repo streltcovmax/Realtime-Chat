@@ -4,7 +4,6 @@ import com.mkstr.chat.analytics.AnalyticsService;
 import com.mkstr.chat.dto.GroupChatEventDto;
 import com.mkstr.chat.dto.GroupCreateRequest;
 import com.mkstr.chat.dto.GroupMemberRequest;
-import com.mkstr.chat.dto.MessageReadEventDto;
 import com.mkstr.chat.model.Chat;
 import com.mkstr.chat.model.ChatParticipant;
 import com.mkstr.chat.model.Message;
@@ -125,7 +124,6 @@ public class ChatController {
                 }
             }
         } else {
-            messagingTemplate.convertAndSendToUser(senderId, "/queue/messageAcks", message);
             messagingTemplate.convertAndSend("/user/" + recipientId + "/messages", message);
         }
     }
@@ -156,7 +154,7 @@ public class ChatController {
         Long chatId = chat.getChatId();
         Pageable pageable = PageRequest.of(page, size);
         Page<Message> messagePage = messageService.findByChatId(chatId, pageable);
-        notifyReadMessages(messageService.readPageForUser(messagePage, username), username);
+        messageService.readPageForUser(messagePage, username);
         return ResponseEntity.ok(messagePage);
     }
 
@@ -174,7 +172,7 @@ public class ChatController {
             return ResponseEntity.ok(Page.empty(emptyPageable));
         }
         Page<Message> messagePage = messageService.findPageContainingMessage(chat.getChatId(), messageId, size);
-        notifyReadMessages(messageService.readPageForUser(messagePage, username), username);
+        messageService.readPageForUser(messagePage, username);
         return ResponseEntity.ok(messagePage);
     }
 
@@ -272,10 +270,7 @@ public class ChatController {
     public ResponseEntity<Void> markOneMessageRead(@PathVariable long messageId) {
         String currentUsername = currentUserProvider.requireCurrentUsername();
         Message message = messageService.markReadForRecipient(messageId, currentUsername);
-        if (message != null) {
-            analyticsService.messageRead(message, currentUsername);
-            notifyReadMessage(message, currentUsername);
-        }
+        analyticsService.messageRead(message, currentUsername);
         return ResponseEntity.noContent().build();
     }
 
@@ -308,25 +303,6 @@ public class ChatController {
         messagingTemplate.convertAndSend(
                 "/user/" + username + "/groupUpdates",
                 new GroupChatEventDto("REMOVE", chatId, null)
-        );
-    }
-
-    private void notifyReadMessages(List<Message> messages, String readBy) {
-        messages.forEach(message -> notifyReadMessage(message, readBy));
-    }
-
-    private void notifyReadMessage(Message message, String readBy) {
-        if (message == null || chatService.isGroupSelector(message.getRecipientId())) {
-            return;
-        }
-        String senderId = message.getSenderId();
-        if (senderId == null || senderId.equals(readBy)) {
-            return;
-        }
-        messagingTemplate.convertAndSendToUser(
-                senderId,
-                "/queue/messageReads",
-                new MessageReadEventDto(message.getMessage_id(), message.getChatId(), readBy)
         );
     }
 

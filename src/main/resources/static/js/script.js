@@ -211,8 +211,6 @@ function onConnected() {
     AppState.stompClient.subscribe(`/user/public/`, onUserStatusUpdate);
     AppState.stompClient.subscribe(`/user/${User.username}/usersSearch`, onSearchResults);
     AppState.stompClient.subscribe(`/user/${User.username}/groupUpdates`, onGroupChatUpdate);
-    AppState.stompClient.subscribe('/user/queue/messageAcks', onMessageAck);
-    AppState.stompClient.subscribe('/user/queue/messageReads', onMessageRead);
 
     // Регистрация пользователя
     registerUser();
@@ -1908,57 +1906,6 @@ async function onMessageReceived(payload) {
             notifyNewMessage(senderName, message.content, senderName[0]);
         }
     }
-}
-
-function onMessageAck(payload) {
-    const message = JSON.parse(payload.body);
-    const messageId = message.message_id ?? message.messageId;
-    if (messageId == null || message.senderId !== User.username || isGroupChat()) {
-        return;
-    }
-    const selectedSelector = getChatSelector(AppState.selectedUser);
-    if (selectedSelector !== message.recipientId) {
-        return;
-    }
-
-    const pendingRow = Array.from(DOM.chatMessagesArea.querySelectorAll('.chat-message-row'))
-        .reverse()
-        .find(row => {
-            if (row.dataset.messageId) return false;
-            if (row.dataset.senderId !== User.username) return false;
-            const text = row.querySelector('.message-text')?.textContent || '';
-            return text === (message.content || '');
-        });
-    if (!pendingRow) {
-        return;
-    }
-    pendingRow.dataset.messageId = String(messageId);
-    updateMessageReadStatus(pendingRow, message.read === true);
-}
-
-function onMessageRead(payload) {
-    const event = JSON.parse(payload.body);
-    const messageId = event.messageId ?? event.message_id;
-    if (messageId == null) {
-        return;
-    }
-    const row = Array.from(DOM.chatMessagesArea.querySelectorAll('.chat-message-row'))
-        .find(item => item.dataset.messageId === String(messageId));
-    if (row) {
-        updateMessageReadStatus(row, true);
-    }
-}
-
-function updateMessageReadStatus(row, isRead) {
-    const status = row?.querySelector('.message-read-status');
-    if (!status) {
-        return;
-    }
-    status.classList.toggle('read', isRead);
-    status.classList.toggle('unread', !isRead);
-    status.textContent = isRead
-        ? '\u043f\u0440\u043e\u0447\u0438\u0442\u0430\u043d\u043e'
-        : '\u043d\u0435 \u043f\u0440\u043e\u0447\u0438\u0442\u0430\u043d\u043e';
 }
 
 function onMessagesScroll() {
