@@ -212,6 +212,13 @@ public class AnalyticsService {
         technicalEvent("backend_error", userId, "", null, null, exceptionStatus(exception), null, metadata);
     }
 
+    public void healthcheck() {
+        ObjectNode metadata = objectMapper.createObjectNode();
+        metadata.put("component", "analytics");
+        metadata.put("operation", "healthcheck");
+        technicalEvent("analytics_healthcheck", "system", "", null, null, "OK", null, metadata);
+    }
+
     @PreDestroy
     void shutdown() {
         executor.shutdown();

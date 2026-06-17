@@ -23,6 +23,8 @@ analytics:
     table: ${ANALYTICS_CLICKHOUSE_TABLE:events}
     username: ${ANALYTICS_CLICKHOUSE_USERNAME:${CLICKHOUSE_USER:default}}
     password: ${ANALYTICS_CLICKHOUSE_PASSWORD:${CLICKHOUSE_PASSWORD:password}}
+    healthcheck-initial-delay-ms: ${ANALYTICS_CLICKHOUSE_HEALTHCHECK_INITIAL_DELAY_MS:15000}
+    healthcheck-interval-ms: ${ANALYTICS_CLICKHOUSE_HEALTHCHECK_INTERVAL_MS:60000}
 
 spring:
   application:
