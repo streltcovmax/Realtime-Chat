@@ -870,22 +870,6 @@ h2 {
     line-height: 1.2;
 }
 
-.message-read-status {
-    flex-shrink: 0;
-    color: var(--text-dark);
-    font-size: 11px;
-    line-height: 1.2;
-    white-space: nowrap;
-}
-
-.message-read-status.read {
-    color: var(--accent);
-}
-
-.message-read-status.unread {
-    opacity: 0.78;
-}
-
 form#messageForm {
     flex-shrink: 0;
     padding: 14px 18px 16px;

@@ -154,7 +154,7 @@ public class ChatController {
         Long chatId = chat.getChatId();
         Pageable pageable = PageRequest.of(page, size);
         Page<Message> messagePage = messageService.findByChatId(chatId, pageable);
-        messageService.readPageForUser(messagePage, username);
+        messageService.readPage(messagePage);
         return ResponseEntity.ok(messagePage);
     }
 
@@ -172,7 +172,7 @@ public class ChatController {
             return ResponseEntity.ok(Page.empty(emptyPageable));
         }
         Page<Message> messagePage = messageService.findPageContainingMessage(chat.getChatId(), messageId, size);
-        messageService.readPageForUser(messagePage, username);
+        messageService.readPage(messagePage);
         return ResponseEntity.ok(messagePage);
     }
 

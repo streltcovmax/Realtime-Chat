@@ -1737,15 +1737,6 @@ function createMessageElement(messageData) {
 
     contentBox.appendChild(textSpan);
     contentBox.appendChild(timeSpan);
-    if (!isGroupChat() && messageData.senderId === User.username) {
-        const readStatus = document.createElement('span');
-        const isRead = messageData.read === true;
-        readStatus.classList.add('message-read-status', isRead ? 'read' : 'unread');
-        readStatus.textContent = isRead
-            ? '\u043f\u0440\u043e\u0447\u0438\u0442\u0430\u043d\u043e'
-            : '\u043d\u0435 \u043f\u0440\u043e\u0447\u0438\u0442\u0430\u043d\u043e';
-        contentBox.appendChild(readStatus);
-    }
     body.appendChild(sender);
     body.appendChild(contentBox);
     block.appendChild(avatar);
