@@ -62,17 +62,21 @@ public class MessageService {
         return messageRepository.countByChatIdAndSenderIdNotAndReadIsFalse(chatId, username);
     }
 
-    public void readPageForUser(Page<Message> messages, String username) {
+    public List<Message> readPageForUser(Page<Message> messages, String username) {
         List<Message> messagesToRead = messages.stream()
                 .filter(message -> shouldMarkReadForUser(message, username))
                 .toList();
         if (!messagesToRead.isEmpty()) {
             messagesToRead.forEach(message -> message.setRead(true));
-            messageRepository.saveAll(messagesToRead);
+            return messageRepository.saveAll(messagesToRead);
         }
+        return List.of();
     }
 
     private boolean shouldMarkReadForUser(Message message, String username) {
+        if (Boolean.TRUE.equals(message.getRead())) {
+            return false;
+        }
         String recipientId = message.getRecipientId();
         if (username.equals(recipientId)) {
             return true;
@@ -92,7 +96,7 @@ public class MessageService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         if (Boolean.TRUE.equals(m.getRead())) {
-            return m;
+            return null;
         }
         m.setRead(true);
         return messageRepository.save(m);
